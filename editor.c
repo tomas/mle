@@ -903,6 +903,31 @@ static void _editor_draw_cursors(editor_t* editor, bview_t* bview) {
     }
 }
 
+static int mouse_down = 0;
+
+static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
+	switch (ev.key) {
+  	case TB_KEY_MOUSE_LEFT:
+    	cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
+    	mouse_down = 1;
+  		break;
+  	case TB_KEY_MOUSE_MIDDLE:
+  		break;
+  	case TB_KEY_MOUSE_RIGHT:
+  		break;
+  	case TB_KEY_MOUSE_WHEEL_UP:
+  	  cmd_scroll_up(ctx);
+  		break;
+  	case TB_KEY_MOUSE_WHEEL_DOWN:
+  	  cmd_scroll_down(ctx);
+  		break;
+  	case TB_KEY_MOUSE_RELEASE:
+  	  mouse_down = 0;
+  		break;
+	}
+	
+}
+
 // Get user input
 static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
     int rc;
@@ -923,6 +948,10 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
         rc = tb_poll_event(&ev);
         if (rc == -1) {
             continue; // Error
+        } else if (rc == TB_EVENT_MOUSE) {
+            _handle_mouse_event(ctx, ev);
+            editor_display(editor);
+            continue;
         } else if (rc == TB_EVENT_RESIZE) {
             // Resize
             _editor_resize(editor, ev.w, ev.h);
@@ -1365,8 +1394,8 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_isearch", "C-r"),
         MLE_KBINDING_DEF("cmd_replace", "C-h"),
         MLE_KBINDING_DEF("cmd_cut", "C-k"),
-        MLE_KBINDING_DEF("cmd_cut", "M-c"),
-        // MLE_KBINDING_DEF("cmd_cut", "C-x"),
+        // MLE_KBINDING_DEF("cmd_cut", "M-c"),
+        MLE_KBINDING_DEF("cmd_cut", "C-x"),
         MLE_KBINDING_DEF("cmd_copy", "M-k"),
         MLE_KBINDING_DEF("cmd_copy", "C-c"),
         MLE_KBINDING_DEF("cmd_uncut", "C-u"),
@@ -1442,7 +1471,6 @@ static void _editor_init_kmaps(editor_t* editor) {
         // MLE_KBINDING_DEF("cmd_close", "M-c"),
         MLE_KBINDING_DEF("cmd_close", "C-q"),
         MLE_KBINDING_DEF("cmd_close", "C-d"),
-        MLE_KBINDING_DEF("cmd_close", "C-x"),
         MLE_KBINDING_DEF("cmd_close", "escape"),
         MLE_KBINDING_DEF("cmd_quit", "CS-q"),
         MLE_KBINDING_DEF(NULL, NULL)

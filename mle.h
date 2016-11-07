@@ -410,6 +410,7 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
 int bview_add_cursor_asleep(bview_t* self, bline_t* bline, bint_t col, cursor_t** optret_cursor);
 int bview_add_cursor(bview_t* self, bline_t* bline, bint_t col, cursor_t** optret_cursor);
 int bview_add_listener(bview_t* self, bview_listener_cb_t callback, void* udata);
+int bview_scroll_viewport(bview_t* self, int offset);
 int bview_center_viewport_y(bview_t* self);
 int bview_destroy(bview_t* self);
 int bview_destroy_listener(bview_t* self, bview_listener_t* listener);
@@ -475,6 +476,9 @@ int cmd_insert_tab(cmd_context_t* ctx);
 int cmd_isearch(cmd_context_t* ctx);
 int cmd_lel(cmd_context_t* ctx);
 int cmd_less(cmd_context_t* ctx);
+int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int x, int y);
+int cmd_scroll_up(cmd_context_t* ctx);
+int cmd_scroll_down(cmd_context_t* ctx);
 int cmd_move_beginning(cmd_context_t* ctx);
 int cmd_move_bol(cmd_context_t* ctx);
 int cmd_move_bracket_back(cmd_context_t* ctx);

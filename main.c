@@ -15,7 +15,8 @@ int main(int argc, char** argv) {
     if (editor_init(&_editor, argc, argv) == MLE_OK) {
         if (!_editor.headless_mode) {
             tb_init();
-            tb_select_input_mode(TB_INPUT_ALT);
+            // tb_select_input_mode(TB_INPUT_ALT);
+            tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
         }
         editor_run(&_editor);
         if (_editor.headless_mode && _editor.active_edit) {

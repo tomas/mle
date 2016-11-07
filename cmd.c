@@ -126,6 +126,35 @@ int cmd_delete_after(cmd_context_t* ctx) {
     return MLE_OK;
 }
 
+int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
+  
+  if (mouse_down && !ctx->cursor->is_anchored)
+    cursor_toggle_anchor(ctx->cursor, 1);
+  else if (!mouse_down && ctx->cursor->is_anchored)
+    cursor_toggle_anchor(ctx->cursor, 1);
+
+  int offsetx = mx > 4 ? mx - 4 : 0;
+  int offsety = ctx->bview->viewport_y + my -1;
+  
+  mark_move_to(ctx->cursor->mark, offsety, offsetx);
+  bview_rectify_viewport(ctx->bview);
+  return MLE_OK;
+}
+
+int cmd_scroll_up(cmd_context_t * ctx) {
+  // bview_scroll_viewport(ctx->bview, -5);
+  mark_move_vert(ctx->cursor->mark, -5);
+  bview_rectify_viewport(ctx->bview);
+  return MLE_OK;
+}
+
+int cmd_scroll_down(cmd_context_t * ctx) {
+  // bview_scroll_viewport(ctx->bview, 5);
+  mark_move_vert(ctx->cursor->mark, 5);
+  bview_rectify_viewport(ctx->bview);
+  return MLE_OK;
+}
+
 // Move cursor to beginning of line
 int cmd_move_bol(cmd_context_t* ctx) {
     uint32_t ch;

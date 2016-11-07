@@ -33,6 +33,15 @@ static int _cmd_indent(cmd_context_t* ctx, int outdent);
 static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent);
 static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h);
 
+int have_multiple_cursors(bview_t* bview) {
+  int count = 0;
+  cursor_t* cursor;
+  DL_FOREACH(bview->cursors, cursor) {
+    count++;
+  };
+  return count > 1;
+};
+
 // Insert data
 int cmd_insert_data(cmd_context_t* ctx) {
     bint_t insertbuf_len;
@@ -348,6 +357,36 @@ int cmd_select_right(cmd_context_t* ctx) {
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, 1);
     bview_rectify_viewport(ctx->bview);
   );
+  return MLE_OK;
+}
+
+int cmd_select_word_back(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    cmd_move_word_back(ctx);
+  );
+  return MLE_OK;
+}
+
+int cmd_select_word_forward(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    cmd_move_word_forward(ctx);
+  );
+  return MLE_OK;
+}
+
+int cmd_new_cursor_up(cmd_context_t* ctx) {
+  if (!ctx->cursor->is_anchored) cursor_toggle_anchor(ctx->cursor, 1);
+  mark_move_vert(ctx->cursor->mark, -1);
+  cmd_drop_cursor_column(ctx);
+  return MLE_OK;
+}
+
+int cmd_new_cursor_down(cmd_context_t* ctx) {
+  if (!ctx->cursor->is_anchored) cursor_toggle_anchor(ctx->cursor, 1);
+  mark_move_vert(ctx->cursor->mark, 1);
+  cmd_drop_cursor_column(ctx);
   return MLE_OK;
 }
 
@@ -687,13 +726,17 @@ int cmd_open_replace_new(cmd_context_t* ctx) {
 
 // Close bview
 int cmd_close(cmd_context_t* ctx) {
+  if (have_multiple_cursors(ctx->bview)) {
+    cmd_remove_extra_cursors(ctx);
+  } else {
     int num_open;
     int num_closed;
     if (_cmd_pre_close(ctx->editor, ctx->bview) == MLE_ERR) return MLE_OK;
     num_open = editor_bview_edit_count(ctx->editor);
     editor_close_bview(ctx->editor, ctx->bview, &num_closed);
     ctx->loop_ctx->should_exit = num_closed == num_open ? 1 : 0;
-    return MLE_OK;
+  }
+  return MLE_OK;
 }
 
 // Quit editor

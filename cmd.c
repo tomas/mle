@@ -33,15 +33,6 @@ static int _cmd_indent(cmd_context_t* ctx, int outdent);
 static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent);
 static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h);
 
-int have_multiple_cursors(bview_t* bview) {
-  int count = 0;
-  cursor_t* cursor;
-  DL_FOREACH(bview->cursors, cursor) {
-    count++;
-  };
-  return count > 1;
-};
-
 // Insert data
 int cmd_insert_data(cmd_context_t* ctx) {
     bint_t insertbuf_len;
@@ -726,7 +717,7 @@ int cmd_open_replace_new(cmd_context_t* ctx) {
 
 // Close bview
 int cmd_close(cmd_context_t* ctx) {
-  if (have_multiple_cursors(ctx->bview)) {
+  if (bview_get_active_cursor_count(ctx->bview) > 1) {
     cmd_remove_extra_cursors(ctx);
   } else {
     int num_open;

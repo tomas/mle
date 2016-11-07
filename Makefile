@@ -20,8 +20,13 @@ $(mle_objects): %.o: %.c
 ./mlbuf/libmlbuf.a:
 	$(MAKE) -C mlbuf
 
-./termbox/build/src/libtermbox.a:
+./termbox/build/src/libtermbox.a: ./termbox/src/termbox.c.patched
 	cd termbox && python waf configure &>/dev/null && python waf &>/dev/null && cd -
+
+./termbox/src/termbox.c.patched: termbox-meta-keys.patch
+	if [ -e $@ ]; then cd termbox; patch -R -p1 < ../$<; cd ..; fi
+	cd termbox; patch -p1 < ../$<; cd ..
+	cp termbox-meta-keys.patch $@
 
 test: mle test_mle
 	$(MAKE) -C mlbuf test

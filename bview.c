@@ -335,7 +335,7 @@ int bview_move_viewport(bview_t* self, bint_t y) {
     if (y < 0) y = 0;
     self->viewport_y = y;
     bview_rectify_viewport(self);
-    // buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
+    buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
     return MLE_OK;
 }
 

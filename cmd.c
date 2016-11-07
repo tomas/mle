@@ -261,16 +261,24 @@ int cmd_move_word_back(cmd_context_t* ctx) {
 
 // Move to next open bracket
 int cmd_move_bracket_forward(cmd_context_t* ctx) {
-    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_next_str, "{", 1);
+  if (bview_get_active_cursor_count(ctx->bview) > 1) {
+    cmd_remove_extra_cursors(ctx);
+  } else {
+    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_next_str, "Z{", 1);
     bview_rectify_viewport(ctx->bview);
-    return MLE_OK;
+  }
+  return MLE_OK;
 }
 
 // Move to prev open bracket
 int cmd_move_bracket_back(cmd_context_t* ctx) {
+  if (bview_get_active_cursor_count(ctx->bview) > 1) {
+    cmd_remove_extra_cursors(ctx);
+  } else {
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_prev_str, "{", 1);
     bview_rectify_viewport(ctx->bview);
-    return MLE_OK;
+  }
+  return MLE_OK;
 }
 
 // Delete word back

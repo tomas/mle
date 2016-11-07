@@ -294,7 +294,7 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
     bview_t* bview;
     bview = bview_new(editor, opt_path, opt_path_len, opt_buffer);
     bview->type = type;
-    CDL_PREPEND2(editor->all_bviews, bview, all_prev, all_next);
+    CDL_APPEND2(editor->all_bviews, bview, all_prev, all_next);
     if (!parent) {
         DL_APPEND2(editor->top_bviews, bview, top_prev, top_next);
     } else {
@@ -1365,7 +1365,8 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_isearch", "C-r"),
         MLE_KBINDING_DEF("cmd_replace", "C-h"),
         MLE_KBINDING_DEF("cmd_cut", "C-k"),
-        MLE_KBINDING_DEF("cmd_cut", "C-x"),
+        MLE_KBINDING_DEF("cmd_cut", "M-c"),
+        // MLE_KBINDING_DEF("cmd_cut", "C-x"),
         MLE_KBINDING_DEF("cmd_copy", "M-k"),
         MLE_KBINDING_DEF("cmd_copy", "C-c"),
         MLE_KBINDING_DEF("cmd_uncut", "C-u"),
@@ -1440,6 +1441,7 @@ static void _editor_init_kmaps(editor_t* editor) {
         // MLE_KBINDING_DEF("cmd_close", "M-c"),
         MLE_KBINDING_DEF("cmd_close", "C-q"),
         MLE_KBINDING_DEF("cmd_close", "C-d"),
+        MLE_KBINDING_DEF("cmd_close", "C-x"),
         MLE_KBINDING_DEF("cmd_close", "escape"),
         MLE_KBINDING_DEF("cmd_quit", "CS-q"),
         MLE_KBINDING_DEF(NULL, NULL)

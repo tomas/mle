@@ -850,24 +850,12 @@ static void _bview_draw_status(bview_t* self) {
         i_needinput = ".";
     }
 
-    // Bview num TODO pre-compute this
-    bview_t* bview_tmp;
-    int bview_count = 0;
-    int bview_num = 0;
-    CDL_FOREACH2(editor->all_bviews, bview_tmp, all_next) {
-        if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
-            bview_count += 1;
-            if (bview_tmp == active_edit) bview_num = bview_count;
-        }
-    }
-
     // Render status line
     MLBUF_BLINE_ENSURE_CHARS(mark->bline);
     tb_printf(editor->rect_status, 0, 0, 0, 0, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
     tb_printf_attr(editor->rect_status, 0, 0,
         "@%d,%d;%s@%d,%d;"                                // mle_normal    mode
         "(@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;)  " // (....)        need_input,anchor,macro,async
-        "buf:@%d,%d;%d@%d,%d;/@%d,%d;%d@%d,%d;  "         // buf[1/2]      bview num
         "<@%d,%d;%s@%d,%d;>  "                            // <php>         syntax
         "line:@%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d;  "    // line:1/100    line
         "col:@%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d; ",     // col:0/80      col
@@ -876,7 +864,6 @@ static void _bview_draw_status(bview_t* self) {
         i_anchor_fg, i_anchor_bg, i_anchor,
         i_macro_fg, i_macro_bg, i_macro,
         i_async_fg, i_async_bg, i_async, 0, 0,
-        TB_BLUE | TB_BOLD, 0, bview_num, 0, 0, TB_BLUE, 0, bview_count, 0, 0,
         TB_CYAN | TB_BOLD, 0, active_edit->syntax ? active_edit->syntax->name : "none", 0, 0,
         TB_YELLOW | TB_BOLD, 0, mark->bline->line_index + 1, 0, 0, TB_YELLOW, 0, active_edit->buffer->line_count, 0, 0,
         TB_YELLOW | TB_BOLD, 0, mark->col, 0, 0, TB_YELLOW, 0, mark->bline->char_count, 0, 0
@@ -938,9 +925,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
     bview_t* bview_tmp;
     int bview_count = 0;
-    // int bview_num = 0;
     int offset = 0;
-    // char * label;
     int tab_width = 24;
     
     CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
@@ -963,29 +948,13 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
             bview_count,
-            bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled", self->buffer->is_unsaved ? '*' : ' ');
+            bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled", bview_tmp->buffer->is_unsaved ? '*' : ' ');
 
           offset += tab_width;
 
         }
       }
     }
-
-/*
-
-    // Render caption
-    fg_attr = self->editor->active_edit == self ? TB_BOLD : 0;
-    bg_attr = self->editor->active_edit == self ? TB_BLUE : 0;
-    tb_printf(self->rect_caption, 0, 0, fg_attr, bg_attr, "%*.*s", self->rect_caption.w, self->rect_caption.w, " ");
-
-    if (self->buffer->path) {
-    } else {
-        tb_printf(self->rect_caption, 0, 0, fg_attr, bg_attr, "[%d/%d] %*.s %c",
-            bview_num, bview_count,
-            self->linenum_width, " ",
-            self->buffer, self->buffer->is_unsaved ? '*' : ' ');
-    }
-*/
 
     // Render lines and margins
     if (!self->viewport_bline) {

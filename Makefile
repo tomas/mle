@@ -21,7 +21,7 @@ $(mle_objects): %.o: %.c
 	$(MAKE) -C mlbuf
 
 ./termbox/build/src/libtermbox.a:
-	pushd termbox && ./waf configure &>/dev/null && ./waf &>/dev/null && popd
+	cd termbox && python waf configure &>/dev/null && python waf &>/dev/null && cd -
 
 test: mle test_mle
 	$(MAKE) -C mlbuf test

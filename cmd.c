@@ -107,10 +107,16 @@ int cmd_insert_newline_above(cmd_context_t* ctx) {
 
 // Delete char before cursor mark
 int cmd_delete_before(cmd_context_t* ctx) {
-    bint_t offset;
-    mark_get_offset(ctx->cursor->mark, &offset);
-    if (offset < 1) return MLE_OK;
-    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_delete_before, 1);
+    if (ctx->cursor->is_anchored) {
+      MLE_MULTI_CURSOR_CODE(ctx->cursor,
+        mark_delete_between_mark(cursor->mark, cursor->anchor);
+      );
+    } else {
+      bint_t offset;
+      mark_get_offset(ctx->cursor->mark, &offset);
+      if (offset < 1) return MLE_OK;
+      MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_delete_before, 1);
+    }
     return MLE_OK;
 }
 
@@ -165,6 +171,7 @@ int cmd_move_end(cmd_context_t* ctx) {
 
 // Move cursor left one char
 int cmd_move_left(cmd_context_t* ctx) {
+    if (ctx->cursor->is_anchored) cmd_toggle_anchor(ctx);
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, -1);
     bview_rectify_viewport(ctx->bview);
     return MLE_OK;
@@ -172,6 +179,7 @@ int cmd_move_left(cmd_context_t* ctx) {
 
 // Move cursor right one char
 int cmd_move_right(cmd_context_t* ctx) {
+    if (ctx->cursor->is_anchored) cmd_toggle_anchor(ctx);
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, 1);
     bview_rectify_viewport(ctx->bview);
     return MLE_OK;
@@ -179,6 +187,7 @@ int cmd_move_right(cmd_context_t* ctx) {
 
 // Move cursor up one line
 int cmd_move_up(cmd_context_t* ctx) {
+    if (ctx->cursor->is_anchored) cmd_toggle_anchor(ctx);
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, -1);
     bview_rectify_viewport(ctx->bview);
     return MLE_OK;
@@ -186,6 +195,7 @@ int cmd_move_up(cmd_context_t* ctx) {
 
 // Move cursor down one line
 int cmd_move_down(cmd_context_t* ctx) {
+    if (ctx->cursor->is_anchored) cmd_toggle_anchor(ctx);
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, 1);
     bview_rectify_viewport(ctx->bview);
     return MLE_OK;
@@ -293,6 +303,52 @@ int cmd_toggle_anchor(cmd_context_t* ctx) {
         cursor_toggle_anchor(cursor, 1);
     );
     return MLE_OK;
+}
+
+int cmd_select_up(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+  
+    // move up
+    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, -1);
+    bview_rectify_viewport(ctx->bview);
+  );
+
+  return MLE_OK;
+}
+
+int cmd_select_down(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+  
+    // move down
+    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, 1);
+    bview_rectify_viewport(ctx->bview);
+  );
+
+  return MLE_OK;
+}
+
+int cmd_select_left(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+  
+    // move left
+    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, -1);
+    bview_rectify_viewport(ctx->bview);
+  );
+  return MLE_OK;
+}
+
+int cmd_select_right(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+  
+    // move right
+    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, 1);
+    bview_rectify_viewport(ctx->bview);
+  );
+  return MLE_OK;
 }
 
 // Drop an is_asleep=1 cursor

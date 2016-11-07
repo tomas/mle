@@ -929,7 +929,7 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
             editor_display(editor);
             continue;
         }
-        ctx->input = (kinput_t){ ev.mod, ev.ch, ev.key };
+        ctx->input = (kinput_t){ ev.mod, ev.ch, ev.key, ev.meta };
         break;
     }
 }
@@ -965,7 +965,7 @@ static void _editor_ingest_paste(editor_t* editor, cmd_context_t* ctx) {
             editor_display(editor);
             break;
         }
-        input = (kinput_t){ ev.mod, ev.ch, ev.key };
+        input = (kinput_t){ ev.mod, ev.ch, ev.key, ev.meta };
         // TODO check for macro key
         cmd = _editor_get_command(editor, ctx, &input);
         if (cmd && cmd->func == cmd_insert_data) {
@@ -1156,14 +1156,15 @@ static cmd_t* _editor_resolve_cmd(editor_t* editor, cmd_t** rcmd, char* cmd_name
 static int _editor_key_to_input(char* key, kinput_t* ret_input) {
     int keylen;
     int mod;
+    int meta = 0;
     uint32_t ch;
     keylen = strlen(key);
     memset(ret_input, 0, sizeof(kinput_t));
 
-    // Check for special key
-    #define MLE_KEY_DEF(pckey, pmod, pch, pkey) \
+    // Check for special TB_META_CTRLSHIFT
+    #define MLE_KEY_DEF(pckey, pmeta, pch, pkey) \
         } else if (keylen == strlen((pckey)) && !strncmp((pckey), key, keylen)) { \
-            ret_input->mod = (pmod); \
+            ret_input->meta = (pmeta); \
             ret_input->ch = (pch); \
             ret_input->key = (pkey); \
             return MLE_OK;
@@ -1177,15 +1178,17 @@ static int _editor_key_to_input(char* key, kinput_t* ret_input) {
     mod = 0;
     ch = 0;
     if (keylen > 2 && !strncmp("M-", key, 2)) {
-        mod = TB_MOD_ALT;
-        key += 2;
+      mod = TB_MOD_ALT;
+      key += 2;
     }
+
     utf8_char_to_unicode(&ch, key, NULL);
     if (ch < 1) {
         return MLE_ERR;
     }
-    ret_input->mod = mod;
-    ret_input->ch = ch;
+    ret_input->mod  = mod;
+    ret_input->ch   = ch;
+    ret_input->meta = meta;
     return MLE_OK;
 }
 
@@ -1286,6 +1289,10 @@ static void _editor_register_cmds(editor_t* editor) {
     _editor_register_cmd_fn(editor, "cmd_split_horizontal", cmd_split_horizontal);
     _editor_register_cmd_fn(editor, "cmd_split_vertical", cmd_split_vertical);
     _editor_register_cmd_fn(editor, "cmd_toggle_anchor", cmd_toggle_anchor);
+    _editor_register_cmd_fn(editor, "cmd_select_up", cmd_select_up);
+    _editor_register_cmd_fn(editor, "cmd_select_down", cmd_select_down);
+    _editor_register_cmd_fn(editor, "cmd_select_left", cmd_select_left);
+    _editor_register_cmd_fn(editor, "cmd_select_right", cmd_select_right);
     _editor_register_cmd_fn(editor, "cmd_uncut", cmd_uncut);
     _editor_register_cmd_fn(editor, "cmd_undo", cmd_undo);
     _editor_register_cmd_fn(editor, "cmd_viewport_top", cmd_viewport_top);
@@ -1320,9 +1327,9 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_delete_after", "delete"),
         MLE_KBINDING_DEF("cmd_insert_newline_above", "C-\\"),
         MLE_KBINDING_DEF("cmd_move_bol", "C-a"),
-        MLE_KBINDING_DEF("cmd_move_bol", "home"),
+        // MLE_KBINDING_DEF("cmd_move_bol", "home"),
         MLE_KBINDING_DEF("cmd_move_eol", "C-e"),
-        MLE_KBINDING_DEF("cmd_move_eol", "end"),
+        // MLE_KBINDING_DEF("cmd_move_eol", "end"),
         MLE_KBINDING_DEF("cmd_move_beginning", "M-\\"),
         MLE_KBINDING_DEF("cmd_move_end", "M-/"),
         MLE_KBINDING_DEF("cmd_move_left", "left"),
@@ -1341,14 +1348,17 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_move_bracket_forward", "M-]"),
         MLE_KBINDING_DEF("cmd_move_bracket_back", "M-["),
         MLE_KBINDING_DEF("cmd_search", "C-f"),
+        MLE_KBINDING_DEF("cmd_search", "C-w"),
         MLE_KBINDING_DEF("cmd_search_next", "C-g"),
         MLE_KBINDING_DEF("cmd_search_next", "F3"),
         MLE_KBINDING_DEF("cmd_find_word", "C-v"),
         MLE_KBINDING_DEF("cmd_isearch", "C-r"),
-        MLE_KBINDING_DEF("cmd_replace", "C-t"),
+        MLE_KBINDING_DEF("cmd_replace", "C-h"),
         MLE_KBINDING_DEF("cmd_cut", "C-k"),
+        MLE_KBINDING_DEF("cmd_cut", "C-x"),
         MLE_KBINDING_DEF("cmd_copy", "M-k"),
         MLE_KBINDING_DEF("cmd_uncut", "C-u"),
+        MLE_KBINDING_DEF("cmd_uncut", "C-v"),
         MLE_KBINDING_DEF("cmd_redraw", "M-x l"),
         MLE_KBINDING_DEF("cmd_lel", "M-x e"),
         MLE_KBINDING_DEF("cmd_less", "M-l"),
@@ -1371,40 +1381,46 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF_EX("cmd_cut_by", "C-d a", "bol"),
         MLE_KBINDING_DEF_EX("cmd_cut_by", "C-d e", "eol"),
         MLE_KBINDING_DEF_EX("cmd_cut_by", "C-d c", "string"),
-        MLE_KBINDING_DEF("cmd_delete_word_before", "C-w"),
+        // MLE_KBINDING_DEF("cmd_delete_word_before", "C-w"),
         MLE_KBINDING_DEF("cmd_delete_word_after", "M-d"),
         MLE_KBINDING_DEF("cmd_toggle_anchor", "M-a"),
+        MLE_KBINDING_DEF("cmd_select_up", "S-up"),
+        MLE_KBINDING_DEF("cmd_select_down", "S-down"),
+        MLE_KBINDING_DEF("cmd_select_left", "S-left"),
+        MLE_KBINDING_DEF("cmd_select_right", "S-right"),
         MLE_KBINDING_DEF("cmd_drop_sleeping_cursor", "C-/ ."),
         MLE_KBINDING_DEF("cmd_wake_sleeping_cursors", "C-/ a"),
         MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-/ /"),
         MLE_KBINDING_DEF("cmd_drop_cursor_column", "C-/ '"),
         MLE_KBINDING_DEF("cmd_apply_macro", "M-j"),
         MLE_KBINDING_DEF("cmd_apply_macro_by", "M-m **"),
-        MLE_KBINDING_DEF("cmd_next", "M-n"),
-        MLE_KBINDING_DEF("cmd_prev", "M-p"),
+        MLE_KBINDING_DEF("cmd_next", "end"),
+        MLE_KBINDING_DEF("cmd_prev", "home"),
         MLE_KBINDING_DEF("cmd_split_vertical", "M-v"),
         MLE_KBINDING_DEF("cmd_split_horizontal", "M-h"),
         MLE_KBINDING_DEF("cmd_grep", "M-q"),
         MLE_KBINDING_DEF("cmd_fsearch", "C-p"),
-        MLE_KBINDING_DEF("cmd_browse", "C-b"),
+        MLE_KBINDING_DEF("cmd_browse", "C-t"),
         MLE_KBINDING_DEF("cmd_undo", "C-z"),
         MLE_KBINDING_DEF("cmd_redo", "C-y"),
         MLE_KBINDING_DEF("cmd_save", "C-s"),
         MLE_KBINDING_DEF("cmd_save_as", "M-s"),
+        MLE_KBINDING_DEF("cmd_save_as", "C-o"),
         MLE_KBINDING_DEF_EX("cmd_set_opt", "M-o a", "tab_to_space"),
         MLE_KBINDING_DEF_EX("cmd_set_opt", "M-o t", "tab_width"),
         MLE_KBINDING_DEF_EX("cmd_set_opt", "M-o y", "syntax"),
         MLE_KBINDING_DEF_EX("cmd_set_opt", "M-o w", "soft_wrap"),
         MLE_KBINDING_DEF("cmd_open_new", "C-n"),
-        MLE_KBINDING_DEF("cmd_open_file", "C-o"),
+        // MLE_KBINDING_DEF("cmd_open_file", "C-o"),
         MLE_KBINDING_DEF("cmd_open_replace_new", "C-q n"),
         MLE_KBINDING_DEF("cmd_open_replace_file", "C-q o"),
         MLE_KBINDING_DEF_EX("cmd_fsearch", "C-q p", "replace"),
         MLE_KBINDING_DEF("cmd_indent", "M-."),
         MLE_KBINDING_DEF("cmd_outdent", "M-,"),
         MLE_KBINDING_DEF("cmd_shell", "M-e"),
-        MLE_KBINDING_DEF("cmd_close", "M-c"),
-        MLE_KBINDING_DEF("cmd_quit", "C-x"),
+        // MLE_KBINDING_DEF("cmd_close", "M-c"),
+        MLE_KBINDING_DEF("cmd_close", "C-q"),
+        // MLE_KBINDING_DEF("cmd_quit", "C-x"),
         MLE_KBINDING_DEF(NULL, NULL)
     });
     _editor_init_kmap(editor, &editor->kmap_prompt_input, "mle_prompt_input", NULL, 1, (kbinding_def_t[]){

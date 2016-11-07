@@ -41,6 +41,7 @@ struct kinput_s {
     uint8_t mod;
     uint32_t ch;
     uint16_t key;
+    uint8_t meta;
 };
 
 // bview_rect_t
@@ -511,6 +512,10 @@ int cmd_save_as(cmd_context_t* ctx);
 int cmd_save(cmd_context_t* ctx);
 int cmd_search(cmd_context_t* ctx);
 int cmd_search_next(cmd_context_t* ctx);
+int cmd_select_up(cmd_context_t* ctx);
+int cmd_select_down(cmd_context_t* ctx);
+int cmd_select_left(cmd_context_t* ctx);
+int cmd_select_right(cmd_context_t* ctx);
 int cmd_set_opt(cmd_context_t* ctx);
 int cmd_shell(cmd_context_t* ctx);
 int cmd_show_help(cmd_context_t* ctx);

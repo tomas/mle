@@ -643,7 +643,8 @@ int cmd_grep(cmd_context_t* ctx) {
     if (ctx->static_param) {
         grep_fmt = ctx->static_param;
     } else {
-        grep_fmt = "grep --color=never -P -i -I -n -r %s . 2>/dev/null";
+        // grep_fmt = "grep --color=never -P -i -I -n -r %s . 2>/dev/null";
+        grep_fmt = "grep --context=1 --color=never -i -I -n -r %s . 2>/dev/null"; // without -P, which may not be supported
     }
     path_arg = util_escape_shell_arg(path, strlen(path));
     free(path);

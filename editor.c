@@ -1418,6 +1418,7 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_split_vertical", "M-v"),
         MLE_KBINDING_DEF("cmd_split_horizontal", "M-h"),
         MLE_KBINDING_DEF("cmd_grep", "M-q"),
+        MLE_KBINDING_DEF("cmd_grep", "CS-f"),
         MLE_KBINDING_DEF("cmd_fsearch", "C-p"),
         MLE_KBINDING_DEF("cmd_browse", "C-t"),
         MLE_KBINDING_DEF("cmd_undo", "C-z"),

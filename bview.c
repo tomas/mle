@@ -936,19 +936,56 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
         return;
     }
 
+    bview_t* bview_tmp;
+    int bview_count = 0;
+    // int bview_num = 0;
+    int offset = 0;
+    // char * label;
+    int tab_width = 24;
+    
+    CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
+      if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
+
+        bview_count += 1;
+        if (bview_tmp == self->editor->active_edit) {
+          fg_attr = TB_BOLD;
+          bg_attr = TB_BLUE;
+        } else {
+          fg_attr = 0;
+          bg_attr = 0;
+        }
+        
+        if (offset + tab_width < w) {
+
+          tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",
+            self->rect_caption.w, self->rect_caption.w,
+            " ");
+
+          tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
+            bview_count,
+            bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled", self->buffer->is_unsaved ? '*' : ' ');
+
+          offset += tab_width;
+
+        }
+      }
+    }
+
+/*
+
     // Render caption
     fg_attr = self->editor->active_edit == self ? TB_BOLD : 0;
     bg_attr = self->editor->active_edit == self ? TB_BLUE : 0;
     tb_printf(self->rect_caption, 0, 0, fg_attr, bg_attr, "%*.*s", self->rect_caption.w, self->rect_caption.w, " ");
+
     if (self->buffer->path) {
-        tb_printf(self->rect_caption, 0, 0, fg_attr, bg_attr, "%*.s%s %c",
-            self->linenum_width, " ",
-            self->buffer->path, self->buffer->is_unsaved ? '*' : ' ');
     } else {
-        tb_printf(self->rect_caption, 0, 0, fg_attr, bg_attr, "%*.s<buffer-%p> %c",
+        tb_printf(self->rect_caption, 0, 0, fg_attr, bg_attr, "[%d/%d] %*.s %c",
+            bview_num, bview_count,
             self->linenum_width, " ",
             self->buffer, self->buffer->is_unsaved ? '*' : ' ');
     }
+*/
 
     // Render lines and margins
     if (!self->viewport_bline) {

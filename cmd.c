@@ -1394,7 +1394,7 @@ static int _cmd_menu_grep_cb(cmd_context_t* ctx) {
     } else {
         linenum = 0;
     }
-    editor_close_bview(ctx->editor, ctx->bview, NULL);
+    // editor_close_bview(ctx->editor, ctx->bview, NULL);
     editor_open_bview(ctx->editor, NULL, MLE_BVIEW_TYPE_EDIT, line, (int)(colon - line), 1, linenum, &ctx->editor->rect_edit, NULL, NULL);
     free(line);
     return MLE_OK;

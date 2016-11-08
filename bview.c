@@ -332,28 +332,34 @@ int bview_remove_cursor(bview_t* self, cursor_t* cursor) {
 }
 
 int bview_move_viewport(bview_t* self, bint_t y) {
-    if (y < 0) y = 0;
-    self->viewport_y = y;
-    bview_rectify_viewport(self);
-    buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
     return MLE_OK;
 }
 
 int bview_scroll_viewport(bview_t* self, int offset) {
+  
     bint_t y;
-    if (offset < 0 && self->viewport_y < offset*1) {
+    if (offset < 0 && self->viewport_y < offset*-1) {
       y = 0;
     } else {
       y = self->viewport_y + (bint_t) offset;
     }
+    
+    if (y + self->rect_buffer.h < self->buffer->line_count) {
+      self->viewport_y = y;
+      buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
+    }
 
-    return bview_move_viewport(self, y);
+    return MLE_OK;
 }
 
 // Center the viewport vertically
 int bview_center_viewport_y(bview_t* self) {
     bint_t center = self->active_cursor->mark->bline->line_index - (self->rect_buffer.h/2);
-    return bview_move_viewport(self, center);
+    if (center < 0) center = 0;
+    self->viewport_y = center;
+    bview_rectify_viewport(self);
+    buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
+    return MLE_OK;
 }
 
 // Zero the viewport vertically

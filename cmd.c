@@ -142,16 +142,12 @@ int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
 }
 
 int cmd_scroll_up(cmd_context_t * ctx) {
-  // bview_scroll_viewport(ctx->bview, -5);
-  mark_move_vert(ctx->cursor->mark, -5);
-  bview_rectify_viewport(ctx->bview);
+  bview_scroll_viewport(ctx->bview, -5);
   return MLE_OK;
 }
 
 int cmd_scroll_down(cmd_context_t * ctx) {
-  // bview_scroll_viewport(ctx->bview, 5);
-  mark_move_vert(ctx->cursor->mark, 5);
-  bview_rectify_viewport(ctx->bview);
+  bview_scroll_viewport(ctx->bview, 5);
   return MLE_OK;
 }
 

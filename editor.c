@@ -949,9 +949,11 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
         if (rc == -1) {
             continue; // Error
         } else if (rc == TB_EVENT_MOUSE) {
-            _handle_mouse_event(ctx, ev);
-            editor_display(editor);
-            continue;
+            if (ctx->bview) { // otherwise we'll get an ugly segfault
+              _handle_mouse_event(ctx, ev);
+              editor_display(editor);
+              continue;
+            }
         } else if (rc == TB_EVENT_RESIZE) {
             // Resize
             _editor_resize(editor, ev.w, ev.h);

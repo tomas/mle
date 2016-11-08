@@ -134,7 +134,7 @@ int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
     cursor_toggle_anchor(ctx->cursor, 1);
 
   int offsetx = mx > 4 ? mx - 4 : 0;
-  int offsety = ctx->bview->viewport_y + my -1;
+  int offsety = ctx->bview->viewport_y + my - 1;
   
   mark_move_to(ctx->cursor->mark, offsety, offsetx);
   bview_rectify_viewport(ctx->bview);

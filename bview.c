@@ -29,12 +29,12 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
     self = calloc(1, sizeof(bview_t));
     self->editor = editor;
     self->path = strndup(opt_path, opt_path_len);
-    self->rect_caption.fg = TB_WHITE;
-    self->rect_caption.bg = TB_BLACK;
-    self->rect_lines.fg = TB_YELLOW;
-    self->rect_lines.bg = TB_BLACK;
-    self->rect_margin_left.fg = TB_RED;
-    self->rect_margin_right.fg = TB_RED;
+    self->rect_caption.fg = RECT_CAPTION_FG;
+    self->rect_caption.bg = RECT_CAPTION_BG;
+    self->rect_lines.fg = RECT_LINES_FG;
+    self->rect_lines.bg = RECT_LINES_BG;
+    self->rect_margin_left.fg = RECT_MARGIN_LEFT_FG;
+    self->rect_margin_right.fg = RECT_MARGIN_RIGHT_FG;
     self->rect_buffer.h = 10; // TODO hack to fix _bview_set_linenum_width before bview_resize
     self->tab_width = editor->tab_width;
     self->tab_to_space = editor->tab_to_space;
@@ -953,11 +953,11 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
         bview_count += 1;
         if (bview_tmp == self->editor->active_edit) {
-          fg_attr = TB_BOLD;
-          bg_attr = TB_BLUE;
+          fg_attr = CAPTION_ACTIVE_FG;
+          bg_attr = CAPTION_ACTIVE_BG;
         } else {
-          fg_attr = 0;
-          bg_attr = 0;
+          fg_attr = CAPTION_INACTIVE_FG;
+          bg_attr = CAPTION_INACTIVE_BG;
         }
         
         if (offset + tab_width < w) {
@@ -1030,7 +1030,8 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
 
     // Draw linenums and margins
     if (MLE_BVIEW_IS_EDIT(self)) {
-        int linenum_fg = is_cursor_line ? TB_BOLD : 0;
+        int linenum_fg = is_cursor_line ? LINENUM_FG_CURSOR : LINENUM_FG;
+        
         if (self->editor->linenum_type == MLE_LINENUM_TYPE_ABS
             || self->editor->linenum_type == MLE_LINENUM_TYPE_BOTH
             || (self->editor->linenum_type == MLE_LINENUM_TYPE_REL && is_cursor_line)
@@ -1067,7 +1068,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
                 ch = '?';
             }
             if (self->editor->color_col == char_col && MLE_BVIEW_IS_EDIT(self)) {
-                bg |= TB_RED;
+                bg |= CURSOR_BG;
             }
         } else {
             break;

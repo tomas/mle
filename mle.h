@@ -6,42 +6,7 @@
 #include "termbox.h"
 #include "uthash.h"
 #include "mlbuf.h"
-
-/*
-#define TB_DEFAULT 0x00
-#define TB_BLACK   0x01
-#define TB_RED     0x02
-#define TB_GREEN   0x03
-#define TB_YELLOW  0x04
-#define TB_BLUE    0x05
-#define TB_MAGENTA 0x06
-#define TB_CYAN    0x07
-#define TB_WHITE   0x08
-#define TB_BOLD      0x0100
-#define TB_UNDERLINE 0x0200
-#define TB_REVERSE   0x0400
-*/
-
-#define CURSOR_BG TB_RED
-
-#define RECT_CAPTION_FG TB_WHITE
-#define RECT_CAPTION_BG TB_BLACK
-#define RECT_LINES_FG TB_YELLOW
-#define RECT_LINES_BG TB_BLACK
-#define RECT_MARGIN_LEFT_FG TB_RED
-#define RECT_MARGIN_RIGHT_FG TB_RED
-
-#define CAPTION_ACTIVE_BG TB_BLUE
-#define CAPTION_ACTIVE_FG TB_WHITE
-#define CAPTION_INACTIVE_BG TB_DEFAULT
-#define CAPTION_INACTIVE_FG TB_DEFAULT
-
-#define LINENUM_FG TB_DEFAULT
-#define LINENUM_FG_CURSOR TB_BOLD
-
-#define LINES_BG TB_DEFAULT
-
-#define PUNCTUATION_FG TB_YELLOW
+#include "colors.h"
 
 // Typedefs
 typedef struct editor_s editor_t; // A container for editor-wide globals

@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
             tb_init();
             // tb_select_input_mode(TB_INPUT_ALT);
             tb_select_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
-            tb_select_output_mode(TB_OUTPUT_256);
+            // tb_select_output_mode(TB_OUTPUT_256);
         }
         editor_run(&_editor);
         if (_editor.headless_mode && _editor.active_edit) {

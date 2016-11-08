@@ -183,7 +183,7 @@ int bview_draw_cursor(bview_t* self, int set_real_cursor) {
             tb_set_cursor(screen_x, screen_y);
         } else {
             // Set fake cursor
-            tb_change_cell(screen_x, screen_y, cell->ch, cell->fg, cell->bg | (cursor->is_asleep ? TB_RED : TB_CYAN)); // TODO configurable
+            tb_change_cell(screen_x, screen_y, cell->ch, cell->fg, cell->bg | (cursor->is_asleep ? ASLEEP_CURSOR_BG : AWAKE_CURSOR_BG));
         }
         if (self->editor->highlight_bracket_pairs) {
             _bview_highlight_bracket_pair(self, mark);
@@ -809,7 +809,7 @@ static void _bview_draw_status(bview_t* self) {
 
     // Prompt
     if (active == editor->prompt) {
-        tb_printf(editor->rect_status, 0, 0, TB_GREEN | TB_BOLD, TB_BLACK, "%-*.*s", editor->rect_status.w, editor->rect_status.w, self->editor->prompt->prompt_str);
+        tb_printf(editor->rect_status, 0, 0, PROMPT_FG, PROMPT_BG, "%-*.*s", editor->rect_status.w, editor->rect_status.w, self->editor->prompt->prompt_str);
         goto _bview_draw_status_end;
     }
 
@@ -817,12 +817,12 @@ static void _bview_draw_status(bview_t* self) {
     int i_macro_fg, i_macro_bg;
     char* i_macro;
     if (editor->is_recording_macro) {
-        i_macro_fg = TB_RED | TB_BOLD;
-        i_macro_bg = TB_BLACK;
+        i_macro_fg = MACRO_RECORDING_FG;
+        i_macro_bg = MACRO_RECORDING_BG;
         i_macro = "r";
     } else if (editor->macro_apply) {
-        i_macro_fg = TB_GREEN | TB_BOLD;
-        i_macro_bg = TB_BLACK;
+        i_macro_fg = MACRO_PLAYING_FG;
+        i_macro_bg = MACRO_PLAYING_BG;
         i_macro = "p";
     } else {
         i_macro_fg = 0;
@@ -834,8 +834,8 @@ static void _bview_draw_status(bview_t* self) {
     int i_anchor_fg, i_anchor_bg;
     char* i_anchor;
     if (active_edit->active_cursor->is_anchored) {
-        i_anchor_fg = TB_WHITE | TB_BOLD;
-        i_anchor_bg = TB_BLACK;
+        i_anchor_fg = ANCHOR_FG;
+        i_anchor_bg = ANCHOR_BG;
         i_anchor = "\xe2\x97\xa8";
     } else {
         i_anchor_fg = 0;
@@ -847,8 +847,8 @@ static void _bview_draw_status(bview_t* self) {
     int i_async_fg, i_async_bg;
     char* i_async;
     if (editor->async_procs) {
-        i_async_fg = TB_YELLOW | TB_BOLD;
-        i_async_bg = TB_BLACK;
+        i_async_fg = ASYNC_FG;
+        i_async_bg = ASYNC_BG;
         i_async = "x";
     } else {
         i_async_fg = 0;
@@ -861,8 +861,8 @@ static void _bview_draw_status(bview_t* self) {
     int i_needinput_bg;
     char* i_needinput;
     if (editor->loop_ctx->need_more_input) {
-        i_needinput_fg = TB_BLUE | TB_BOLD;
-        i_needinput_bg = TB_BLACK;
+        i_needinput_fg = NEEDINPUT_FG;
+        i_needinput_bg = NEEDINPUT_BG;
         i_needinput = "n";
     } else {
         i_needinput_fg = 0;
@@ -879,25 +879,25 @@ static void _bview_draw_status(bview_t* self) {
         "<@%d,%d;%s@%d,%d;>  "                            // <php>         syntax
         "line:@%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d;  "    // line:1/100    line
         "col:@%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d; ",     // col:0/80      col
-        TB_MAGENTA | TB_BOLD, 0, active->kmap_tail->kmap->name, 0, 0,
+        MODE_FG, 0, active->kmap_tail->kmap->name, 0, 0,
         i_needinput_fg, i_needinput_bg, i_needinput,
         i_anchor_fg, i_anchor_bg, i_anchor,
         i_macro_fg, i_macro_bg, i_macro,
         i_async_fg, i_async_bg, i_async, 0, 0,
-        TB_CYAN | TB_BOLD, 0, active_edit->syntax ? active_edit->syntax->name : "none", 0, 0,
-        TB_YELLOW | TB_BOLD, 0, mark->bline->line_index + 1, 0, 0, TB_YELLOW, 0, active_edit->buffer->line_count, 0, 0,
-        TB_YELLOW | TB_BOLD, 0, mark->col, 0, 0, TB_YELLOW, 0, mark->bline->char_count, 0, 0
+        SYNTAX_FG, 0, active_edit->syntax ? active_edit->syntax->name : "none", 0, 0,
+        LINECOL_CURRENT_FG, 0, mark->bline->line_index + 1, 0, 0, LINECOL_TOTAL_FG, 0, active_edit->buffer->line_count, 0, 0,
+        LINECOL_CURRENT_FG, 0, mark->col, 0, 0, LINECOL_TOTAL_FG, 0, mark->bline->char_count, 0, 0
     );
 
     // Overlay errstr if present
 _bview_draw_status_end:
     if (editor->errstr[0] != '\0') {
         int errstrlen = strlen(editor->errstr) + 5; // Add 5 for "err! "
-        tb_printf(editor->rect_status, editor->rect_status.w - errstrlen, 0, TB_WHITE | TB_BOLD, TB_RED, "err! %s", editor->errstr);
+        tb_printf(editor->rect_status, editor->rect_status.w - errstrlen, 0, ERROR_FG, ERROR_BG, "err! %s", editor->errstr);
         editor->errstr[0] = '\0'; // Clear errstr
     } else if (editor->infostr[0] != '\0') {
         int infostrlen = strlen(editor->infostr);
-        tb_printf(editor->rect_status, editor->rect_status.w - infostrlen, 0, TB_WHITE, 0, "%s", editor->infostr);
+        tb_printf(editor->rect_status, editor->rect_status.w - infostrlen, 0, INFO_FG, INFO_BG, "%s", editor->infostr);
         editor->infostr[0] = '\0'; // Clear errstr
     }
 }
@@ -1074,7 +1074,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
             break;
         }
         if (MLE_BVIEW_IS_MENU(self) && is_cursor_line) {
-            bg |= TB_REVERSE;
+            bg |= MENU_CURSOR_LINE_BG;
         }
         for (i = 0; i < char_w && rect_x < self->rect_buffer.w; i++) {
             tb_change_cell(self->rect_buffer.x + rect_x + i, self->rect_buffer.y + rect_y, ch, fg, bg);
@@ -1128,7 +1128,8 @@ static void _bview_highlight_bracket_pair(bview_t* self, mark_t* mark) {
         // Out of bounds
         return;
     }
-    tb_change_cell(screen_x, screen_y, cell->ch, cell->fg, cell->bg | TB_REVERSE); // TODO configurable
+  
+    tb_change_cell(screen_x, screen_y, cell->ch, cell->fg, cell->bg | BRACKET_HIGHLIGHT); // TODO configurable
 }
 
 // Find screen coordinates for a mark

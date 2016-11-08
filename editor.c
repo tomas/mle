@@ -488,10 +488,10 @@ static int _editor_close_bview_inner(editor_t* editor, bview_t* bview, int *optr
         bview->split_parent->split_child = NULL;
         editor_set_active(editor, bview->split_parent);
     } else {
-        if (bview->all_prev && bview->all_prev != bview && MLE_BVIEW_IS_EDIT(bview->all_prev)) {
-            editor_set_active(editor, bview->all_prev);
-        } else if (bview->all_next && bview->all_next != bview && MLE_BVIEW_IS_EDIT(bview->all_next)) {
+        if (bview->all_next && bview->all_next != bview && MLE_BVIEW_IS_EDIT(bview->all_next)) {
             editor_set_active(editor, bview->all_next);
+        } else if (bview->all_prev && bview->all_prev != bview && MLE_BVIEW_IS_EDIT(bview->all_prev)) {
+            editor_set_active(editor, bview->all_prev);
         } else {
             editor_open_bview(editor, NULL, MLE_BVIEW_TYPE_EDIT, NULL, 0, 1, 0, &editor->rect_edit, NULL, NULL);
         }

@@ -843,13 +843,45 @@ int cmd_move_until_back(cmd_context_t* ctx) {
 
 // Undo
 int cmd_undo(cmd_context_t* ctx) {
+
+    // TODO: fix this duplication from mlbuf.c
+    baction_t* action_to_undo;
+    if (ctx->buffer->action_undone) {
+      if (ctx->buffer->action_undone == ctx->buffer->actions) {
+          return MLBUF_ERR;
+      } else if (!ctx->buffer->action_undone->prev) {
+          return MLBUF_ERR;
+      }
+      action_to_undo = ctx->buffer->action_undone->prev;
+    } else if (ctx->buffer->action_tail) {
+      action_to_undo = ctx->buffer->action_tail;
+    } else {
+      return MLBUF_ERR;
+    }
+    
+
+    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_to, action_to_undo->start_line_index, 0);
+    // bview_center_viewport_y(ctx->bview);
     buffer_undo(ctx->bview->buffer);
+
     return MLE_OK;
 }
 
 // Redo
 int cmd_redo(cmd_context_t* ctx) {
+
+    // TODO: fix this duplication from mlbuf.c
+
+    baction_t* action_to_redo;
+    if (!ctx->buffer->action_undone) {
+        return MLBUF_ERR;
+    }
+
+    action_to_redo = ctx->buffer->action_undone;
+    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_to, action_to_redo->start_line_index, 0);
+    // bview_center_viewport_y(ctx->bview);
     buffer_redo(ctx->bview->buffer);
+
     return MLE_OK;
 }
 

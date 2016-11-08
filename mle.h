@@ -6,7 +6,6 @@
 #include "termbox.h"
 #include "uthash.h"
 #include "mlbuf.h"
-#include "colors.h"
 
 // Typedefs
 typedef struct editor_s editor_t; // A container for editor-wide globals

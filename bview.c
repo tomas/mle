@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <wctype.h>
 #include "mle.h"
+#include "colors.h"
 
 static int _bview_rectify_viewport_dim(bview_t* self, bline_t* bline, bint_t vpos, int dim_scope, int dim_size, bint_t *view_vpos);
 static void _bview_init(bview_t* self, buffer_t* buffer);
@@ -809,7 +810,8 @@ static void _bview_draw_status(bview_t* self) {
 
     // Prompt
     if (active == editor->prompt) {
-        tb_printf(editor->rect_status, 0, 0, PROMPT_FG, PROMPT_BG, "%-*.*s", editor->rect_status.w, editor->rect_status.w, self->editor->prompt->prompt_str);
+        tb_printf(editor->rect_status, 0, 0, PROMPT_FG, PROMPT_BG, "%-*.*s -- ", editor->rect_status.w, editor->rect_status.w,
+        self->editor->prompt->prompt_str);
         goto _bview_draw_status_end;
     }
 

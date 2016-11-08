@@ -5,6 +5,7 @@
 #include "utlist.h"
 #include "mle.h"
 #include "mlbuf.h"
+#include "colors.h"
 
 static int _editor_set_macro_toggle_key(editor_t* editor, char* key);
 static int _editor_bview_exists(editor_t* editor, bview_t* bview);
@@ -241,6 +242,9 @@ int editor_prompt(editor_t* editor, char* prompt, editor_prompt_params_t* params
     loop_ctx.prompt_answer = NULL;
 
     // Init prompt
+    int prompt_len = strlen(prompt);
+    editor->rect_prompt.x = prompt_len + 1;
+  
     editor_open_bview(editor, NULL, MLE_BVIEW_TYPE_PROMPT, NULL, 0, 1, 0, &editor->rect_prompt, NULL, &editor->prompt);
     if (params && params->prompt_cb) bview_add_listener(editor->prompt, params->prompt_cb, params->prompt_cb_udata);
     editor->prompt->prompt_str = prompt;
@@ -867,10 +871,10 @@ static void _editor_resize(editor_t* editor, int w, int h) {
     editor->rect_edit.x = 0;
     editor->rect_edit.y = 0;
     editor->rect_edit.w = editor->w;
-    editor->rect_edit.h = editor->h - 2;
+    editor->rect_edit.h = editor->h - 1;
 
     editor->rect_status.x = 0;
-    editor->rect_status.y = editor->h - 2;
+    editor->rect_status.y = editor->h - 1;
     editor->rect_status.w = editor->w;
     editor->rect_status.h = 1;
 
@@ -2101,8 +2105,8 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
 static void _editor_init_status(editor_t* editor) {
     editor->status = bview_new(editor, NULL, 0, NULL);
     editor->status->type = MLE_BVIEW_TYPE_STATUS;
-    editor->rect_status.fg = TB_WHITE;
-    editor->rect_status.bg = TB_BLACK;
+    editor->rect_status.fg = RECT_STATUS_FG;
+    editor->rect_status.bg = RECT_STATUS_BG;
 }
 
 // Init bviews

@@ -948,7 +948,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
     bview_t* bview_tmp;
     int bview_count = 0;
     int offset = 0;
-    int tab_width = 24;
+    int tab_width = 20;
     
     CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
       if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
@@ -962,7 +962,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
           bg_attr = CAPTION_INACTIVE_BG;
         }
         
-        if (offset + tab_width < w) {
+        if (offset + tab_width <= w) {
 
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",
             self->rect_caption.w, self->rect_caption.w,

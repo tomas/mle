@@ -949,7 +949,7 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
         if (rc == -1) {
             continue; // Error
         } else if (rc == TB_EVENT_MOUSE) {
-            if (ctx->bview) { // otherwise we'll get an ugly segfault
+            if (ctx->bview && editor->active == ctx->bview) {
               _handle_mouse_event(ctx, ev);
               editor_display(editor);
               continue;

@@ -344,7 +344,7 @@ int bview_scroll_viewport(bview_t* self, int offset) {
       y = self->viewport_y + (bint_t) offset;
     }
     
-    if (y + self->rect_buffer.h < self->buffer->line_count) {
+    if (y + self->rect_buffer.h - 2 < self->buffer->line_count) {
       self->viewport_y = y;
       buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
     }

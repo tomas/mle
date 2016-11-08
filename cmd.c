@@ -871,7 +871,6 @@ int cmd_undo(cmd_context_t* ctx) {
 int cmd_redo(cmd_context_t* ctx) {
 
     // TODO: fix this duplication from mlbuf.c
-
     baction_t* action_to_redo;
     if (!ctx->buffer->action_undone) {
         return MLBUF_ERR;

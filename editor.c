@@ -809,6 +809,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
             if (cmd_ctx.is_user_input && cmd->func == cmd_insert_data) {
                 _editor_ingest_paste(editor, &cmd_ctx);
             }
+            // printf("cmd: %s\n", cmd->name);
             cmd_ctx.cmd = cmd;
             cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
             cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
@@ -1442,7 +1443,6 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_drop_sleeping_cursor", "C-/ ."),
         MLE_KBINDING_DEF("cmd_wake_sleeping_cursors", "C-/ a"),
         MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-/ /"),
-        MLE_KBINDING_DEF("cmd_remove_extra_cursors", "S-enter"),
         // MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-up"),
         // MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-down"),
         MLE_KBINDING_DEF("cmd_drop_cursor_column", "C-/ '"),

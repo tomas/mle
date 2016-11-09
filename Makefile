@@ -7,7 +7,7 @@ mle_static:=
 
 all: mle
 
-mle: $(mle_objects) ./mlbuf/libmlbuf.a ./termbox/build/src/libtermbox.a
+mle: ./mlbuf/libmlbuf.a ./termbox/build/src/libtermbox.a $(mle_objects)
 	$(CC) $(mle_objects) $(mle_static) ./mlbuf/libmlbuf.a ./termbox/build/src/libtermbox.a $(mle_ldlibs) -o mle
 
 mle_static: mle_static:=-static
@@ -21,9 +21,12 @@ $(mle_objects): %.o: %.c
 	$(MAKE) -C mlbuf
 
 ./termbox/build/src/libtermbox.a: ./termbox/src/termbox.c.patched
-	cd termbox && python waf configure &>/dev/null && python waf &>/dev/null && cd -
+	@echo "Building termbox..."
+	cd termbox && python waf configure
+	cd termbox && python waf
 
 ./termbox/src/termbox.c.patched: termbox-meta-keys.patch
+	@echo "Patching termbox..."
 	if [ -e $@ ]; then cd termbox; patch -R -p1 < ../$<; cd ..; fi
 	cd termbox; patch -p1 < ../$<; cd ..
 	cp termbox-meta-keys.patch $@
@@ -47,6 +50,6 @@ clean:
 	rm -f *.o mle.bak.* gmon.out perf.data perf.data.old mle
 	$(MAKE) -C mlbuf clean
 	$(MAKE) -C tests clean
-	cd termbox && ./waf clean &>/dev/null && cd -
+	cd termbox && python waf clean
 
 .PHONY: all mle_static test test_mle sloc install clean

@@ -807,7 +807,10 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
         if ((cmd = _editor_get_command(editor, &cmd_ctx, NULL)) != NULL) {
             // Found cmd in kmap trie, now execute
             if (cmd_ctx.is_user_input && cmd->func == cmd_insert_data) {
-                _editor_ingest_paste(editor, &cmd_ctx);
+              if (cmd_ctx.cursor->is_anchored) {
+                cmd_delete_before(&cmd_ctx);
+              }
+              _editor_ingest_paste(editor, &cmd_ctx);
             }
             // printf("cmd: %s\n", cmd->name);
             cmd_ctx.cmd = cmd;

@@ -244,7 +244,7 @@ int editor_prompt(editor_t* editor, char* prompt, editor_prompt_params_t* params
     // Init prompt
     int prompt_len = strlen(prompt);
     editor->rect_prompt.x = prompt_len + 1;
-  
+
     editor_open_bview(editor, NULL, MLE_BVIEW_TYPE_PROMPT, NULL, 0, 1, 0, &editor->rect_prompt, NULL, &editor->prompt);
     if (params && params->prompt_cb) bview_add_listener(editor->prompt, params->prompt_cb, params->prompt_cb_udata);
     editor->prompt->prompt_str = prompt;
@@ -798,7 +798,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
         if (editor_get_input(editor, loop_ctx, &cmd_ctx) == MLE_ERR) {
             break;
         }
-        
+
         // Toggle macro?
         if (_editor_maybe_toggle_macro(editor, &cmd_ctx.input)) {
             continue;
@@ -920,6 +920,13 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
     	mouse_down = 1;
   		break;
   	case TB_KEY_MOUSE_MIDDLE:
+        if (ctx->cursor->is_anchored) {
+          cmd_copy(ctx);
+        } else {
+          // should we move the cursor before pasting?
+          // cmd_mouse_move(ctx, 0, ev.x, ev.y);
+          cmd_uncut(ctx);
+        }
   		break;
   	case TB_KEY_MOUSE_RIGHT:
   		break;
@@ -933,7 +940,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
   	  mouse_down = 0;
   		break;
 	}
-	
+
 }
 
 // Get user input
@@ -1442,7 +1449,9 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_select_word_back", "CS-left"),
         MLE_KBINDING_DEF("cmd_select_word_forward", "CS-right"),
         MLE_KBINDING_DEF("cmd_new_cursor_up", "CS-up"),
+        MLE_KBINDING_DEF("cmd_new_cursor_up", "CM-up"),
         MLE_KBINDING_DEF("cmd_new_cursor_down", "CS-down"),
+        MLE_KBINDING_DEF("cmd_new_cursor_down", "CM-down"),
         MLE_KBINDING_DEF("cmd_drop_sleeping_cursor", "C-/ ."),
         MLE_KBINDING_DEF("cmd_wake_sleeping_cursors", "C-/ a"),
         MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-/ /"),

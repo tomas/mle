@@ -332,7 +332,27 @@ int bview_remove_cursor(bview_t* self, cursor_t* cursor) {
     return MLE_ERR;
 }
 
-int bview_move_viewport(bview_t* self, bint_t y) {
+int bview_is_line_visible(bview_t* self, bint_t number) {
+  int res = 0;
+  if (self->viewport_y < number && number < self->viewport_y + self->rect_buffer.h) {
+    return 1;
+  }
+  
+  return res;
+}
+
+int bview_move_to_line(bview_t* self, bint_t number) {
+    if (bview_is_line_visible(self, number))
+      return MLE_OK;
+  
+    bint_t y = number - (self->rect_buffer.h/2);
+    if (y < 0) y = 0;
+
+    // if (y + self->rect_buffer.h - 2 < self->buffer->line_count) {
+    self->viewport_y = y;
+    buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
+    // }
+
     return MLE_OK;
 }
 

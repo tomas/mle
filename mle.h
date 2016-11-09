@@ -410,6 +410,7 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
 int bview_add_cursor_asleep(bview_t* self, bline_t* bline, bint_t col, cursor_t** optret_cursor);
 int bview_add_cursor(bview_t* self, bline_t* bline, bint_t col, cursor_t** optret_cursor);
 int bview_add_listener(bview_t* self, bview_listener_cb_t callback, void* udata);
+int bview_move_to_line(bview_t* self, bint_t number);
 int bview_scroll_viewport(bview_t* self, int offset);
 int bview_center_viewport_y(bview_t* self);
 int bview_destroy(bview_t* self);

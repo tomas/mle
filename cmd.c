@@ -128,14 +128,17 @@ int cmd_delete_after(cmd_context_t* ctx) {
 
 int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
   
-  if (mouse_down && !ctx->cursor->is_anchored)
+  if ((mouse_down && !ctx->cursor->is_anchored) || (!mouse_down && ctx->cursor->is_anchored)) {
     cursor_toggle_anchor(ctx->cursor, 1);
-  else if (!mouse_down && ctx->cursor->is_anchored)
-    cursor_toggle_anchor(ctx->cursor, 1);
+  }
 
   int offsetx = mx > 4 ? mx - 4 : 0;
   int offsety = ctx->bview->viewport_y + my - 1;
-  
+
+  if (bview_get_active_cursor_count(ctx->bview) > 1) {
+    cmd_remove_extra_cursors(ctx);
+  }
+
   mark_move_to(ctx->cursor->mark, offsety, offsetx);
   bview_rectify_viewport(ctx->bview);
   return MLE_OK;
@@ -848,9 +851,9 @@ int cmd_undo(cmd_context_t* ctx) {
     baction_t* action_to_undo;
     if (ctx->buffer->action_undone) {
       if (ctx->buffer->action_undone == ctx->buffer->actions) {
-          return MLBUF_ERR;
+        return MLBUF_ERR;
       } else if (!ctx->buffer->action_undone->prev) {
-          return MLBUF_ERR;
+        return MLBUF_ERR;
       }
       action_to_undo = ctx->buffer->action_undone->prev;
     } else if (ctx->buffer->action_tail) {
@@ -858,12 +861,16 @@ int cmd_undo(cmd_context_t* ctx) {
     } else {
       return MLBUF_ERR;
     }
-    
 
-    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_to, action_to_undo->start_line_index, 0);
-    // bview_center_viewport_y(ctx->bview);
-    buffer_undo(ctx->bview->buffer);
+    if (bview_get_active_cursor_count(ctx->bview) > 1) {
+      bview_move_to_line(ctx->bview, action_to_undo->start_line_index);
+    } else {
+      MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_to, action_to_undo->start_line_index, action_to_undo->start_col);
+    }
 
+    MLE_MULTI_CURSOR_CODE(ctx->cursor,
+      buffer_undo(ctx->bview->buffer);
+    );
     return MLE_OK;
 }
 
@@ -877,10 +884,16 @@ int cmd_redo(cmd_context_t* ctx) {
     }
 
     action_to_redo = ctx->buffer->action_undone;
-    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_to, action_to_redo->start_line_index, 0);
-    // bview_center_viewport_y(ctx->bview);
-    buffer_redo(ctx->bview->buffer);
 
+    if (bview_get_active_cursor_count(ctx->bview) > 1) {
+      bview_move_to_line(ctx->bview, action_to_redo->start_line_index);
+    } else {
+      MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_to, action_to_redo->start_line_index, action_to_redo->start_col);
+    }
+
+    MLE_MULTI_CURSOR_CODE(ctx->cursor,
+      buffer_redo(ctx->bview->buffer);
+    );
     return MLE_OK;
 }
 

@@ -38,6 +38,17 @@ index a4dbfca..679a1e5 100644
 +		return false;
 +	}
 +
++/*
++	int i;
++	printf("\nbuf: --> ");
++	for (i = 0; i < strlen(buf); i++)
++		printf("%d ", buf[i]);
++
++	printf("\nkey: --> ");
++	for (i = 0; i < strlen(key); i++)
++		printf("%d ", key[i]);
++*/
++
 +  // i'm not sure why this happens, but there's a one byte difference with the Go version
 +	// if (buf[kl-1] != 49) { // ';'
 +	if (buf[kl-2] != 49) { // ';'
@@ -97,7 +108,7 @@ index a4dbfca..679a1e5 100644
 +				k2[a+1] = keys[i][a];
 +			}
 +
-+			sprintf(desc, "k2 (%d): %d, %d, %d, %d", (int)strlen(k2), k2[0], k2[1], k2[2], k2[3]);
++			sprintf(desc, "k2 (%d): %d, %d, %d", (int)strlen(k2), k2[0], k2[1], k2[2]);
 +			if (parse_meta_key(event, buf, k2)) {
 +				event->key = 0xFFFF-i;
 +				return strlen(k2) + 2;

@@ -122,12 +122,18 @@ int cmd_delete_before(cmd_context_t* ctx) {
 
 // Delete char after cursor mark
 int cmd_delete_after(cmd_context_t* ctx) {
-    MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_delete_after, 1);
+    if (ctx->cursor->is_anchored) {
+      MLE_MULTI_CURSOR_CODE(ctx->cursor,
+        mark_delete_between_mark(cursor->mark, cursor->anchor);
+      );
+    } else {
+      MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_delete_after, 1);
+    }
     return MLE_OK;
 }
 
 int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
-  
+
   if ((mouse_down && !ctx->cursor->is_anchored) || (!mouse_down && ctx->cursor->is_anchored)) {
     cursor_toggle_anchor(ctx->cursor, 1);
   }
@@ -344,7 +350,7 @@ int cmd_toggle_anchor(cmd_context_t* ctx) {
 int cmd_select_up(cmd_context_t* ctx) {
   MLE_MULTI_CURSOR_CODE(ctx->cursor,
     if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-  
+
     // move up
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, -1);
     bview_rectify_viewport(ctx->bview);
@@ -356,7 +362,7 @@ int cmd_select_up(cmd_context_t* ctx) {
 int cmd_select_down(cmd_context_t* ctx) {
   MLE_MULTI_CURSOR_CODE(ctx->cursor,
     if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-  
+
     // move down
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, 1);
     bview_rectify_viewport(ctx->bview);
@@ -368,7 +374,7 @@ int cmd_select_down(cmd_context_t* ctx) {
 int cmd_select_left(cmd_context_t* ctx) {
   MLE_MULTI_CURSOR_CODE(ctx->cursor,
     if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-  
+
     // move left
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, -1);
     bview_rectify_viewport(ctx->bview);
@@ -379,7 +385,7 @@ int cmd_select_left(cmd_context_t* ctx) {
 int cmd_select_right(cmd_context_t* ctx) {
   MLE_MULTI_CURSOR_CODE(ctx->cursor,
     if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-  
+
     // move right
     MLE_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, 1);
     bview_rectify_viewport(ctx->bview);

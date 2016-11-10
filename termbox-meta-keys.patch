@@ -13,10 +13,10 @@ index e2164d3..0666627 100644
  }
  
 diff --git a/src/input.inl b/src/input.inl
-index a4dbfca..679a1e5 100644
+index a4dbfca..956d544 100644
 --- a/src/input.inl
 +++ b/src/input.inl
-@@ -137,6 +137,44 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
+@@ -137,6 +137,53 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
  	return 0;
  }
  
@@ -70,7 +70,7 @@ index a4dbfca..679a1e5 100644
  // convert escape sequence to event, and return consumed bytes on success (failure == 0)
  static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  {
-@@ -148,12 +186,44 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
+@@ -148,12 +195,44 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  	// it's pretty simple here, find 'starts_with' match and return
  	// success, else return failure
  	int i;
@@ -115,7 +115,7 @@ index a4dbfca..679a1e5 100644
  	}
  	return 0;
  }
-@@ -164,7 +234,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -164,7 +243,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  	const int len = inbuf->len;
  	if (len == 0)
  		return false;
@@ -124,7 +124,7 @@ index a4dbfca..679a1e5 100644
  	if (buf[0] == '\033') {
  		int n = parse_escape_seq(event, buf, len);
  		if (n != 0) {
-@@ -202,7 +272,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -202,7 +281,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  
  	// first of all check if it's a functional key
  	if ((unsigned char)buf[0] <= TB_KEY_SPACE ||

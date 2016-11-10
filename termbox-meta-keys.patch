@@ -27,19 +27,10 @@ index a4dbfca..679a1e5 100644
 +// [27, 91, 49, 59, 50, 65] --> shift + up arrow
 +// [27, 91, 49, 59, 50, 66] --> shift + down arrow
 +static bool parse_meta_key(struct tb_event *event, const char *buf, const char *key) {
-+ 
++
 +	int kl = strlen(key);
 +
-+	if (strlen(buf) < kl+2) {
-+		return false;
-+	}
-+	
-+	if (buf[0] != key[0] || buf[1] != key[1]) {
-+		return false;
-+	}
-+
-+/*
-+	int i;
++/*	int i;
 +	printf("\nbuf: --> ");
 +	for (i = 0; i < strlen(buf); i++)
 +		printf("%d ", buf[i]);
@@ -49,9 +40,15 @@ index a4dbfca..679a1e5 100644
 +		printf("%d ", key[i]);
 +*/
 +
-+  // i'm not sure why this happens, but there's a one byte difference with the Go version
-+	// if (buf[kl-1] != 49) { // ';'
-+	if (buf[kl-2] != 49) { // ';'
++	if (strlen(buf) < kl+2) {
++		return false;
++	}
++
++	if (buf[0] != key[0] || buf[1] != key[1]) {
++		return false;
++	}
++
++	if (buf[kl-1] != 59) { // ';'
 +		return false;
 +	}
 +
@@ -60,9 +57,10 @@ index a4dbfca..679a1e5 100644
 +	}
 +
 +	if (buf[kl+1] != key[kl-1]) {
++		// printf("%d != %d\n", buf[kl+1], key[kl-1]);
 +		return false;
 +	}
-+	
++
 +	event->ch = 0;
 +	event->meta = buf[kl] - 48;
 +
@@ -90,7 +88,7 @@ index a4dbfca..679a1e5 100644
 +			return strlen(keys[i]) + 2;
 +		}
 +
-+		if (keys[i][1] == 79) { // 'O'
++		if (keys[i][1] == 79 || (keys[i][1] == 91 && strlen(keys[i]) == 3)) { // 'O'
 +			// For some crazy reason xterm sends LeftArrow as [27,79,68]
 +			// but Shift+LeftArrow as [27,91,49,59,50,68]
 +			// the extra [59, 50] was expected but not the [79] -> [91,49]
@@ -108,7 +106,7 @@ index a4dbfca..679a1e5 100644
 +				k2[a+1] = keys[i][a];
 +			}
 +
-+			sprintf(desc, "k2 (%d): %d, %d, %d", (int)strlen(k2), k2[0], k2[1], k2[2]);
++			sprintf(desc, " k2 (%d): %d, %d, %d", (int)strlen(k2), k2[0], k2[1], k2[2]);
 +			if (parse_meta_key(event, buf, k2)) {
 +				event->key = 0xFFFF-i;
 +				return strlen(k2) + 2;

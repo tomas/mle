@@ -777,6 +777,9 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
     memset(&cmd_ctx, 0, sizeof(cmd_context_t));
     cmd_ctx.editor = editor;
     cmd_ctx.loop_ctx = loop_ctx;
+    cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
+    cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
+    cmd_ctx.buffer = cmd_ctx.bview->buffer;
 
     // Loop until editor should exit
     while (!loop_ctx->should_exit) {
@@ -937,8 +940,9 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
   	  cmd_scroll_down(ctx);
   		break;
   	case TB_KEY_MOUSE_RELEASE:
+      cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
   	  mouse_down = 0;
-  		break;
+  	  break;
 	}
 
 }
@@ -947,6 +951,9 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
 static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
     int rc;
     tb_event_t ev;
+    ev.key  = 0;
+    ev.meta = 0;
+    ev.key  = 0;
 
     // Reset pastebuf
     ctx->pastebuf_len = 0;
@@ -976,7 +983,7 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
             continue;
         }
         ctx->input = (kinput_t){ ev.mod, ev.ch, ev.key, ev.meta };
-        // printf("ch %d, key %d\n", ev.ch, ev.key);
+        // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
         break;
     }
 }

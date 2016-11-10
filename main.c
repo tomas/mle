@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
         if (!_editor.headless_mode) {
             tb_init();
             // tb_select_input_mode(TB_INPUT_ALT);
-            tb_select_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
+            tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
             // tb_select_output_mode(TB_OUTPUT_256);
         }
         editor_run(&_editor);

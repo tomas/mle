@@ -486,16 +486,29 @@ int cmd_search(cmd_context_t* ctx) {
     char* regex;
     int regex_len;
     mark_t* search_mark;
-    editor_prompt(ctx->editor, "search: Regex?", NULL, &regex);
+
+    char * prompt;
+    char * default_str = "Regex";
+    asprintf(&prompt, "search: [%s]", ctx->bview->last_search ? ctx->bview->last_search : default_str);
+
+    editor_prompt(ctx->editor, prompt, NULL, &regex);
     if (!regex) return MLE_OK;
     regex_len = strlen(regex);
+
+    if (regex_len > 0) {
+      if (ctx->bview->last_search) free(ctx->bview->last_search);
+      ctx->bview->last_search = regex;
+    } else if (ctx->bview->last_search) {
+      regex = ctx->bview->last_search;
+      regex_len = strlen(ctx->bview->last_search);
+    }
+
     search_mark = buffer_add_mark(ctx->bview->buffer, NULL, 0);
     MLE_MULTI_CURSOR_CODE(ctx->cursor,
         _cmd_search_next(ctx->bview, cursor, search_mark, regex, regex_len);
     );
+
     mark_destroy(search_mark);
-    if (ctx->bview->last_search) free(ctx->bview->last_search);
-    ctx->bview->last_search = regex;
     return MLE_OK;
 }
 

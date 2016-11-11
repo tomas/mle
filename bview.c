@@ -968,6 +968,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
     bview_t* bview_tmp;
     int bview_count = 0;
     int offset = 0;
+    char * desc;
 
     CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
       if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
@@ -981,15 +982,19 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
           bg_attr = CAPTION_INACTIVE_BG;
         }
 
+        if (MLE_BVIEW_IS_MENU(bview_tmp)) {
+            desc = "Results";
+        } else {
+            desc = bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled";
+        }
+
         if (offset + self->editor->bview_tab_width <= w) {
 
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",
-            self->rect_caption.w, self->rect_caption.w,
-            " ");
+            self->rect_caption.w, self->rect_caption.w, " ");
 
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
-            bview_count,
-            bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled", bview_tmp->buffer->is_unsaved ? '*' : ' ');
+            bview_count, desc, !MLE_BVIEW_IS_MENU(bview_tmp) && bview_tmp->buffer->is_unsaved ? '*' : ' ');
 
           offset += self->editor->bview_tab_width;
 

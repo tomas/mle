@@ -95,6 +95,7 @@ struct editor_s {
     FILE* tty;
     int ttyfd;
     char* syntax_override;
+    int no_mouse;
     int linenum_type;
     int tab_width;
     int tab_to_space;
@@ -517,6 +518,8 @@ int cmd_save_as(cmd_context_t* ctx);
 int cmd_save(cmd_context_t* ctx);
 int cmd_search(cmd_context_t* ctx);
 int cmd_search_next(cmd_context_t* ctx);
+int cmd_select_bol(cmd_context_t* ctx);
+int cmd_select_eol(cmd_context_t* ctx);
 int cmd_select_up(cmd_context_t* ctx);
 int cmd_select_down(cmd_context_t* ctx);
 int cmd_select_left(cmd_context_t* ctx);

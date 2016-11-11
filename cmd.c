@@ -342,9 +342,25 @@ int cmd_delete_word_after(cmd_context_t* ctx) {
 // Toggle sel bound on cursors
 int cmd_toggle_anchor(cmd_context_t* ctx) {
     MLE_MULTI_CURSOR_CODE(ctx->cursor,
-        cursor_toggle_anchor(cursor, 1);
+      cursor_toggle_anchor(cursor, 1);
     );
     return MLE_OK;
+}
+
+int cmd_select_bol(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    cmd_move_bol(ctx);
+  );
+  return MLE_OK;
+}
+
+int cmd_select_eol(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    cmd_move_eol(ctx);
+  );
+  return MLE_OK;
 }
 
 int cmd_select_up(cmd_context_t* ctx) {

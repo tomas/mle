@@ -95,7 +95,6 @@ struct editor_s {
     FILE* tty;
     int ttyfd;
     char* syntax_override;
-    int no_mouse;
     int linenum_type;
     int tab_width;
     int tab_to_space;
@@ -116,6 +115,8 @@ struct editor_s {
     char errstr[MLE_ERRSTR_SIZE];
     char infostr[MLE_ERRSTR_SIZE];
     int exit_code;
+    int bview_tab_width;
+    int no_mouse;
 };
 
 // srule_def_t

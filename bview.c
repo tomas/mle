@@ -337,14 +337,14 @@ int bview_is_line_visible(bview_t* self, bint_t number) {
   if (self->viewport_y < number && number < self->viewport_y + self->rect_buffer.h) {
     return 1;
   }
-  
+
   return res;
 }
 
 int bview_move_to_line(bview_t* self, bint_t number) {
     if (bview_is_line_visible(self, number))
       return MLE_OK;
-  
+
     bint_t y = number - (self->rect_buffer.h/2);
     if (y < 0) y = 0;
 
@@ -357,14 +357,14 @@ int bview_move_to_line(bview_t* self, bint_t number) {
 }
 
 int bview_scroll_viewport(bview_t* self, int offset) {
-  
+
     bint_t y;
     if (offset < 0 && self->viewport_y < offset*-1) {
       y = 0;
     } else {
       y = self->viewport_y + (bint_t) offset;
     }
-    
+
     if (y + self->rect_buffer.h - 2 < self->buffer->line_count) {
       self->viewport_y = y;
       buffer_get_bline(self->buffer, self->viewport_y, &self->viewport_bline);
@@ -968,8 +968,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
     bview_t* bview_tmp;
     int bview_count = 0;
     int offset = 0;
-    int tab_width = 20;
-    
+
     CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
       if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
 
@@ -981,8 +980,8 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
           fg_attr = CAPTION_INACTIVE_FG;
           bg_attr = CAPTION_INACTIVE_BG;
         }
-        
-        if (offset + tab_width <= w) {
+
+        if (offset + self->editor->bview_tab_width <= w) {
 
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",
             self->rect_caption.w, self->rect_caption.w,
@@ -992,7 +991,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
             bview_count,
             bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled", bview_tmp->buffer->is_unsaved ? '*' : ' ');
 
-          offset += tab_width;
+          offset += self->editor->bview_tab_width;
 
         }
       }
@@ -1053,7 +1052,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
     // Draw linenums and margins
     if (MLE_BVIEW_IS_EDIT(self)) {
         int linenum_fg = is_cursor_line ? LINENUM_FG_CURSOR : LINENUM_FG;
-        
+
         if (self->editor->linenum_type == MLE_LINENUM_TYPE_ABS
             || self->editor->linenum_type == MLE_LINENUM_TYPE_BOTH
             || (self->editor->linenum_type == MLE_LINENUM_TYPE_REL && is_cursor_line)
@@ -1150,7 +1149,7 @@ static void _bview_highlight_bracket_pair(bview_t* self, mark_t* mark) {
         // Out of bounds
         return;
     }
-  
+
     tb_change_cell(screen_x, screen_y, cell->ch, cell->fg, cell->bg | BRACKET_HIGHLIGHT); // TODO configurable
 }
 

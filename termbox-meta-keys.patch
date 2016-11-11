@@ -13,7 +13,7 @@ index e2164d3..0666627 100644
  }
  
 diff --git a/src/input.inl b/src/input.inl
-index a4dbfca..1c5f0cc 100644
+index a4dbfca..8c81146 100644
 --- a/src/input.inl
 +++ b/src/input.inl
 @@ -1,3 +1,5 @@
@@ -31,7 +31,7 @@ index a4dbfca..1c5f0cc 100644
  		if (isU)
  			n1 -= 32;
  
-@@ -137,6 +139,125 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
+@@ -137,6 +139,140 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
  	return 0;
  }
  
@@ -97,7 +97,8 @@ index a4dbfca..1c5f0cc 100644
 +	return true;
 +}
 +
-+#define known_codes_length 24
++#define known_codes_length 28
++
 +const char * known_codes[known_codes_length] = {
 +	"\033[Z", // Shift+TAB
 +	// "\033[2$", // Shift+Insert
@@ -123,11 +124,19 @@ index a4dbfca..1c5f0cc 100644
 +	"\033Oa", // Control+Up
 +	"\033Ob", // Control+Down
 +	"\033Oc", // Control+Left
-+	"\033Od"  // Control+Right
++	"\033Od",  // Control+Right
++
++	"\033[5;5~", // Ctrl+PageUp
++	"\033[6;5~", // Ctrl+PageDown
++	"\033OH", // Ctrl+Home (xterm)
++	"\033OF", // Ctrl+End (xterm)
 +};
 +
 +int known_codes_keys[known_codes_length][2] = {
++	// global, apparently
 +	{ TB_KEY_TAB,          TB_META_SHIFT },
++
++	// urxvt
 +	// { TB_KEY_INSERT,      TB_META_SHIFT },
 +	{ TB_KEY_DELETE,      TB_META_SHIFT },
 +	{ TB_KEY_PGUP,        TB_META_SHIFT },
@@ -151,21 +160,28 @@ index a4dbfca..1c5f0cc 100644
 +	{ TB_KEY_ARROW_UP,    TB_META_CTRL  },
 +	{ TB_KEY_ARROW_DOWN,  TB_META_CTRL  },
 +	{ TB_KEY_ARROW_RIGHT, TB_META_CTRL  },
-+	{ TB_KEY_ARROW_LEFT,  TB_META_CTRL  }
++	{ TB_KEY_ARROW_LEFT,  TB_META_CTRL  },
++
++	// xterm
++	{ TB_KEY_PGDN,        TB_META_CTRL },
++	{ TB_KEY_PGUP,        TB_META_CTRL },
++	{ TB_KEY_HOME,        TB_META_CTRL },
++	{ TB_KEY_END,         TB_META_CTRL }
 +};
 +
  // convert escape sequence to event, and return consumed bytes on success (failure == 0)
  static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  {
-@@ -148,12 +269,75 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
+@@ -148,12 +284,76 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  	// it's pretty simple here, find 'starts_with' match and return
  	// success, else return failure
  	int i;
 +
 +	// if (strcmp(term_name, "xterm") != 0) {
 +		for (i = 0; i < known_codes_length; i++) {
-+			// printf("[%d] %d %d %d %d", len, buf[0], buf[1], buf[2], buf[3]);
++			// printf("[%d] %d %d %d %d %d %d", len, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
 +			if (starts_with(buf, len, known_codes[i])) {
++				// printf(" ------ found: %d\n", i);
 +				event->ch   = 0;
 +				event->key  = known_codes_keys[i][0];
 +				event->meta = known_codes_keys[i][1];
@@ -233,7 +249,7 @@ index a4dbfca..1c5f0cc 100644
  	}
  	return 0;
  }
-@@ -166,6 +350,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -166,6 +366,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  		return false;
  
  	if (buf[0] == '\033') {
@@ -241,7 +257,7 @@ index a4dbfca..1c5f0cc 100644
  		int n = parse_escape_seq(event, buf, len);
  		if (n != 0) {
  			bool success = true;
-@@ -202,7 +387,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -202,7 +403,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  
  	// first of all check if it's a functional key
  	if ((unsigned char)buf[0] <= TB_KEY_SPACE ||

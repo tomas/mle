@@ -1514,7 +1514,12 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
     }
 
     // Fix cwd if it changed
+#ifdef __APPLE__
+    getcwd(cwd, NULL);
+#else
     cwd = get_current_dir_name();
+#endif
+
     if (strcmp(cwd, ctx->bview->init_cwd) != 0) {
         asprintf(&corrected_path, "%s/%s", ctx->bview->init_cwd, path);
     } else {

@@ -896,12 +896,12 @@ static void _bview_draw_status(bview_t* self) {
     MLBUF_BLINE_ENSURE_CHARS(mark->bline);
     tb_printf(editor->rect_status, 0, 0, 0, 0, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
     tb_printf_attr(editor->rect_status, 0, 0,
-        "@%d,%d;%s@%d,%d;"                                // mle_normal    mode
-        "(@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;)  " // (....)        need_input,anchor,macro,async
-        "<@%d,%d;%s@%d,%d;>  "                            // <php>         syntax
-        "line:@%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d;  "    // line:1/100    line
-        "col:@%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d; ",     // col:0/80      col
-        MODE_FG, 0, active->kmap_tail->kmap->name, 0, 0,
+        // "@%d,%d;%s@%d,%d;"                                // mle_normal    mode
+        " (@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;)  " // (....)        need_input,anchor,macro,async
+        "[@%d,%d;%s@%d,%d;]  "                            // <php>         syntax
+        "line: @%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d;  "    // line:1/100    line
+        "col: @%d,%d;%llu@%d,%d;/@%d,%d;%llu@%d,%d; ",     // col:0/80      col
+        // MODE_FG, 0, active->kmap_tail->kmap->name, 0, 0,
         i_needinput_fg, i_needinput_bg, i_needinput,
         i_anchor_fg, i_anchor_bg, i_anchor,
         i_macro_fg, i_macro_bg, i_macro,

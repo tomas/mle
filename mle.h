@@ -115,6 +115,8 @@ struct editor_s {
     char errstr[MLE_ERRSTR_SIZE];
     char infostr[MLE_ERRSTR_SIZE];
     int exit_code;
+    int bview_tab_width;
+    int no_mouse;
 };
 
 // srule_def_t
@@ -517,6 +519,8 @@ int cmd_save_as(cmd_context_t* ctx);
 int cmd_save(cmd_context_t* ctx);
 int cmd_search(cmd_context_t* ctx);
 int cmd_search_next(cmd_context_t* ctx);
+int cmd_select_bol(cmd_context_t* ctx);
+int cmd_select_eol(cmd_context_t* ctx);
 int cmd_select_up(cmd_context_t* ctx);
 int cmd_select_down(cmd_context_t* ctx);
 int cmd_select_left(cmd_context_t* ctx);

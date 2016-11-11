@@ -13,32 +13,62 @@ index e2164d3..0666627 100644
  }
  
 diff --git a/src/input.inl b/src/input.inl
-index a4dbfca..956d544 100644
+index a4dbfca..a0bc795 100644
 --- a/src/input.inl
 +++ b/src/input.inl
-@@ -137,6 +137,53 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
+@@ -1,3 +1,5 @@
++extern char * term_name;
++
+ // if s1 starts with s2 returns true, else false
+ // len is the length of s1
+ // s2 should be null-terminated
+@@ -90,7 +92,7 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
+ 		n1 = strtoul(&buf[starti], NULL, 10);
+ 		n2 = strtoul(&buf[s1 + 1], NULL, 10);
+ 		n3 = strtoul(&buf[s2 + 1], NULL, 10);
+-		
++
+ 		if (isU)
+ 			n1 -= 32;
+ 
+@@ -137,6 +139,125 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
  	return 0;
  }
  
++// #define DEBUGGING 1
 +// function ported from tcolar's termbox-go fork:
 +// https://github.com/tcolar/termbox-go/commit/8e386c1b6b783dee1904d688347e2d282450b8e7
 +
 +// example bufs:
-+// [27, 91, 49, 59, 50, 65] --> shift + up arrow
-+// [27, 91, 49, 59, 50, 66] --> shift + down arrow
++
++//       xterm:
++//        27, 91, 49, 59, 50, 65  --> shift + up arrow
++//        27, 91, 49, 59, 50, 66  --> shift + down arrow
++//       esc   [  1   ;   mod key
++
++//       urxvt:
++//        27  91  98 -13 -91, 126
++//        27  91  98 -95  40  127 <-- with URxvt.iso14755 = false
++//       esc mod key
++
++//       mrxvt:
++//        27, 91, 66, 59, 50, 66
++//        27, 91, 49, 59, 50, 66
++
 +static bool parse_meta_key(struct tb_event *event, const char *buf, const char *key) {
 +
 +	int kl = strlen(key);
 +
-+/*	int i;
-+	printf("\nbuf: --> ");
++#ifdef DEBUGGING
++	int i;
++	printf("\nbuf: %s --> ", ""); // buf);
 +	for (i = 0; i < strlen(buf); i++)
 +		printf("%d ", buf[i]);
 +
-+	printf("\nkey: --> ");
++	printf("\nkey: %s --> ", ""); // key);
 +	for (i = 0; i < strlen(key); i++)
 +		printf("%d ", key[i]);
-+*/
++#endif
 +
 +	if (strlen(buf) < kl+2) {
 +		return false;
@@ -67,13 +97,83 @@ index a4dbfca..956d544 100644
 +	return true;
 +}
 +
++#define known_codes_length 24
++const char * known_codes[known_codes_length] = {
++	"\033[Z", // Shift+TAB
++	// "\033[2$", // Shift+Insert
++	"\033[3$", // Shift+Delete
++	"\033[5$", // Shift+PageUp
++	"\033[6$", // Shift+PageDown
++	"\033[7$", // Shift+Home
++	"\033[8$", // Shift+End
++  "\033[2^", // Ctrl+Insert
++	"\033[3^", // Ctrl+Delete
++	"\033[5^", // Ctrl+PageUp
++	"\033[6^", // Ctrl+PageDown
++	"\033[7^", // Ctrl+Home
++	"\033[8^", // Ctrl+End
++	"\033\033[a", // Alt+Shift+Up
++	"\033\033[b", // Alt+Shift+Down
++	"\033\033[c", // Alt+Shift+Left
++	"\033\033[d", // Alt+Shift+Right
++	"\033[a", // Shift+Up
++	"\033[b", // Shift+Down
++	"\033[c", // Shift+Left
++	"\033[d", // Shift+Right
++	"\033Oa", // Control+Up
++	"\033Ob", // Control+Down
++	"\033Oc", // Control+Left
++	"\033Od"  // Control+Right
++};
++
++int known_codes_keys[known_codes_length][2] = {
++	{ TB_KEY_TAB,          TB_META_SHIFT },
++	// { TB_KEY_INSERT,      TB_META_SHIFT },
++	{ TB_KEY_DELETE,      TB_META_SHIFT },
++	{ TB_KEY_PGUP,        TB_META_SHIFT },
++	{ TB_KEY_PGDN,        TB_META_SHIFT },
++	{ TB_KEY_HOME,        TB_META_SHIFT },
++	{ TB_KEY_END,         TB_META_SHIFT },
++	{ TB_KEY_INSERT,      TB_META_CTRL },
++	{ TB_KEY_DELETE,      TB_META_CTRL },
++	{ TB_KEY_PGUP,        TB_META_CTRL },
++	{ TB_KEY_PGDN,        TB_META_CTRL },
++	{ TB_KEY_HOME,        TB_META_CTRL },
++	{ TB_KEY_END,         TB_META_CTRL },
++	{ TB_KEY_ARROW_UP,    TB_META_ALTSHIFT },
++	{ TB_KEY_ARROW_DOWN,  TB_META_ALTSHIFT },
++	{ TB_KEY_ARROW_RIGHT, TB_META_ALTSHIFT },
++	{ TB_KEY_ARROW_LEFT,  TB_META_ALTSHIFT },
++	{ TB_KEY_ARROW_UP,    TB_META_SHIFT },
++	{ TB_KEY_ARROW_DOWN,  TB_META_SHIFT },
++	{ TB_KEY_ARROW_RIGHT, TB_META_SHIFT },
++	{ TB_KEY_ARROW_LEFT,  TB_META_SHIFT },
++	{ TB_KEY_ARROW_UP,    TB_META_CTRL  },
++	{ TB_KEY_ARROW_DOWN,  TB_META_CTRL  },
++	{ TB_KEY_ARROW_RIGHT, TB_META_CTRL  },
++	{ TB_KEY_ARROW_LEFT,  TB_META_CTRL  }
++};
++
  // convert escape sequence to event, and return consumed bytes on success (failure == 0)
  static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  {
-@@ -148,12 +195,44 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
+@@ -148,12 +269,75 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  	// it's pretty simple here, find 'starts_with' match and return
  	// success, else return failure
  	int i;
++
++	if (strcmp(term_name, "xterm") != 0) {
++		for (i = 0; i < known_codes_length; i++) {
++			// printf("[%d] %d %d %d %d", len, buf[0], buf[1], buf[2], buf[3]);
++			if (starts_with(buf, len, known_codes[i])) {
++				event->ch   = 0;
++				event->key  = known_codes_keys[i][0];
++				event->meta = known_codes_keys[i][1];
++				return strlen(known_codes[i]);
++			}
++		}
++	}
++
 +	char desc[20];
  	for (i = 0; keys[i]; i++) {
 +
@@ -108,23 +208,40 @@ index a4dbfca..956d544 100644
 +
 +			sprintf(desc, " k2 (%d): %d, %d, %d", (int)strlen(k2), k2[0], k2[1], k2[2]);
 +			if (parse_meta_key(event, buf, k2)) {
-+				event->key = 0xFFFF-i;
++				if (buf[2] != 49) {
++					switch(buf[2]) {
++						case 66:
++						  event->key = TB_KEY_ARROW_DOWN;
++						  break;
++						case 67:
++							event->key = TB_KEY_ARROW_RIGHT;
++							break;
++						case 68:
++							event->key = TB_KEY_ARROW_LEFT;
++							break;
++						default:
++							break;
++					}
++					event->meta = 0;
++				} else {
++					event->key = 0xFFFF - i;
++				}
++
 +				return strlen(k2) + 2;
 +			}
 +		}
  	}
  	return 0;
  }
-@@ -164,7 +243,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
- 	const int len = inbuf->len;
- 	if (len == 0)
+@@ -166,6 +350,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  		return false;
--
-+		
+ 
  	if (buf[0] == '\033') {
++
  		int n = parse_escape_seq(event, buf, len);
  		if (n != 0) {
-@@ -202,7 +281,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+ 			bool success = true;
+@@ -202,7 +387,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  
  	// first of all check if it's a functional key
  	if ((unsigned char)buf[0] <= TB_KEY_SPACE ||
@@ -133,8 +250,29 @@ index a4dbfca..956d544 100644
  	{
  		// fill event, pop buffer, return success */
  		event->ch = 0;
+diff --git a/src/term.inl b/src/term.inl
+index d2ebaa2..23b8899 100644
+--- a/src/term.inl
++++ b/src/term.inl
+@@ -16,6 +16,8 @@ enum {
+ 	T_FUNCS_NUM,
+ };
+ 
++char * term_name;
++
+ #define ENTER_MOUSE_SEQ "\x1b[?1000h\x1b[?1002h\x1b[?1015h\x1b[?1006h"
+ #define EXIT_MOUSE_SEQ "\x1b[?1006l\x1b[?1015l\x1b[?1002l\x1b[?1000l"
+ 
+@@ -103,6 +105,7 @@ static int init_term_builtin(void)
+ {
+ 	int i;
+ 	const char *term = getenv("TERM");
++	term_name = term;
+ 
+ 	if (term) {
+ 		for (i = 0; terms[i].name; i++) {
 diff --git a/src/termbox.h b/src/termbox.h
-index dc2d372..fcfa505 100644
+index e34cb01..d67660b 100644
 --- a/src/termbox.h
 +++ b/src/termbox.h
 @@ -94,6 +94,17 @@ extern "C" {

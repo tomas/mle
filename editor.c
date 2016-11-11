@@ -874,6 +874,7 @@ static void _editor_resize(editor_t* editor, int w, int h) {
 
     editor->w = w >= 0 ? w : tb_width();
     editor->h = h >= 0 ? h : tb_height();
+    editor->bview_tab_width = 20; // TODO: shrink dynamically
 
     editor->rect_edit.x = 0;
     editor->rect_edit.y = 0;
@@ -916,11 +917,49 @@ static void _editor_draw_cursors(editor_t* editor, bview_t* bview) {
 
 static int mouse_down = 0;
 
+static void _open_bview_at(cmd_context_t * ctx, int offset) {
+    bview_t* bview_tmp;
+    int bview_count = 0;
+
+    CDL_FOREACH2(ctx->editor->all_bviews, bview_tmp, all_next) {
+      if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
+        bview_count += 1;
+      }
+    }
+
+    int from = -1, index = bview_count, to = -1;
+    while (index--) {
+        to   = to == -1 ? ctx->editor->w : from;
+        from = (index) * ctx->editor->bview_tab_width;
+
+        if (from < offset && offset < to) {
+           break;
+        }
+    }
+
+    if (index == -1) return;
+
+    int a = 0;
+    CDL_FOREACH2(ctx->editor->all_bviews, bview_tmp, all_next) {
+      if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
+        if (a++ == index) {
+          editor_set_active(ctx->editor, bview_tmp);
+        }
+      }
+    }
+}
+
 static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
 	switch (ev.key) {
   	case TB_KEY_MOUSE_LEFT:
-    	cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
-    	mouse_down = 1;
+        if (ev.y == 0) {
+            // _open_bview_at(ctx, ev.x);
+        } else if (ev.y == ctx->editor->h - 1) {
+            // printf("clicked status bar");
+        } else {
+            cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
+            mouse_down = 1;
+        }
   		break;
   	case TB_KEY_MOUSE_MIDDLE:
         if (ctx->cursor->is_anchored) {
@@ -940,8 +979,14 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
   	  cmd_scroll_down(ctx);
   		break;
   	case TB_KEY_MOUSE_RELEASE:
-      cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
-  	  mouse_down = 0;
+        if (ev.y == 0) {
+            _open_bview_at(ctx, ev.x);
+        } else if (ev.y == ctx->editor->h - 1) {
+            // printf("clicked status bar");
+        } else {
+            cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
+            mouse_down = 0;
+        }
   	  break;
 	}
 
@@ -1343,6 +1388,8 @@ static void _editor_register_cmds(editor_t* editor) {
     _editor_register_cmd_fn(editor, "cmd_split_horizontal", cmd_split_horizontal);
     _editor_register_cmd_fn(editor, "cmd_split_vertical", cmd_split_vertical);
     _editor_register_cmd_fn(editor, "cmd_toggle_anchor", cmd_toggle_anchor);
+    _editor_register_cmd_fn(editor, "cmd_select_bol", cmd_select_bol);
+    _editor_register_cmd_fn(editor, "cmd_select_eol", cmd_select_eol);
     _editor_register_cmd_fn(editor, "cmd_select_up", cmd_select_up);
     _editor_register_cmd_fn(editor, "cmd_select_down", cmd_select_down);
     _editor_register_cmd_fn(editor, "cmd_select_left", cmd_select_left);
@@ -1385,9 +1432,11 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_delete_after", "delete"),
         MLE_KBINDING_DEF("cmd_insert_newline_above", "C-\\"),
         MLE_KBINDING_DEF("cmd_move_bol", "C-a"),
-        // MLE_KBINDING_DEF("cmd_move_bol", "home"),
+        MLE_KBINDING_DEF("cmd_move_bol", "home"),
+        MLE_KBINDING_DEF("cmd_select_bol", "S-home"),
         MLE_KBINDING_DEF("cmd_move_eol", "C-e"),
-        // MLE_KBINDING_DEF("cmd_move_eol", "end"),
+        MLE_KBINDING_DEF("cmd_move_eol", "end"),
+        MLE_KBINDING_DEF("cmd_select_eol", "S-end"),
         MLE_KBINDING_DEF("cmd_move_beginning", "M-\\"),
         MLE_KBINDING_DEF("cmd_move_end", "M-/"),
         MLE_KBINDING_DEF("cmd_move_left", "left"),
@@ -1467,13 +1516,14 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_drop_cursor_column", "C-/ '"),
         MLE_KBINDING_DEF("cmd_apply_macro", "M-j"),
         MLE_KBINDING_DEF("cmd_apply_macro_by", "M-m **"),
-        MLE_KBINDING_DEF("cmd_next", "end"),
-        MLE_KBINDING_DEF("cmd_prev", "home"),
+        MLE_KBINDING_DEF("cmd_next", "C-end"),
+        MLE_KBINDING_DEF("cmd_prev", "C-home"),
         MLE_KBINDING_DEF("cmd_split_vertical", "M-v"),
         MLE_KBINDING_DEF("cmd_split_horizontal", "M-h"),
         MLE_KBINDING_DEF("cmd_grep", "M-q"),
         MLE_KBINDING_DEF("cmd_grep", "CS-f"),
         MLE_KBINDING_DEF("cmd_fsearch", "C-p"),
+        MLE_KBINDING_DEF("cmd_browse", "C-b"),
         MLE_KBINDING_DEF("cmd_browse", "C-t"),
         MLE_KBINDING_DEF("cmd_undo", "C-z"),
         MLE_KBINDING_DEF("cmd_redo", "C-y"),
@@ -1490,8 +1540,9 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_open_replace_new", "C-q n"),
         MLE_KBINDING_DEF("cmd_open_replace_file", "C-q o"),
         MLE_KBINDING_DEF_EX("cmd_fsearch", "C-q p", "replace"),
-        MLE_KBINDING_DEF("cmd_indent", "M-."),
+        MLE_KBINDING_DEF("cmd_indent", "tab"),
         MLE_KBINDING_DEF("cmd_outdent", "M-,"),
+        MLE_KBINDING_DEF("cmd_outdent", "S-tab"),
         MLE_KBINDING_DEF("cmd_shell", "M-e"),
         // MLE_KBINDING_DEF("cmd_close", "M-c"),
         MLE_KBINDING_DEF("cmd_close", "C-q"),
@@ -1980,7 +2031,7 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
     cur_kmap = NULL;
     cur_syntax = NULL;
     optind = 0;
-    while (rv == MLE_OK && (c = getopt(argc, argv, "ha:b:c:H:K:k:l:M:m:Nn:p:S:s:t:vw:x:y:z:")) != -1) {
+    while (rv == MLE_OK && (c = getopt(argc, argv, "ha:b:c:gn:H:K:k:l:M:m:Nn:p:S:s:t:vw:x:y:z:")) != -1) {
         switch (c) {
             case 'h':
                 printf("mle version %s\n\n", MLE_VERSION);
@@ -1989,6 +2040,7 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
                 printf("    -a <1|0>     Enable/disable tab_to_space (default: %d)\n", MLE_DEFAULT_TAB_TO_SPACE);
                 printf("    -b <1|0>     Enable/disbale highlight bracket pairs (default: %d)\n", MLE_DEFAULT_HILI_BRACKET_PAIRS);
                 printf("    -c <column>  Color column\n");
+                printf("    -g           Disable mouse\n");
                 printf("    -H <1|0>     Enable/disable headless mode (default: 1 if no tty, else 0)\n");
                 printf("    -K <kdef>    Set current kmap definition (use with -k)\n");
                 printf("    -k <kbind>   Add key binding to current kmap definition (use with -K)\n");
@@ -2028,6 +2080,9 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
                 break;
             case 'c':
                 editor->color_col = atoi(optarg);
+                break;
+            case 'g':
+                editor->no_mouse = 1;
                 break;
             case 'H':
                 editor->headless_mode = atoi(optarg) ? 1 : 0;

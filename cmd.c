@@ -1527,7 +1527,8 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
     }
 
     // Fix cwd if it changed
-    cwd = get_current_dir_name();
+    // cwd = get_current_dir_name();
+    getcwd(cwd, NULL);
     if (strcmp(cwd, ctx->bview->init_cwd) != 0) {
         asprintf(&corrected_path, "%s/%s", ctx->bview->init_cwd, path);
     } else {

@@ -894,7 +894,9 @@ static void _bview_draw_status(bview_t* self) {
 
     // Render status line
     MLBUF_BLINE_ENSURE_CHARS(mark->bline);
-    tb_printf(editor->rect_status, 0, 0, 0, 0, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
+    tb_printf(editor->rect_status, 0, 0, 0, 0, "%*.*c", editor->rect_status.w, editor->rect_status.w, " ");
+
+/*
     tb_printf_attr(editor->rect_status, 0, 0,
         "@%d,%d;%s@%d,%d;"                                // mle_normal    mode
         "(@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;)  " // (....)        need_input,anchor,macro,async
@@ -910,6 +912,8 @@ static void _bview_draw_status(bview_t* self) {
         LINECOL_CURRENT_FG, 0, mark->bline->line_index + 1, 0, 0, LINECOL_TOTAL_FG, 0, active_edit->buffer->line_count, 0, 0,
         LINECOL_CURRENT_FG, 0, mark->col, 0, 0, LINECOL_TOTAL_FG, 0, mark->bline->char_count, 0, 0
     );
+
+*/
 
     // Overlay errstr if present
 _bview_draw_status_end:
@@ -983,13 +987,16 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
         if (offset + self->editor->bview_tab_width <= w) {
 
-          tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",
-            self->rect_caption.w, self->rect_caption.w,
-            " ");
+          // tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*c",
+          //  self->rect_caption.w, self->rect_caption.w, " ");
 
-          tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
-            bview_count,
-            bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled", bview_tmp->buffer->is_unsaved ? '*' : ' ');
+          // tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
+          //  bview_count, 
+          //  bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled", 
+          //  bview_tmp->buffer->is_unsaved ? '*' : ' ');
+
+          tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %c",
+            bview_count, bview_tmp->buffer->is_unsaved ? '*' : ' ');
 
           offset += self->editor->bview_tab_width;
 
@@ -1008,7 +1015,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
             tb_printf(self->rect_lines, 0, rect_y, 0, 0, "%*c", self->linenum_width, '~');
             tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", ' ');
             tb_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", ' ');
-            tb_printf(self->rect_buffer, 0, rect_y, 0, 0, "%-*.*s", self->rect_buffer.w, self->rect_buffer.w, " ");
+            tb_printf(self->rect_buffer, 0, rect_y, 0, 0, "%-*.*c", self->rect_buffer.w, self->rect_buffer.w, " ");
         } else {
             // Draw bline at self->rect_buffer self->viewport_y + rect_y
             // TODO How can bline be NULL here?

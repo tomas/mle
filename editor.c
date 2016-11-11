@@ -790,7 +790,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
         if (!editor->is_display_disabled) {
             editor_display(editor);
         }
-
+                                                                                         
         // Check for async io
         // async_proc_drain_all will bail and return 0 if there's any tty data
         if (editor->async_procs && async_proc_drain_all(editor->async_procs, &editor->ttyfd)) {

@@ -1,7 +1,9 @@
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
+MACOS_DEPLOYMENT_TARGET=10.7
+
 mle_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
-mle_ldlibs:=$(LDLIBS) -lm -lpcre
+mle_ldlibs:=$(LDLIBS) -lm -lpcre -L/usr/local/Cellar/pcre/8.36/lib
 mle_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
 mle_static:=
 

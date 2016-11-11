@@ -1520,6 +1520,8 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_apply_macro_by", "M-m **"),
         MLE_KBINDING_DEF("cmd_prev", "C-page-down"),
         MLE_KBINDING_DEF("cmd_next", "C-page-up"),
+        MLE_KBINDING_DEF("cmd_prev", "CS-page-down"),
+        MLE_KBINDING_DEF("cmd_next", "CS-page-up"),
         MLE_KBINDING_DEF("cmd_split_vertical", "M-v"),
         MLE_KBINDING_DEF("cmd_split_horizontal", "M-h"),
         MLE_KBINDING_DEF("cmd_grep", "M-q"),

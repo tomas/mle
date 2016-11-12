@@ -1010,10 +1010,12 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
       }
     }
 
+#ifndef __APPLE__
     // Render lines and margins
     if (!self->viewport_bline) {
         buffer_get_bline(self->buffer, MLE_MAX(0, self->viewport_y), &self->viewport_bline);
     }
+#endif
     bline = self->viewport_bline;
     for (rect_y = 0; rect_y < self->rect_buffer.h; rect_y++) {
         if (self->viewport_y + rect_y < 0 || self->viewport_y + rect_y >= self->buffer->line_count || !bline) { // "|| !bline" See TODOs below
@@ -1021,7 +1023,9 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
             tb_printf(self->rect_lines, 0, rect_y, 0, 0, "%*c", self->linenum_width, ' ');
             tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", ' ');
             tb_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", ' ');
+#ifndef __APPLE__
             tb_printf(self->rect_buffer, 0, rect_y, 0, 0, "%-*.*s", self->rect_buffer.w, self->rect_buffer.w, " ");
+#endif
         } else {
             // Draw bline at self->rect_buffer self->viewport_y + rect_y
             // TODO How can bline be NULL here?

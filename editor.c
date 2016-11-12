@@ -916,28 +916,38 @@ static void _editor_draw_cursors(editor_t* editor, bview_t* bview) {
     }
 }
 
-static int mouse_down = 0;
+static int _get_bview_count(cmd_context_t * ctx) {
+  bview_t* bview_tmp;
+  int bview_count = 0;
+
+  CDL_FOREACH2(ctx->editor->all_bviews, bview_tmp, all_next) {
+    if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
+      bview_count += 1;
+    }
+  }
+
+  return bview_count;
+}
+
+static int _find_bview_at(cmd_context_t * ctx, int offset) {
+  int bview_count = _get_bview_count(ctx);
+
+  int from = -1, index = bview_count, to = -1;
+  while (index--) {
+      to   = to == -1 ? ctx->editor->w : from;
+      from = (index) * ctx->editor->bview_tab_width;
+
+      if (from < offset && offset < to) {
+         break;
+      }
+  }
+  
+  return index;
+}
 
 static void _open_bview_at(cmd_context_t * ctx, int offset) {
     bview_t* bview_tmp;
-    int bview_count = 0;
-
-    CDL_FOREACH2(ctx->editor->all_bviews, bview_tmp, all_next) {
-      if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
-        bview_count += 1;
-      }
-    }
-
-    int from = -1, index = bview_count, to = -1;
-    while (index--) {
-        to   = to == -1 ? ctx->editor->w : from;
-        from = (index) * ctx->editor->bview_tab_width;
-
-        if (from < offset && offset < to) {
-           break;
-        }
-    }
-
+    int index = _find_bview_at(ctx, offset);
     if (index == -1) return;
 
     int a = 0;
@@ -950,11 +960,31 @@ static void _open_bview_at(cmd_context_t * ctx, int offset) {
     }
 }
 
+static void _close_bview_at(cmd_context_t * ctx, int offset) {
+    int bview_count = _get_bview_count(ctx);
+    if (bview_count <= 1) return;
+
+    bview_t* bview_tmp;
+    int index = _find_bview_at(ctx, offset);
+    if (index == -1) return;
+
+    int a = 0;
+    CDL_FOREACH2(ctx->editor->all_bviews, bview_tmp, all_next) {
+      if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
+        if (a++ == index) {
+          editor_close_bview(ctx->editor, bview_tmp, NULL);
+        }
+      }
+    }
+}
+
+static int mouse_down = 0;
+
 static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
 	switch (ev.key) {
   	case TB_KEY_MOUSE_LEFT:
         if (ev.y == 0) {
-            // _open_bview_at(ctx, ev.x);
+            _open_bview_at(ctx, ev.x);
         } else if (ev.y == ctx->editor->h - 1) {
             // printf("clicked status bar");
         } else {
@@ -963,13 +993,19 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
         }
   		break;
   	case TB_KEY_MOUSE_MIDDLE:
-        if (ctx->cursor->is_anchored) {
-          cmd_copy(ctx);
-        } else {
-          // should we move the cursor before pasting?
-          // cmd_mouse_move(ctx, 0, ev.x, ev.y);
-          cmd_uncut(ctx);
-        }
+  	    if (ev.y == 0) {
+  	      _close_bview_at(ctx, ev.x);
+  	    } else if (ev.y == ctx->editor->h -1 ) {
+
+  	    } else {
+          if (ctx->cursor->is_anchored) {
+            cmd_copy(ctx);
+          } else {
+            // should we move the cursor before pasting?
+            // cmd_mouse_move(ctx, 0, ev.x, ev.y);
+            cmd_uncut(ctx);
+          }
+  	    }
   		break;
   	case TB_KEY_MOUSE_RIGHT:
   		break;
@@ -981,7 +1017,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
   		break;
   	case TB_KEY_MOUSE_RELEASE:
         if (ev.y == 0) {
-            _open_bview_at(ctx, ev.x);
+            // _open_bview_at(ctx, ev.x);
         } else if (ev.y == ctx->editor->h - 1) {
             // printf("clicked status bar");
         } else {

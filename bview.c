@@ -894,7 +894,7 @@ static void _bview_draw_status(bview_t* self) {
 
     // Render status line
     MLBUF_BLINE_ENSURE_CHARS(mark->bline);
-    tb_printf(editor->rect_status, 0, 0, 0, 0, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
+    tb_printf(editor->rect_status, 0, 0, 0, RECT_STATUS_BG, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
     tb_printf_attr(editor->rect_status, 0, 0,
         // "@%d,%d;%s@%d,%d;"                                // mle_normal    mode
         " (@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;)  " // (....)        need_input,anchor,macro,async
@@ -1010,7 +1010,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
     for (rect_y = 0; rect_y < self->rect_buffer.h; rect_y++) {
         if (self->viewport_y + rect_y < 0 || self->viewport_y + rect_y >= self->buffer->line_count || !bline) { // "|| !bline" See TODOs below
             // Draw pre/post blank
-            tb_printf(self->rect_lines, 0, rect_y, 0, 0, "%*c", self->linenum_width, '~');
+            tb_printf(self->rect_lines, 0, rect_y, 0, 0, "%*c", self->linenum_width, ' ');
             tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", ' ');
             tb_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", ' ');
             tb_printf(self->rect_buffer, 0, rect_y, 0, 0, "%-*.*s", self->rect_buffer.w, self->rect_buffer.w, " ");

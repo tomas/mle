@@ -2,6 +2,8 @@
 #include <ctype.h>
 #include "mle.h"
 
+char* shared_cutbuf;
+
 // Clone cursor
 int cursor_clone(cursor_t* cursor, int use_srules, cursor_t** ret_clone) {
     cursor_t* clone;
@@ -212,6 +214,13 @@ int cursor_cut_copy(cursor_t* cursor, int is_cut, int use_srules, int append) {
     } else {
         cursor->cut_buffer = cutbuf;
     }
+
+    // if (strcmp(cursor->cut_buffer, shared_cutbuf) != 0) {
+      free(shared_cutbuf);
+      shared_cutbuf = malloc(cutbuf_len + 1);
+      strncat(shared_cutbuf, cursor->cut_buffer, cutbuf_len);
+    // }
+
     if (is_cut) {
         mark_delete_between_mark(cursor->mark, cursor->anchor);
     }
@@ -221,8 +230,12 @@ int cursor_cut_copy(cursor_t* cursor, int is_cut, int use_srules, int append) {
 
 // Uncut (paste) text
 int cursor_uncut(cursor_t* cursor) {
-    if (!cursor->cut_buffer) return MLE_ERR;
-    mark_insert_before(cursor->mark, cursor->cut_buffer, strlen(cursor->cut_buffer));
+    // if (!cursor->cut_buffer) return MLE_ERR;
+    if (cursor->cut_buffer) {
+      mark_insert_before(cursor->mark, cursor->cut_buffer, strlen(cursor->cut_buffer));
+    } else if (strlen(shared_cutbuf) > 0) {
+      mark_insert_before(cursor->mark, shared_cutbuf, strlen(shared_cutbuf));
+    }
     return MLE_OK;
 }
 

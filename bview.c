@@ -989,7 +989,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
 #ifdef __APPLE__
             desc = NULL;
-#else            
+#else
         if (MLE_BVIEW_IS_MENU(bview_tmp)) {
             desc = "Results";
         } else {
@@ -999,7 +999,9 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
         if (offset + self->editor->bview_tab_width <= w) {
 
-          // tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s", self->rect_caption.w, self->rect_caption.w, " ");
+#ifndef __APPLE__
+          tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s", self->rect_caption.w, self->rect_caption.w, " ");
+#endif
 
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
           bview_count, desc, !MLE_BVIEW_IS_MENU(bview_tmp) && bview_tmp->buffer->is_unsaved ? '*' : ' ');

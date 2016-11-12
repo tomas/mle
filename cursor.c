@@ -208,17 +208,25 @@ int cursor_cut_copy(cursor_t* cursor, int is_cut, int use_srules, int append) {
     mark_get_between_mark(cursor->mark, cursor->anchor, &cutbuf, &cutbuf_len);
     if (append && cursor->cut_buffer) {
         cur_len = strlen(cursor->cut_buffer);
+
+        // cursor buf
         cursor->cut_buffer = realloc(cursor->cut_buffer, cur_len + cutbuf_len + 1);
         strncat(cursor->cut_buffer, cutbuf, cutbuf_len);
+
+        // shared buf
+        shared_cutbuf = realloc(shared_cutbuf, cur_len + cutbuf_len + 1);
+        strncat(shared_cutbuf, cutbuf, cutbuf_len);
+  
         free(cutbuf);
     } else {
-        cursor->cut_buffer = cutbuf;
-    }
 
-    // copy buffer to shared one
-    free(shared_cutbuf);
-    shared_cutbuf = malloc(cutbuf_len + 1);
-    strcpy(shared_cutbuf, cursor->cut_buffer);
+        cursor->cut_buffer = cutbuf;
+
+        // copy to shared cutbuf
+        free(shared_cutbuf);
+        shared_cutbuf = malloc(cutbuf_len + 1);
+        strcpy(shared_cutbuf, cursor->cut_buffer);
+    }
 
     if (is_cut) {
         mark_delete_between_mark(cursor->mark, cursor->anchor);

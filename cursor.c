@@ -215,11 +215,10 @@ int cursor_cut_copy(cursor_t* cursor, int is_cut, int use_srules, int append) {
         cursor->cut_buffer = cutbuf;
     }
 
-    // if (strcmp(cursor->cut_buffer, shared_cutbuf) != 0) {
-      free(shared_cutbuf);
-      shared_cutbuf = malloc(cutbuf_len + 1);
-      strncat(shared_cutbuf, cursor->cut_buffer, cutbuf_len);
-    // }
+    // copy buffer to shared one
+    free(shared_cutbuf);
+    shared_cutbuf = malloc(cutbuf_len + 1);
+    strcpy(shared_cutbuf, cursor->cut_buffer);
 
     if (is_cut) {
         mark_delete_between_mark(cursor->mark, cursor->anchor);
@@ -230,7 +229,6 @@ int cursor_cut_copy(cursor_t* cursor, int is_cut, int use_srules, int append) {
 
 // Uncut (paste) text
 int cursor_uncut(cursor_t* cursor) {
-    // if (!cursor->cut_buffer) return MLE_ERR;
     if (cursor->cut_buffer) {
       mark_insert_before(cursor->mark, cursor->cut_buffer, strlen(cursor->cut_buffer));
     } else if (strlen(shared_cutbuf) > 0) {

@@ -1,5 +1,5 @@
 SHELL=/bin/sh
-DESTDIR?=/usr/bin/
+DESTDIR?=/usr/local/bin/
 mle_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
 mle_ldlibs:=$(LDLIBS) -lm -L /usr/local/Cellar/pcre/8.36/lib -lpcre
 mle_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
@@ -20,10 +20,14 @@ $(mle_objects): %.o: %.c
 ./mlbuf/libmlbuf.a:
 	$(MAKE) -C mlbuf
 
-./termbox/build/src/libtermbox.a: ./termbox/modified
+./termbox/build/src/libtermbox.a: ./termbox/build/src/*.o
+	ar rcs ./termbox/build/src/libtermbox.a ./termbox/build/src/*.o
+
+./termbox/build/src/*.o: ./termbox/modified
 	@echo "Building termbox..."
-	cd termbox && python waf configure
-	cd termbox && python waf
+	mkdir -p termbox/build/src
+	cd termbox/src && gcc termbox.c utf8.c -c
+	mv termbox/src/*.o termbox/build/src
 
 ./termbox/modified: termbox-meta-keys.patch
 	@echo "Patching termbox..."
@@ -50,6 +54,6 @@ clean:
 	rm -f *.o mle.bak.* gmon.out perf.data perf.data.old mle
 	$(MAKE) -C mlbuf clean
 	$(MAKE) -C tests clean
-	cd termbox && python waf clean
+	rm -Rf termbox/build
 
 .PHONY: all mle_static test test_mle sloc install clean

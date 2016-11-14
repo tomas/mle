@@ -802,6 +802,11 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
             break;
         }
 
+        // if (cmd_ctx->input->key == TB_KEY_ESC) {
+        //    cmd_close(&cmd_ctx);
+        //    continue;
+        // }
+
         // Toggle macro?
         if (_editor_maybe_toggle_macro(editor, &cmd_ctx.input)) {
             continue;
@@ -2231,6 +2236,10 @@ static void _editor_init_bviews(editor_t* editor, int argc, char** argv) {
     int i;
     char *path;
     int path_len;
+
+#ifdef __APPLE__
+    optind++;
+#endif
 
     // Open bviews
     if (optind >= argc) {

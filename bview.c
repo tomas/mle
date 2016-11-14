@@ -896,10 +896,7 @@ static void _bview_draw_status(bview_t* self) {
     // Render status line
     MLBUF_BLINE_ENSURE_CHARS(mark->bline);
 
-#ifndef __APPLE__
     tb_printf(editor->rect_status, 0, 0, 0, RECT_STATUS_BG, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
-#endif
-
     tb_printf_attr(editor->rect_status, 0, 0,
         // "@%d,%d;%s@%d,%d;"                                // mle_normal    mode
         // " (@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;)  " // (....)        need_input,anchor,macro,async
@@ -987,21 +984,15 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
           bg_attr = CAPTION_INACTIVE_BG;
         }
 
-#ifdef __APPLE__
-            desc = NULL;
-#else
         if (MLE_BVIEW_IS_MENU(bview_tmp)) {
             desc = "Results";
         } else {
             desc = bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled";
         }
-#endif
 
         if (offset + self->editor->bview_tab_width <= w) {
 
-#ifndef __APPLE__
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s", self->rect_caption.w, self->rect_caption.w, " ");
-#endif
 
           tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
           bview_count, desc, !MLE_BVIEW_IS_MENU(bview_tmp) && bview_tmp->buffer->is_unsaved ? '*' : ' ');
@@ -1012,12 +1003,10 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
       }
     }
 
-#ifndef __APPLE__
     // Render lines and margins
     if (!self->viewport_bline) {
         buffer_get_bline(self->buffer, MLE_MAX(0, self->viewport_y), &self->viewport_bline);
     }
-#endif
     bline = self->viewport_bline;
     for (rect_y = 0; rect_y < self->rect_buffer.h; rect_y++) {
         if (self->viewport_y + rect_y < 0 || self->viewport_y + rect_y >= self->buffer->line_count || !bline) { // "|| !bline" See TODOs below
@@ -1025,9 +1014,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
             tb_printf(self->rect_lines, 0, rect_y, 0, 0, "%*c", self->linenum_width, ' ');
             tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", ' ');
             tb_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", ' ');
-#ifndef __APPLE__
             tb_printf(self->rect_buffer, 0, rect_y, 0, 0, "%-*.*s", self->rect_buffer.w, self->rect_buffer.w, " ");
-#endif
         } else {
             // Draw bline at self->rect_buffer self->viewport_y + rect_y
             // TODO How can bline be NULL here?

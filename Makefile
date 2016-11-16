@@ -21,14 +21,19 @@ $(mle_objects): %.o: %.c
 ./mlbuf/libmlbuf.a:
 	$(MAKE) -C mlbuf
 
-./termbox/build/src/libtermbox.a: ./termbox/build/src/*.o
-	ar rcs ./termbox/build/src/libtermbox.a ./termbox/build/src/*.o
+# ./termbox/build/src/libtermbox.a: ./termbox/build/src/*.o
+#	ar rcs ./termbox/build/src/libtermbox.a ./termbox/build/src/*.o
 
-./termbox/build/src/*.o: ./termbox/modified
+#./termbox/build/src/*.o: ./termbox/modified
+# 	@echo "Building termbox..."
+#	mkdir -p termbox/build/src
+#	cd termbox/src && gcc termbox.c utf8.c -c
+#	mv termbox/src/*.o termbox/build/src
+
+./termbox/build/src/libtermbox.a: ./termbox/modified
 	@echo "Building termbox..."
-	mkdir -p termbox/build/src
-	cd termbox/src && gcc termbox.c utf8.c -c
-	mv termbox/src/*.o termbox/build/src
+	cd termbox && python waf configure
+	cd termbox && python waf
 
 ./termbox/modified: termbox-meta-keys.patch
 	@echo "Patching termbox..."

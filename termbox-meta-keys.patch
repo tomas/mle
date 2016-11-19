@@ -40,7 +40,7 @@ index ca9a9c6..f26fde1 100644
  	if (code < 0) {
  		fprintf(stderr, "termbox init failed, code: %d\n", code);
 diff --git a/src/input.inl b/src/input.inl
-index a4dbfca..c6c339f 100644
+index a4dbfca..9a82ab8 100644
 --- a/src/input.inl
 +++ b/src/input.inl
 @@ -90,7 +90,7 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
@@ -229,7 +229,7 @@ index a4dbfca..c6c339f 100644
 +		}
 +	}
 +
-+	char desc[20];
++	// char desc[20];
  	for (i = 0; keys[i]; i++) {
 +
  		if (starts_with(buf, len, keys[i])) {
@@ -238,7 +238,7 @@ index a4dbfca..c6c339f 100644
  			return strlen(keys[i]);
  		}
 +
-+    if (is_linux) continue;
++        if (is_linux) continue;
 +
 +		if (parse_meta_key(event, buf, keys[i])) {
 +			event->key = 0xFFFF-i;
@@ -263,7 +263,7 @@ index a4dbfca..c6c339f 100644
 +				k2[a+1] = keys[i][a];
 +			}
 +
-+			sprintf(desc, " k2 (%d): %d, %d, %d", (int)strlen(k2), k2[0], k2[1], k2[2]);
++			// sprintf(desc, " k2 (%d): %d, %d, %d", (int)strlen(k2), k2[0], k2[1], k2[2]);
 +			if (parse_meta_key(event, buf, k2)) {
 +				if (buf[2] != 49) {
 +					switch(buf[2]) {

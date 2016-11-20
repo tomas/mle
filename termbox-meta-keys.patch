@@ -1,3 +1,17 @@
+diff --git a/src/bytebuffer.inl b/src/bytebuffer.inl
+index 51f9e81..2ddc479 100644
+--- a/src/bytebuffer.inl
++++ b/src/bytebuffer.inl
+@@ -55,7 +55,8 @@ static void bytebuffer_resize(struct bytebuffer *b, int len) {
+ }
+ 
+ static void bytebuffer_flush(struct bytebuffer *b, int fd) {
+-	write(fd, b->buf, b->len);
++  int unused __attribute__((unused));
++	unused = write(fd, b->buf, b->len);
+ 	bytebuffer_clear(b);
+ }
+ 
 diff --git a/src/demo/keyboard.c b/src/demo/keyboard.c
 index e2164d3..0666627 100644
 --- a/src/demo/keyboard.c
@@ -12,17 +26,24 @@ index e2164d3..0666627 100644
  
  }
  
+diff --git a/src/demo/paint.c b/src/demo/paint.c
+index ca9a9c6..f26fde1 100644
+--- a/src/demo/paint.c
++++ b/src/demo/paint.c
+@@ -97,7 +97,7 @@ void reallocBackBuffer(int w, int h) {
+ 	backbuf = calloc(sizeof(struct tb_cell), w*h);
+ }
+ 
+-int main(int argv, char **argc) {
++int main(void) {
+ 	int code = tb_init();
+ 	if (code < 0) {
+ 		fprintf(stderr, "termbox init failed, code: %d\n", code);
 diff --git a/src/input.inl b/src/input.inl
-index a4dbfca..52de804 100644
+index a4dbfca..fef0fcc 100644
 --- a/src/input.inl
 +++ b/src/input.inl
-@@ -1,3 +1,5 @@
-+extern char * term_name;
-+
- // if s1 starts with s2 returns true, else false
- // len is the length of s1
- // s2 should be null-terminated
-@@ -90,7 +92,7 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
+@@ -90,7 +90,7 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
  		n1 = strtoul(&buf[starti], NULL, 10);
  		n2 = strtoul(&buf[s1 + 1], NULL, 10);
  		n3 = strtoul(&buf[s2 + 1], NULL, 10);
@@ -31,7 +52,7 @@ index a4dbfca..52de804 100644
  		if (isU)
  			n1 -= 32;
  
-@@ -137,6 +139,155 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
+@@ -137,6 +137,155 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
  	return 0;
  }
  
@@ -57,7 +78,7 @@ index a4dbfca..52de804 100644
 +
 +static bool parse_meta_key(struct tb_event *event, const char *buf, const char *key) {
 +
-+	int kl = strlen(key);
++	unsigned int kl = strlen(key);
 +
 +#ifdef DEBUGGING
 +	int i;
@@ -187,7 +208,7 @@ index a4dbfca..52de804 100644
  // convert escape sequence to event, and return consumed bytes on success (failure == 0)
  static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  {
-@@ -148,12 +299,76 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
+@@ -148,12 +297,76 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  	// it's pretty simple here, find 'starts_with' match and return
  	// success, else return failure
  	int i;
@@ -264,7 +285,7 @@ index a4dbfca..52de804 100644
  	}
  	return 0;
  }
-@@ -166,6 +381,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -166,6 +379,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  		return false;
  
  	if (buf[0] == '\033') {
@@ -272,7 +293,7 @@ index a4dbfca..52de804 100644
  		int n = parse_escape_seq(event, buf, len);
  		if (n != 0) {
  			bool success = true;
-@@ -202,7 +418,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -202,7 +416,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  
  	// first of all check if it's a functional key
  	if ((unsigned char)buf[0] <= TB_KEY_SPACE ||
@@ -282,7 +303,7 @@ index a4dbfca..52de804 100644
  		// fill event, pop buffer, return success */
  		event->ch = 0;
 diff --git a/src/term.inl b/src/term.inl
-index d2ebaa2..23b8899 100644
+index d2ebaa2..dac041f 100644
 --- a/src/term.inl
 +++ b/src/term.inl
 @@ -16,6 +16,8 @@ enum {
@@ -298,15 +319,49 @@ index d2ebaa2..23b8899 100644
  {
  	int i;
  	const char *term = getenv("TERM");
-+	term_name = term;
++	term_name = (char *)term;
  
  	if (term) {
  		for (i = 0; terms[i].name; i++) {
+diff --git a/src/termbox.c b/src/termbox.c
+index ff6a775..ef11517 100644
+--- a/src/termbox.c
++++ b/src/termbox.c
+@@ -578,7 +578,9 @@ static void sigwinch_handler(int xxx)
+ {
+ 	(void) xxx;
+ 	const int zzz = 1;
+-	write(winch_fds[1], &zzz, sizeof(int));
++
++  int unused __attribute__((unused));
++	unused = write(winch_fds[1], &zzz, sizeof(int));
+ }
+ 
+ static void update_size(void)
+@@ -668,7 +670,8 @@ static int wait_fill_event(struct tb_event *event, struct timeval *timeout)
+ 		if (FD_ISSET(winch_fds[0], &events)) {
+ 			event->type = TB_EVENT_RESIZE;
+ 			int zzz = 0;
+-			read(winch_fds[0], &zzz, sizeof(int));
++      int unused __attribute__((unused));
++			unused = read(winch_fds[0], &zzz, sizeof(int));
+ 			buffer_size_change_request = 1;
+ 			get_term_size(&event->w, &event->h);
+ 			return TB_EVENT_RESIZE;
 diff --git a/src/termbox.h b/src/termbox.h
-index dc2d372..fcfa505 100644
+index dc2d372..d6901f1 100644
 --- a/src/termbox.h
 +++ b/src/termbox.h
-@@ -94,6 +94,17 @@ extern "C" {
+@@ -13,6 +13,8 @@
+ extern "C" {
+ #endif
+ 
++extern char * term_name;
++
+ /* Key constants. See also struct tb_event's key field.
+  *
+  * These are a safe subset of terminfo keys, which exist on all popular
+@@ -94,6 +96,17 @@ extern "C" {
  #define TB_KEY_BACKSPACE2       0x7F
  #define TB_KEY_CTRL_8           0x7F /* clash with 'BACKSPACE2' */
  
@@ -324,7 +379,7 @@ index dc2d372..fcfa505 100644
  /* These are non-existing ones.
   *
   * #define TB_KEY_CTRL_1 clash with '1'
-@@ -156,6 +167,7 @@ struct tb_event {
+@@ -156,6 +169,7 @@ struct tb_event {
  	uint8_t mod; /* modifiers to either 'key' or 'ch' below */
  	uint16_t key; /* one of the TB_KEY_* constants */
  	uint32_t ch; /* unicode character */

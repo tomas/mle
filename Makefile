@@ -8,8 +8,8 @@ mle_static:=
 
 all: mle
 
-mle: ./mlbuf/libmlbuf.a ./termbox/build/src/libtermbox.a $(mle_objects)
-	$(CC) $(mle_objects) $(mle_static) ./mlbuf/libmlbuf.a ./termbox/build/src/libtermbox.a $(mle_ldlibs) -o mle
+mle: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(mle_objects)
+	$(CC) $(mle_objects) $(mle_static) ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(mle_ldlibs) -o mle
 
 mle_static: mle_static:=-static
 mle_static: mle_ldlibs:=$(mle_ldlibs) -lpthread
@@ -30,10 +30,9 @@ $(mle_objects): %.o: %.c
 #	cd termbox/src && gcc termbox.c utf8.c -c
 #	mv termbox/src/*.o termbox/build/src
 
-./termbox/build/src/libtermbox.a: ./termbox/modified
+./termbox/build/libtermbox.a: ./termbox/modified
 	@echo "Building termbox..."
-	cd termbox && python waf configure
-	cd termbox && python waf
+	cd termbox/build && make
 
 ./termbox/modified: termbox-meta-keys.patch
 	@echo "Patching termbox..."

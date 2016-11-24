@@ -527,6 +527,8 @@ int cmd_select_left(cmd_context_t* ctx);
 int cmd_select_right(cmd_context_t* ctx);
 int cmd_select_word_back(cmd_context_t* ctx);
 int cmd_select_word_forward(cmd_context_t* ctx);
+int cmd_select_current_word(cmd_context_t* ctx);
+int cmd_select_current_line(cmd_context_t* ctx);
 int cmd_new_cursor_up(cmd_context_t* ctx);
 int cmd_new_cursor_down(cmd_context_t* ctx);
 int cmd_set_opt(cmd_context_t* ctx);

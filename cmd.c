@@ -428,6 +428,26 @@ int cmd_select_word_forward(cmd_context_t* ctx) {
   return MLE_OK;
 }
 
+int cmd_select_current_word(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (cursor->is_anchored) cursor_toggle_anchor(cursor, 0);
+    cmd_move_word_back(ctx);
+    cursor_toggle_anchor(cursor, 1);
+    cmd_move_word_forward(ctx);
+  );
+  return MLE_OK;
+}
+
+int cmd_select_current_line(cmd_context_t* ctx) {
+  MLE_MULTI_CURSOR_CODE(ctx->cursor,
+    if (cursor->is_anchored) cursor_toggle_anchor(cursor, 0);
+    cmd_move_bol(ctx);
+    cursor_toggle_anchor(cursor, 1);
+    cmd_move_eol(ctx);
+  );
+  return MLE_OK;
+}
+
 int cmd_new_cursor_up(cmd_context_t* ctx) {
   if (!ctx->cursor->is_anchored) cursor_toggle_anchor(ctx->cursor, 1);
   mark_move_vert(ctx->cursor->mark, -1);

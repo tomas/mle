@@ -37,7 +37,7 @@ int cursor_select_between(cursor_t* cursor, mark_t* a, mark_t* b, int use_srules
 // Toggle cursor anchor
 int cursor_toggle_anchor(cursor_t* cursor, int use_srules) {
     // TODO: check if this fixes the segfault when closing tabs
-    // if (cursor == NULL) return MLE_OK;
+    if (cursor == NULL) return MLE_OK;
 
     if (!cursor->is_anchored) {
         mark_clone(cursor->mark, &(cursor->anchor));

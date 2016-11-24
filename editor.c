@@ -1003,18 +1003,16 @@ static double _get_timediff(struct timespec start, struct timespec end) {
 }
 
 static int _is_double_click(int x, int y) {
-    if (last_click.x < 0 || x != last_click.x) {
+
+    if (last_click.ts.tv_sec == -1 || x != last_click.x) {
       clock_gettime(CLOCK_MONOTONIC, &last_click.ts);
-      last_click.x = x;
-      last_click.y = y;
       return 0;
     }
 
   struct timespec now = {0, 0};
   clock_gettime(CLOCK_MONOTONIC, &now);
   time_diff = _get_timediff(last_click.ts, now);
-  last_click.x = -1;
-
+  last_click.ts.tv_sec = -1;
   return time_diff < 0.5 ? 1 : 0;
 }
 
@@ -1026,8 +1024,15 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
         } else if (ev.y == ctx->editor->h - 1) {
             // printf("clicked status bar");
         } else {
-            cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
-            mouse_down = 1;
+            if (mouse_down == 0 && _is_double_click(ev.x, ev.y)) {
+                if (MLE_BVIEW_IS_MENU(ctx->editor->active))
+                    _editor_menu_submit(ctx);
+                else
+                    cmd_select_current_word(ctx);
+            } else {
+                cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
+                mouse_down = 1;
+            }
         }
       break;
     case TB_KEY_MOUSE_MIDDLE:
@@ -1058,16 +1063,18 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
             // _open_bview_at(ctx, ev.x);
         } else if (ev.y == ctx->editor->h - 1) {
             // printf("clicked status bar");
-        } else if (_is_double_click(ev.x, ev.y)) {
-            if (MLE_BVIEW_IS_MENU(ctx->editor->active)) _editor_menu_submit(ctx);
-            mouse_down = 0;
         } else {
-            cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
+            if (ev.x != last_click.x && ev.y != last_click.y)
+                cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
+
             mouse_down = 0;
         }
       break;
+
   }
 
+  last_click.x = ev.x;
+  last_click.y = ev.y;
 }
 
 // Get user input
@@ -1474,6 +1481,8 @@ static void _editor_register_cmds(editor_t* editor) {
     _editor_register_cmd_fn(editor, "cmd_select_right", cmd_select_right);
     _editor_register_cmd_fn(editor, "cmd_select_word_back", cmd_select_word_back);
     _editor_register_cmd_fn(editor, "cmd_select_word_forward", cmd_select_word_forward);
+    _editor_register_cmd_fn(editor, "cmd_select_current_word", cmd_select_current_word);
+    _editor_register_cmd_fn(editor, "cmd_select_current_line", cmd_select_current_line);
     _editor_register_cmd_fn(editor, "cmd_new_cursor_up", cmd_new_cursor_up);
     _editor_register_cmd_fn(editor, "cmd_new_cursor_down", cmd_new_cursor_down);
     _editor_register_cmd_fn(editor, "cmd_uncut", cmd_uncut);

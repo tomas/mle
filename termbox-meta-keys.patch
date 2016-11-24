@@ -40,7 +40,7 @@ index ca9a9c6..f26fde1 100644
  	if (code < 0) {
  		fprintf(stderr, "termbox init failed, code: %d\n", code);
 diff --git a/src/input.inl b/src/input.inl
-index a4dbfca..fef0fcc 100644
+index a4dbfca..c6c339f 100644
 --- a/src/input.inl
 +++ b/src/input.inl
 @@ -90,7 +90,7 @@ static int parse_mouse_event(struct tb_event *event, const char *buf, int len) {
@@ -208,12 +208,15 @@ index a4dbfca..fef0fcc 100644
  // convert escape sequence to event, and return consumed bytes on success (failure == 0)
  static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  {
-@@ -148,12 +297,76 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
+@@ -148,12 +297,81 @@ static int parse_escape_seq(struct tb_event *event, const char *buf, int len)
  	// it's pretty simple here, find 'starts_with' match and return
  	// success, else return failure
  	int i;
 +
-+	// if (strcmp(term_name, "xterm") != 0) {
++  // printf("term: %s\n", term_name);
++  int is_linux = strcmp(term_name, "linux") == 0 ? 1 : 0;
++
++  if (!is_linux) {
 +		for (i = 0; i < known_codes_length; i++) {
 +			// printf("\nbuf: [%d] --> ", len); for (int a = 0; a < len; a++) { printf("%d ", buf[a]); }
 +			if (starts_with(buf, len, known_codes[i])) {
@@ -224,7 +227,7 @@ index a4dbfca..fef0fcc 100644
 +				return strlen(known_codes[i]);
 +			}
 +		}
-+	// }
++	}
 +
 +	char desc[20];
  	for (i = 0; keys[i]; i++) {
@@ -234,6 +237,8 @@ index a4dbfca..fef0fcc 100644
  			event->key = 0xFFFF-i;
  			return strlen(keys[i]);
  		}
++
++    if (is_linux) continue;
 +
 +		if (parse_meta_key(event, buf, keys[i])) {
 +			event->key = 0xFFFF-i;
@@ -285,7 +290,7 @@ index a4dbfca..fef0fcc 100644
  	}
  	return 0;
  }
-@@ -166,6 +379,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -166,6 +384,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  		return false;
  
  	if (buf[0] == '\033') {
@@ -293,7 +298,7 @@ index a4dbfca..fef0fcc 100644
  		int n = parse_escape_seq(event, buf, len);
  		if (n != 0) {
  			bool success = true;
-@@ -202,7 +416,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
+@@ -202,7 +421,7 @@ static bool extract_event(struct tb_event *event, struct bytebuffer *inbuf, int
  
  	// first of all check if it's a functional key
  	if ((unsigned char)buf[0] <= TB_KEY_SPACE ||
@@ -303,26 +308,42 @@ index a4dbfca..fef0fcc 100644
  		// fill event, pop buffer, return success */
  		event->ch = 0;
 diff --git a/src/term.inl b/src/term.inl
-index d2ebaa2..dac041f 100644
+index d2ebaa2..1fdd4c0 100644
 --- a/src/term.inl
 +++ b/src/term.inl
-@@ -16,6 +16,8 @@ enum {
+@@ -16,6 +16,7 @@ enum {
  	T_FUNCS_NUM,
  };
  
-+char * term_name;
 +
  #define ENTER_MOUSE_SEQ "\x1b[?1000h\x1b[?1002h\x1b[?1015h\x1b[?1006h"
  #define EXIT_MOUSE_SEQ "\x1b[?1006l\x1b[?1015l\x1b[?1002l\x1b[?1000l"
  
-@@ -103,6 +105,7 @@ static int init_term_builtin(void)
- {
- 	int i;
+@@ -86,6 +87,7 @@ static struct term {
+ static bool init_from_terminfo = false;
+ static const char **keys;
+ static const char **funcs;
++static const char * term_name;
+ 
+ static int try_compatible(const char *term, const char *name,
+ 			  const char **tkeys, const char **tfuncs)
+@@ -105,6 +107,7 @@ static int init_term_builtin(void)
  	const char *term = getenv("TERM");
-+	term_name = (char *)term;
  
  	if (term) {
++    term_name = term;
  		for (i = 0; terms[i].name; i++) {
+ 			if (!strcmp(terms[i].name, term)) {
+ 				keys = terms[i].keys;
+@@ -185,6 +188,8 @@ static char *load_terminfo(void) {
+ 		return 0;
+ 	}
+ 
++  term_name = term;
++
+ 	// if TERMINFO is set, no other directory should be searched
+ 	const char *terminfo = getenv("TERMINFO");
+ 	if (terminfo) {
 diff --git a/src/termbox.c b/src/termbox.c
 index ff6a775..ef11517 100644
 --- a/src/termbox.c
@@ -349,19 +370,10 @@ index ff6a775..ef11517 100644
  			get_term_size(&event->w, &event->h);
  			return TB_EVENT_RESIZE;
 diff --git a/src/termbox.h b/src/termbox.h
-index dc2d372..d6901f1 100644
+index dc2d372..fcfa505 100644
 --- a/src/termbox.h
 +++ b/src/termbox.h
-@@ -13,6 +13,8 @@
- extern "C" {
- #endif
- 
-+extern char * term_name;
-+
- /* Key constants. See also struct tb_event's key field.
-  *
-  * These are a safe subset of terminfo keys, which exist on all popular
-@@ -94,6 +96,17 @@ extern "C" {
+@@ -94,6 +94,17 @@ extern "C" {
  #define TB_KEY_BACKSPACE2       0x7F
  #define TB_KEY_CTRL_8           0x7F /* clash with 'BACKSPACE2' */
  
@@ -379,7 +391,7 @@ index dc2d372..d6901f1 100644
  /* These are non-existing ones.
   *
   * #define TB_KEY_CTRL_1 clash with '1'
-@@ -156,6 +169,7 @@ struct tb_event {
+@@ -156,6 +167,7 @@ struct tb_event {
  	uint8_t mod; /* modifiers to either 'key' or 'ch' below */
  	uint16_t key; /* one of the TB_KEY_* constants */
  	uint32_t ch; /* unicode character */

@@ -605,6 +605,7 @@ static void _bview_deinit(bview_t* self) {
     // Remove all cursors
     while (self->active_cursor) {
         bview_remove_cursor(self, self->active_cursor);
+        self->active_cursor = NULL;
     }
 
     // Destroy async proc

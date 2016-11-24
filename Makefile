@@ -1,7 +1,7 @@
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
-mle_cflags:=$(CFLAGS) -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
+mle_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
 mle_ldlibs:=$(LDLIBS) -lm -L /usr/local/Cellar/pcre/8.36/lib -lpcre
 mle_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
 mle_static:=

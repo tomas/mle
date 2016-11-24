@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 #include <termbox.h>
 #include "uthash.h"
 #include "utlist.h"
@@ -336,6 +337,7 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
 int editor_close_bview(editor_t* editor, bview_t* bview, int* optret_num_closed) {
     int rc;
     if (optret_num_closed) *optret_num_closed = 0;
+
     if ((rc = _editor_close_bview_inner(editor, bview, optret_num_closed)) == MLE_OK) {
         _editor_resize(editor, editor->w, editor->h);
     }
@@ -484,6 +486,7 @@ static int _editor_close_bview_inner(editor_t* editor, bview_t* bview, int *optr
     if (bview->split_child) {
         _editor_close_bview_inner(editor, bview->split_child, optret_num_closed);
     }
+
     if (bview->split_parent) {
         bview->split_parent->split_child = NULL;
         editor_set_active(editor, bview->split_parent);
@@ -496,6 +499,7 @@ static int _editor_close_bview_inner(editor_t* editor, bview_t* bview, int *optr
             editor_open_bview(editor, NULL, MLE_BVIEW_TYPE_EDIT, NULL, 0, 1, 0, &editor->rect_edit, NULL, NULL);
         }
     }
+
     if (!bview->split_parent) {
         DL_DELETE2(editor->top_bviews, bview, top_prev, top_next);
     }
@@ -946,7 +950,7 @@ static int _find_bview_at(cmd_context_t * ctx, int offset) {
          break;
       }
   }
-  
+
   return index;
 }
 
@@ -983,11 +987,40 @@ static void _close_bview_at(cmd_context_t * ctx, int offset) {
     }
 }
 
+
+struct click {
+    int x;
+    int y;
+    struct timespec ts;
+};
+
 static int mouse_down = 0;
+static struct click last_click = {-1, -1, { 0, 0 } };
+static double time_diff;
+
+static double _get_timediff(struct timespec start, struct timespec end) {
+   return ((double)end.tv_sec + 1.0e-9*end.tv_nsec) - ((double)start.tv_sec + 1.0e-9*start.tv_nsec);
+}
+
+static int _is_double_click(int x, int y) {
+    if (last_click.x < 0 || x != last_click.x) {
+      clock_gettime(CLOCK_MONOTONIC, &last_click.ts);
+      last_click.x = x;
+      last_click.y = y;
+      return 0;
+    }
+
+  struct timespec now = {0, 0};
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  time_diff = _get_timediff(last_click.ts, now);
+  last_click.x = -1;
+
+  return time_diff < 0.5 ? 1 : 0;
+}
 
 static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
-	switch (ev.key) {
-  	case TB_KEY_MOUSE_LEFT:
+  switch (ev.key) {
+    case TB_KEY_MOUSE_LEFT:
         if (ev.y == 0) {
             _open_bview_at(ctx, ev.x);
         } else if (ev.y == ctx->editor->h - 1) {
@@ -996,13 +1029,13 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
             cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
             mouse_down = 1;
         }
-  		break;
-  	case TB_KEY_MOUSE_MIDDLE:
-  	    if (ev.y == 0) {
-  	      _close_bview_at(ctx, ev.x);
-  	    } else if (ev.y == ctx->editor->h -1 ) {
+      break;
+    case TB_KEY_MOUSE_MIDDLE:
+        if (ev.y == 0) {
+          _close_bview_at(ctx, ev.x);
+        } else if (ev.y == ctx->editor->h -1 ) {
 
-  	    } else {
+        } else {
           if (ctx->cursor->is_anchored) {
             cmd_copy(ctx);
           } else {
@@ -1010,27 +1043,30 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
             // cmd_mouse_move(ctx, 0, ev.x, ev.y);
             cmd_uncut(ctx);
           }
-  	    }
-  		break;
-  	case TB_KEY_MOUSE_RIGHT:
-  		break;
-  	case TB_KEY_MOUSE_WHEEL_UP:
-  	  cmd_scroll_up(ctx);
-  		break;
-  	case TB_KEY_MOUSE_WHEEL_DOWN:
-  	  cmd_scroll_down(ctx);
-  		break;
-  	case TB_KEY_MOUSE_RELEASE:
+        }
+      break;
+    case TB_KEY_MOUSE_RIGHT:
+      break;
+    case TB_KEY_MOUSE_WHEEL_UP:
+      cmd_scroll_up(ctx);
+      break;
+    case TB_KEY_MOUSE_WHEEL_DOWN:
+      cmd_scroll_down(ctx);
+      break;
+    case TB_KEY_MOUSE_RELEASE:
         if (ev.y == 0) {
             // _open_bview_at(ctx, ev.x);
         } else if (ev.y == ctx->editor->h - 1) {
             // printf("clicked status bar");
+        } else if (_is_double_click(ev.x, ev.y)) {
+            if (MLE_BVIEW_IS_MENU(ctx->editor->active)) _editor_menu_submit(ctx);
+            mouse_down = 0;
         } else {
             cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
             mouse_down = 0;
         }
-  	  break;
-	}
+      break;
+  }
 
 }
 

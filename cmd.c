@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -151,11 +153,13 @@ int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
 }
 
 int cmd_scroll_up(cmd_context_t * ctx) {
+  tb_set_cursor(-1, -1);
   bview_scroll_viewport(ctx->bview, -5);
   return MLE_OK;
 }
 
 int cmd_scroll_down(cmd_context_t * ctx) {
+  tb_set_cursor(-1, -1);
   bview_scroll_viewport(ctx->bview, 5);
   return MLE_OK;
 }

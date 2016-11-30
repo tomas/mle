@@ -360,6 +360,16 @@ int editor_set_active(editor_t* editor, bview_t* bview) {
     return MLE_OK;
 }
 
+void editor_toggle_mouse_mode(editor_t* editor) {
+  if (editor->no_mouse) {
+    tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
+    editor->no_mouse = 0;
+  } else {
+    tb_select_input_mode(TB_INPUT_ALT);
+    editor->no_mouse = 1;
+  }
+}
+
 // Set macro toggle key
 static int _editor_set_macro_toggle_key(editor_t* editor, char* key) {
     return _editor_key_to_input(key, &editor->macro_toggle_key);
@@ -1111,8 +1121,11 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
             _editor_resize(editor, ev.w, ev.h);
             editor_display(editor);
             continue;
+        } else if (rc == TB_EVENT_KEY && ev.key == TB_KEY_BACKSPACE && ev.meta == TB_META_ALT) {
+            editor_toggle_mouse_mode(editor);
+            continue;
         }
-        ctx->input = (kinput_t){ ev.mod, ev.ch, ev.key, ev.meta };
+        ctx->input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
         // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
         break;
     }
@@ -1149,7 +1162,7 @@ static void _editor_ingest_paste(editor_t* editor, cmd_context_t* ctx) {
             editor_display(editor);
             break;
         }
-        input = (kinput_t){ ev.mod, ev.ch, ev.key, ev.meta };
+        input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
         // TODO check for macro key
         cmd = _editor_get_command(editor, ctx, &input);
         if (cmd && cmd->func == cmd_insert_data) {
@@ -1362,7 +1375,8 @@ static int _editor_key_to_input(char* key, kinput_t* ret_input) {
     mod = 0;
     ch = 0;
     if (keylen > 2 && !strncmp("M-", key, 2)) {
-      mod = TB_MOD_ALT;
+      // mod = TB_MOD_ALT;
+      meta = TB_META_ALT;
       key += 2;
     }
 

@@ -36,7 +36,7 @@ $(mle_objects): %.o: %.c
 
 ./termbox/modified: termbox-meta-keys.patch
 	@echo "Patching termbox..."
-	if [ -e $@ ]; then cd termbox; patch -R -p1 < ../$<; cd ..; fi
+	if [ -e $@ ]; then cd termbox; git reset --hard HEAD; cd ..; fi
 	cd termbox; patch -p1 < ../$<; cd ..
 	cp termbox-meta-keys.patch $@
 

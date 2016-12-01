@@ -4,3 +4,4 @@
 [submodule "termbox"]
 	path = termbox
 	url = https://github.com/tomas/termbox
+	branch = refactor

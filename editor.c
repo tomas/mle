@@ -826,6 +826,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
               }
               _editor_ingest_paste(editor, &cmd_ctx);
             }
+
             cmd_ctx.cmd = cmd;
             cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
             cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;

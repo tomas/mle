@@ -4,10 +4,18 @@ A clever little console text editor. Written in C, forked out of [mle](https://g
 
 ## Building
 
+Install deps first:
+
+    $ apt install cmake libpcre # or brew install / apk add
+
+Clone the repo and initialize submodules:
+
     $ git clone https://github.com/tomas/eon.git
     $ cd eon
     $ git submodule update --init --recursive
-    $ sudo apt-get install libpcre3-dev # or yum install pcre-devel, brew install pcre-dev, etc
+
+And off you go!
+
     $ make
 
 You can run `make eon_static` instead to build a static binary.

@@ -981,7 +981,7 @@ static void _close_bview_at(cmd_context_t * ctx, int offset) {
     int a = 0;
     CDL_FOREACH2(ctx->editor->all_bviews, bview_tmp, all_next) {
       if (MLE_BVIEW_IS_EDIT(bview_tmp)) {
-        if (a++ == index) {
+        if (a++ == index && (!bview_tmp->buffer->is_unsaved || MLE_BVIEW_IS_MENU(bview_tmp))) {
           editor_close_bview(ctx->editor, bview_tmp, NULL);
         }
       }

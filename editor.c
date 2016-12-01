@@ -1108,26 +1108,30 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
     // Poll for event
     while (1) {
         rc = tb_poll_event(&ev);
-        if (rc == -1) {
-            continue; // Error
-        } else if (rc == TB_EVENT_MOUSE) {
+        switch(rc) {
+          case -1: // error
+            break;
+          case TB_EVENT_MOUSE:
             if (ctx->bview && editor->active == ctx->bview) {
               _handle_mouse_event(ctx, ev);
               editor_display(editor);
-              continue;
             }
-        } else if (rc == TB_EVENT_RESIZE) {
-            // Resize
+            break;
+          case TB_EVENT_RESIZE:
             _editor_resize(editor, ev.w, ev.h);
             editor_display(editor);
-            continue;
-        } else if (rc == TB_EVENT_KEY && ev.key == TB_KEY_BACKSPACE && ev.meta == TB_META_ALT) {
-            editor_toggle_mouse_mode(editor);
-            continue;
+            break;
+          // case TB_EVENT_KEY:
+          default:
+            if ((ev.key == TB_KEY_BACKSPACE && ev.meta == TB_META_ALT) || (ev.key == TB_KEY_DELETE && ev.meta == TB_META_SHIFT)) {
+              editor_toggle_mouse_mode(editor);
+            } else {
+              ctx->input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
+              return;
+            }
+            // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
+            break;
         }
-        ctx->input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
-        // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
-        break;
     }
 }
 

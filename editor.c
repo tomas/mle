@@ -1098,8 +1098,8 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
     // Poll for event
     while (1) {
         rc = tb_poll_event(&ev);
-        if (rc == -1) {
-            continue; // Error
+        if (rc == -1) { // error
+            continue;
         } else if (rc == TB_EVENT_MOUSE) {
             if (ctx->bview && editor->active == ctx->bview) {
               _handle_mouse_event(ctx, ev);
@@ -1107,7 +1107,6 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
               continue;
             }
         } else if (rc == TB_EVENT_RESIZE) {
-            // Resize
             _editor_resize(editor, ev.w, ev.h);
             editor_display(editor);
             continue;

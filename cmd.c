@@ -810,6 +810,14 @@ int cmd_open_replace_new(cmd_context_t* ctx) {
     return MLE_OK;
 }
 
+int cmd_cut_or_close(cmd_context_t* ctx) {
+  if (ctx->cursor->is_anchored) {
+    return cmd_cut(ctx);
+  } else {
+    return cmd_close(ctx);
+  }
+}
+
 // Close bview
 int cmd_close(cmd_context_t* ctx) {
   if (bview_get_active_cursor_count(ctx->bview) > 1) {
@@ -1039,6 +1047,18 @@ int cmd_shell(cmd_context_t* ctx) {
 
     free(cmd);
     return MLE_OK;
+}
+
+int cmd_toggle_mouse_mode(cmd_context_t* ctx) {
+  if (ctx->editor->no_mouse) {
+    tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
+    ctx->editor->no_mouse = 0;
+  } else {
+    tb_select_input_mode(TB_INPUT_ALT);
+    ctx->editor->no_mouse = 1;
+  }
+
+  return MLE_OK;
 }
 
 // Force a redraw of the screen

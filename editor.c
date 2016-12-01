@@ -360,16 +360,6 @@ int editor_set_active(editor_t* editor, bview_t* bview) {
     return MLE_OK;
 }
 
-void editor_toggle_mouse_mode(editor_t* editor) {
-  if (editor->no_mouse) {
-    tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
-    editor->no_mouse = 0;
-  } else {
-    tb_select_input_mode(TB_INPUT_ALT);
-    editor->no_mouse = 1;
-  }
-}
-
 // Set macro toggle key
 static int _editor_set_macro_toggle_key(editor_t* editor, char* key) {
     return _editor_key_to_input(key, &editor->macro_toggle_key);
@@ -1123,14 +1113,10 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
             break;
           // case TB_EVENT_KEY:
           default:
-            if ((ev.key == TB_KEY_BACKSPACE && ev.meta == TB_META_ALT) || (ev.key == TB_KEY_DELETE && ev.meta == TB_META_SHIFT)) {
-              editor_toggle_mouse_mode(editor);
-            } else {
-              ctx->input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
-              return;
-            }
+            ctx->input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
             // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
-            break;
+            return;
+            // break;
         }
     }
 }
@@ -1434,6 +1420,7 @@ static void _editor_register_cmds(editor_t* editor) {
     _editor_register_cmd_fn(editor, "cmd_copy_by", cmd_copy_by);
     _editor_register_cmd_fn(editor, "cmd_cut", cmd_cut);
     _editor_register_cmd_fn(editor, "cmd_cut_by", cmd_cut_by);
+    _editor_register_cmd_fn(editor, "cmd_cut_or_close", cmd_cut_or_close);
     _editor_register_cmd_fn(editor, "cmd_delete_after", cmd_delete_after);
     _editor_register_cmd_fn(editor, "cmd_delete_before", cmd_delete_before);
     _editor_register_cmd_fn(editor, "cmd_delete_word_after", cmd_delete_word_after);
@@ -1490,6 +1477,7 @@ static void _editor_register_cmds(editor_t* editor) {
     _editor_register_cmd_fn(editor, "cmd_show_help", cmd_show_help);
     _editor_register_cmd_fn(editor, "cmd_split_horizontal", cmd_split_horizontal);
     _editor_register_cmd_fn(editor, "cmd_split_vertical", cmd_split_vertical);
+    _editor_register_cmd_fn(editor, "cmd_toggle_mouse_mode", cmd_toggle_mouse_mode);
     _editor_register_cmd_fn(editor, "cmd_toggle_anchor", cmd_toggle_anchor);
     _editor_register_cmd_fn(editor, "cmd_select_bol", cmd_select_bol);
     _editor_register_cmd_fn(editor, "cmd_select_eol", cmd_select_eol);
@@ -1575,7 +1563,7 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_replace", "C-h"),
         MLE_KBINDING_DEF("cmd_cut", "C-k"),
         // MLE_KBINDING_DEF("cmd_cut", "M-c"),
-        MLE_KBINDING_DEF("cmd_cut", "C-x"),
+        MLE_KBINDING_DEF("cmd_cut_or_close", "C-x"),
         MLE_KBINDING_DEF("cmd_copy", "M-k"),
         MLE_KBINDING_DEF("cmd_copy", "C-c"),
         MLE_KBINDING_DEF("cmd_uncut", "C-u"),
@@ -1656,6 +1644,9 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_outdent", "S-tab"),
         MLE_KBINDING_DEF("cmd_shell", "M-e"),
         // MLE_KBINDING_DEF("cmd_close", "M-c"),
+        MLE_KBINDING_DEF("cmd_toggle_mouse_mode", "M-backspace"),
+        MLE_KBINDING_DEF("cmd_toggle_mouse_mode", "S-delete"),
+
         MLE_KBINDING_DEF("cmd_close", "C-q"),
         MLE_KBINDING_DEF("cmd_close", "C-d"),
         MLE_KBINDING_DEF("cmd_close", "escape"),

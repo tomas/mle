@@ -1105,6 +1105,8 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
         }
         if (MLE_BVIEW_IS_MENU(self) && is_cursor_line) {
             bg |= MENU_CURSOR_LINE_BG;
+        } else if (MLE_BVIEW_IS_PROMPT(self)) {
+            bg = PROMPT_BG;
         }
         for (i = 0; i < char_w && rect_x < self->rect_buffer.w; i++) {
             tb_change_cell(self->rect_buffer.x + rect_x + i, self->rect_buffer.y + rect_y, ch, fg, bg);

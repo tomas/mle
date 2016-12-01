@@ -21,24 +21,10 @@ $(mle_objects): %.o: %.c
 ./mlbuf/libmlbuf.a:
 	$(MAKE) -C mlbuf
 
-# ./termbox/build/src/libtermbox.a: ./termbox/build/src/*.o
-#	ar rcs ./termbox/build/src/libtermbox.a ./termbox/build/src/*.o
-
-#./termbox/build/src/*.o: ./termbox/modified
-# 	@echo "Building termbox..."
-#	mkdir -p termbox/build/src
-#	cd termbox/src && gcc termbox.c utf8.c -c
-#	mv termbox/src/*.o termbox/build/src
-
-./termbox/build/libtermbox.a: ./termbox/modified
+./termbox/build/libtermbox.a:
 	@echo "Building termbox..."
+	if [ ! -e termbox/build ]; then mkdir termbox/build; cd termbox/build; cmake ..; cd ..; fi
 	cd termbox/build && make
-
-./termbox/modified: termbox-meta-keys.patch
-	@echo "Patching termbox..."
-	if [ -e $@ ]; then cd termbox; git reset --hard HEAD; cd ..; fi
-	cd termbox; patch -p1 < ../$<; cd ..
-	cp termbox-meta-keys.patch $@
 
 test: mle test_mle
 	$(MAKE) -C mlbuf test

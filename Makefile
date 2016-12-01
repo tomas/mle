@@ -1,22 +1,22 @@
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
-mle_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
-mle_ldlibs:=$(LDLIBS) -lm -L /usr/local/Cellar/pcre/8.36/lib -lpcre -lrt
-mle_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
-mle_static:=
+eon_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
+eon_ldlibs:=$(LDLIBS) -lm -L /usr/local/Cellar/pcre/8.36/lib -lpcre -lrt
+eon_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
+eon_static:=
 
-all: mle
+all: eon
 
-mle: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(mle_objects)
-	$(CC) $(mle_objects) $(mle_static) ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(mle_ldlibs) -o mle
+eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_objects)
+	$(CC) $(eon_objects) $(eon_static) ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_ldlibs) -o eon
 
-mle_static: mle_static:=-static
-mle_static: mle_ldlibs:=$(mle_ldlibs) -lpthread
-mle_static: mle
+eon_static: eon_static:=-static
+eon_static: eon_ldlibs:=$(eon_ldlibs) -lpthread
+eon_static: eon
 
-$(mle_objects): %.o: %.c
-	$(CC) -c $(mle_cflags) $< -o $@
+$(eon_objects): %.o: %.c
+	$(CC) -c $(eon_cflags) $< -o $@
 
 ./mlbuf/libmlbuf.a:
 	$(MAKE) -C mlbuf
@@ -26,11 +26,11 @@ $(mle_objects): %.o: %.c
 	if [ ! -e termbox/build ]; then mkdir termbox/build; cd termbox/build; cmake ..; cd ..; fi
 	cd termbox/build && make
 
-test: mle test_mle
+test: eon test_eon
 	$(MAKE) -C mlbuf test
 
-test_mle: mle
-	$(MAKE) -C tests && ./mle -v
+test_eon: eon
+	$(MAKE) -C tests && ./eon -v
 
 sloc:
 	find . -name '*.c' -or -name '*.h' | \
@@ -38,13 +38,13 @@ sloc:
 		xargs -rn1 cat | \
 		wc -l
 
-install: mle
-	install -v -m 755 mle $(DESTDIR)
+install: eon
+	install -v -m 755 eon $(DESTDIR)
 
 clean:
-	rm -f *.o mle.bak.* gmon.out perf.data perf.data.old mle
+	rm -f *.o eon.bak.* gmon.out perf.data perf.data.old eon
 	$(MAKE) -C mlbuf clean
 	$(MAKE) -C tests clean
 	rm -Rf termbox/build
 
-.PHONY: all mle_static test test_mle sloc install clean
+.PHONY: all eon_static test test_eon sloc install clean

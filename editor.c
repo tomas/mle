@@ -1098,25 +1098,22 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
     // Poll for event
     while (1) {
         rc = tb_poll_event(&ev);
-        switch(rc) {
-          case -1: // error
-            break;
-          case TB_EVENT_MOUSE:
+        if (rc == -1) { // error
+           continue;
+        } else if (rc == TB_EVENT_MOUSE) {
             if (ctx->bview && editor->active == ctx->bview) {
-              _handle_mouse_event(ctx, ev);
-              editor_display(editor);
+               _handle_mouse_event(ctx, ev);
+               editor_display(editor);
+               continue;
             }
-            break;
-          case TB_EVENT_RESIZE:
-            _editor_resize(editor, ev.w, ev.h);
-            editor_display(editor);
-            break;
-          // case TB_EVENT_KEY:
-          default:
-            ctx->input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
-            // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
-            return;
-            // break;
+        } else if (rc == TB_EVENT_RESIZE) {
+           _editor_resize(editor, ev.w, ev.h);
+           editor_display(editor);
+           continue;
+        } else {
+          ctx->input = (kinput_t){ 0, ev.ch, ev.key, ev.meta };
+          // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
+          break;
         }
     }
 }

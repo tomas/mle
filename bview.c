@@ -913,6 +913,9 @@ static void _bview_draw_status(bview_t* self) {
         LINECOL_CURRENT_FG, 0, mark->col, 0, 0, LINECOL_TOTAL_FG, 0, mark->bline->char_count, 0, 0
     );
 
+    tb_printf(editor->rect_status, editor->rect_status.w - 11, 0, TB_WHITE | TB_BOLD, RECT_STATUS_BG, " eon %s", MLE_VERSION);
+
+
     // Overlay errstr if present
 _bview_draw_status_end:
     if (editor->errstr[0] != '\0') {

@@ -18,8 +18,14 @@ eon_static: eon
 $(eon_objects): %.o: %.c
 	$(CC) -c $(eon_cflags) $< -o $@
 
-./mlbuf/libmlbuf.a:
+./mlbuf/libmlbuf.a: ./mlbuf/patched
 	$(MAKE) -C mlbuf
+
+./mlbuf/patched: 01-mlbuf-makefile.patch
+	@echo "Patching mlbuf..."
+	if [ -e $@ ]; then cd mlbuf; git reset --hard HEAD; cd ..; fi
+	cd mlbuf; patch -p1 < ../$<; cd ..
+	cp $< $@
 
 ./termbox/build/libtermbox.a:
 	@echo "Building termbox..."

@@ -33,6 +33,7 @@ static int _editor_prompt_menu_page_down(cmd_context_t* ctx);
 static int _editor_prompt_isearch_next(cmd_context_t* ctx);
 static int _editor_prompt_isearch_prev(cmd_context_t* ctx);
 static int _editor_prompt_isearch_drop_cursors(cmd_context_t* ctx);
+static int _editor_prompt_toggle_replace(cmd_context_t* ctx);
 static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx);
 static int _editor_maybe_toggle_macro(editor_t* editor, kinput_t* input);
 static void _editor_resize(editor_t* editor, int w, int h);
@@ -420,9 +421,9 @@ int editor_register_cmd(editor_t* editor, cmd_t* cmd) {
 // Get input from either macro or user
 int editor_get_input(editor_t* editor, loop_context_t* loop_ctx, cmd_context_t* ctx) {
     ctx->is_user_input = 0;
+    
     if (editor->macro_apply
-        && editor->macro_apply_input_index < editor->macro_apply->inputs_len
-    ) {
+        && editor->macro_apply_input_index < editor->macro_apply->inputs_len) {
         // Get input from macro
         ctx->input = editor->macro_apply->inputs[editor->macro_apply_input_index];
         editor->macro_apply_input_index += 1;
@@ -744,6 +745,27 @@ static int _editor_prompt_isearch_prev(cmd_context_t* ctx) {
     return MLE_OK;
 }
 
+// Invoked when user hits Ctrl-F while on the search prompt
+static int _editor_prompt_toggle_replace(cmd_context_t* ctx) {
+  // ctx->loop_ctx->prompt_answer = NULL;
+
+  _editor_prompt_cancel(ctx);
+
+  ctx->editor->macro_record = calloc(1, sizeof(kmacro_t));
+  ctx->editor->macro_record->name = "foo";
+  
+  kinput_t * input = calloc(1, sizeof(kinput_t));
+  input->ch   = 0;
+  input->key  = TB_KEY_CTRL_H;
+  input->meta = TB_META_CTRL;
+  _editor_record_macro_input(ctx->editor->macro_record, input);
+
+  ctx->editor->macro_apply = ctx->editor->macro_record;
+  ctx->editor->macro_apply_input_index = 0;
+
+  return MLE_OK;
+}
+
 // Drops a cursor on each isearch match
 static int _editor_prompt_isearch_drop_cursors(cmd_context_t* ctx) {
     bview_t* bview;
@@ -821,7 +843,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
         }
 
         if ((cmd = _editor_get_command(editor, &cmd_ctx, NULL)) != NULL) {
-            // printf("cmd: %s\n", cmd->name);
+            //printf("cmd: %s\n", cmd->name);
 
             // Found cmd in kmap trie, now execute
             if (cmd_ctx.is_user_input && cmd->func == cmd_insert_data) {
@@ -840,6 +862,8 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
             loop_ctx->wildcard_params_len = 0;
             loop_ctx->numeric_params_len = 0;
             loop_ctx->last_cmd = cmd;
+            // printf("cmd finished %s\n", cmd->name);
+            
         } else if (loop_ctx->need_more_input) {
             // Need more input to find
         } else {
@@ -1512,6 +1536,7 @@ static void _editor_register_cmds(editor_t* editor) {
     _editor_register_cmd_fn(editor, "_editor_prompt_menu_page_down", _editor_prompt_menu_page_down);
     _editor_register_cmd_fn(editor, "_editor_prompt_menu_page_up", _editor_prompt_menu_page_up);
     _editor_register_cmd_fn(editor, "_editor_prompt_menu_up", _editor_prompt_menu_up);
+    _editor_register_cmd_fn(editor, "_editor_prompt_toggle_replace", _editor_prompt_toggle_replace);
     _editor_register_cmd_fn(editor, "_editor_prompt_yna_all", _editor_prompt_yna_all);
     _editor_register_cmd_fn(editor, "_editor_prompt_yn_no", _editor_prompt_yn_no);
     _editor_register_cmd_fn(editor, "_editor_prompt_yn_yes", _editor_prompt_yn_yes);
@@ -1674,8 +1699,10 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF(NULL, NULL)
     });
     _editor_init_kmap(editor, &editor->kmap_prompt_yna, "mle_prompt_yna", NULL, 0, (kbinding_def_t[]){
+        MLE_KBINDING_DEF("_editor_prompt_yn_yes", "enter"),
         MLE_KBINDING_DEF("_editor_prompt_yn_yes", "y"),
         MLE_KBINDING_DEF("_editor_prompt_yn_no", "n"),
+        MLE_KBINDING_DEF("_editor_prompt_yn_no", "down"),
         MLE_KBINDING_DEF("_editor_prompt_yna_all", "a"),
         MLE_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
         MLE_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
@@ -1704,6 +1731,7 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF(NULL, NULL)
     });
     _editor_init_kmap(editor, &editor->kmap_prompt_isearch, "mle_prompt_isearch", NULL, 1, (kbinding_def_t[]){
+        MLE_KBINDING_DEF("_editor_prompt_toggle_replace", "C-f"),
         MLE_KBINDING_DEF("_editor_prompt_isearch_prev", "up"),
         MLE_KBINDING_DEF("_editor_prompt_isearch_next", "down"),
         MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-/"),

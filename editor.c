@@ -1618,17 +1618,31 @@ static void _editor_init_kmaps(editor_t* editor) {
         // MLE_KBINDING_DEF_EX("cmd_cut_by", "C-d c", "string"),
         // MLE_KBINDING_DEF("cmd_delete_word_before", "C-w"),
         MLE_KBINDING_DEF("cmd_delete_word_after", "M-d"),
-        MLE_KBINDING_DEF("cmd_toggle_anchor", "M-a"),
+        // MLE_KBINDING_DEF("cmd_toggle_anchor", "M-a"),
         MLE_KBINDING_DEF("cmd_select_up", "S-up"),
         MLE_KBINDING_DEF("cmd_select_down", "S-down"),
         MLE_KBINDING_DEF("cmd_select_left", "S-left"),
         MLE_KBINDING_DEF("cmd_select_right", "S-right"),
+
+        // for linux terminal, that doesn't have shift+arrows
+        MLE_KBINDING_DEF("cmd_select_up", "M-w"),
+        MLE_KBINDING_DEF("cmd_select_down", "M-s"),
+        MLE_KBINDING_DEF("cmd_select_left", "M-a"),
+        MLE_KBINDING_DEF("cmd_select_right", "M-d"),
+
         MLE_KBINDING_DEF("cmd_select_word_back", "CS-left"),
         MLE_KBINDING_DEF("cmd_select_word_forward", "CS-right"),
-        MLE_KBINDING_DEF("cmd_new_cursor_up", "CS-up"),
-        MLE_KBINDING_DEF("cmd_new_cursor_up", "CM-up"),
-        MLE_KBINDING_DEF("cmd_new_cursor_down", "CS-down"),
-        MLE_KBINDING_DEF("cmd_new_cursor_down", "CM-down"),
+
+        MLE_KBINDING_DEF("cmd_select_word_back", "MS-a"), // linux
+        MLE_KBINDING_DEF("cmd_select_word_forward", "MS-d"), // linux
+
+        // MLE_KBINDING_DEF("cmd_new_cursor_up", "CS-up"),
+        MLE_KBINDING_DEF("cmd_new_cursor_up", "MS-up"),
+        MLE_KBINDING_DEF("cmd_new_cursor_up", "MS-w"), // alt+shift+w, for linux
+        // MLE_KBINDING_DEF("cmd_new_cursor_down", "CS-down"),
+        MLE_KBINDING_DEF("cmd_new_cursor_down", "MS-down"),
+        MLE_KBINDING_DEF("cmd_new_cursor_down", "MS-s"), // alt+shift+s
+
         MLE_KBINDING_DEF("cmd_drop_sleeping_cursor", "C-/ ."),
         MLE_KBINDING_DEF("cmd_wake_sleeping_cursors", "C-/ a"),
         MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-/ /"),
@@ -1655,7 +1669,7 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_redo", "C-y"),
         MLE_KBINDING_DEF("cmd_redo", "CS-z"),
         MLE_KBINDING_DEF("cmd_save", "C-s"),
-        MLE_KBINDING_DEF("cmd_save_as", "M-s"),
+        // MLE_KBINDING_DEF("cmd_save_as", "M-s"),
         MLE_KBINDING_DEF("cmd_save_as", "C-o"),
         MLE_KBINDING_DEF_EX("cmd_set_opt", "M-o a", "tab_to_space"),
         MLE_KBINDING_DEF_EX("cmd_set_opt", "M-o t", "tab_width"),

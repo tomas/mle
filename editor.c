@@ -758,8 +758,12 @@ static int _editor_prompt_isearch_drop_cursors(cmd_context_t* ctx) {
     cre = bview->isearch_rule->cre;
     mark_move_beginning(mark);
     last_cursor = NULL;
+    
     while (mark_move_next_cre(mark, cre) == MLBUF_OK) {
-        bview_add_cursor(bview, mark->bline, mark->col, &last_cursor);
+      if (mark->col == 0 && mark->bline->line_index == 0) {
+        break; // otherwise hell breaks loose. FIXME: we should skip to the next one.
+      }
+      bview_add_cursor(bview, mark->bline, mark->col, &last_cursor);
     }
     if (last_cursor) bview_remove_cursor(bview, last_cursor);
     bview->active_cursor = orig_cursor;
@@ -1023,7 +1027,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
         if (ev.y == 0) {
             _open_bview_at(ctx, ev.x);
         } else if (ev.y == ctx->editor->h - 1) {
-            // printf("clicked status bar");
+            // clicked status bar
         } else {
             if (mouse_down == 0 && _is_double_click(ev.x, ev.y)) {
                 if (MLE_BVIEW_IS_MENU(ctx->editor->active))
@@ -1063,7 +1067,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
         if (ev.y == 0) {
             // _open_bview_at(ctx, ev.x);
         } else if (ev.y == ctx->editor->h - 1) {
-            // printf("clicked status bar");
+            // clicked status bar
         } else {
             if (ev.x != last_click.x && ev.y != last_click.y)
                 cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
@@ -1603,6 +1607,7 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("cmd_drop_sleeping_cursor", "C-/ ."),
         MLE_KBINDING_DEF("cmd_wake_sleeping_cursors", "C-/ a"),
         MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-/ /"),
+        MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-2"), // Ctrl+2 or Ctrl+Space
         // MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-up"),
         // MLE_KBINDING_DEF("cmd_remove_extra_cursors", "C-down"),
         MLE_KBINDING_DEF("cmd_drop_cursor_column", "C-/ '"),
@@ -1702,6 +1707,8 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("_editor_prompt_isearch_prev", "up"),
         MLE_KBINDING_DEF("_editor_prompt_isearch_next", "down"),
         MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-/"),
+        MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-2"),
+        // MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "M-space"),
         MLE_KBINDING_DEF("_editor_prompt_cancel", "enter"),
         MLE_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
         MLE_KBINDING_DEF("_editor_prompt_cancel", "C-x"),

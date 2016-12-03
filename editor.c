@@ -421,7 +421,7 @@ int editor_register_cmd(editor_t* editor, cmd_t* cmd) {
 // Get input from either macro or user
 int editor_get_input(editor_t* editor, loop_context_t* loop_ctx, cmd_context_t* ctx) {
     ctx->is_user_input = 0;
-    
+
     if (editor->macro_apply
         && editor->macro_apply_input_index < editor->macro_apply->inputs_len) {
         // Get input from macro
@@ -753,7 +753,7 @@ static int _editor_prompt_toggle_replace(cmd_context_t* ctx) {
 
   ctx->editor->macro_record = calloc(1, sizeof(kmacro_t));
   ctx->editor->macro_record->name = "foo";
-  
+
   kinput_t * input = calloc(1, sizeof(kinput_t));
   input->ch   = 0;
   input->key  = TB_KEY_CTRL_H;
@@ -780,7 +780,7 @@ static int _editor_prompt_isearch_drop_cursors(cmd_context_t* ctx) {
     cre = bview->isearch_rule->cre;
     mark_move_beginning(mark);
     last_cursor = NULL;
-    
+
     while (mark_move_next_cre(mark, cre) == MLBUF_OK) {
       if (mark->col == 0 && mark->bline->line_index == 0) {
         break; // otherwise hell breaks loose. FIXME: we should skip to the next one.
@@ -863,7 +863,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
             loop_ctx->numeric_params_len = 0;
             loop_ctx->last_cmd = cmd;
             // printf("cmd finished %s\n", cmd->name);
-            
+
         } else if (loop_ctx->need_more_input) {
             // Need more input to find
         } else {
@@ -1754,7 +1754,7 @@ static void _editor_init_kmaps(editor_t* editor) {
         MLE_KBINDING_DEF("_editor_prompt_isearch_next", "down"),
         MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-/"),
         MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-2"),
-        // MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "M-space"),
+        MLE_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "M-enter"), // alt enter
         MLE_KBINDING_DEF("_editor_prompt_cancel", "enter"),
         MLE_KBINDING_DEF("_editor_prompt_cancel", "escape"),
         MLE_KBINDING_DEF("_editor_prompt_cancel", "C-c"),

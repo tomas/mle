@@ -631,6 +631,9 @@ int cmd_cut(cmd_context_t* ctx) {
 
 // Copy text
 int cmd_copy(cmd_context_t* ctx) {
+  if (!ctx->cursor->is_anchored)
+    return MLE_OK;
+
     MLE_MULTI_CURSOR_CODE(ctx->cursor,
         cursor_cut_copy(cursor, 0, 1, 0);
     );

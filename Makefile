@@ -9,9 +9,9 @@ eon_static:=
 
 UNAME := $(shell uname -s)
 ifeq ($(UNAME),Darwin)
-	eon_ldlibs:= -L /usr/local/Cellar/pcre/8.38/lib -lpcre
+	eon_ldlibs+= -L /usr/local/Cellar/pcre/8.38/lib -lpcre
 else
-	eon_ldlibs:= -lrt -lpcre
+	eon_ldlibs+= -lrt -lpcre
 endif
 
 all: eon

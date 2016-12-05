@@ -117,6 +117,7 @@ struct editor_s {
     int exit_code;
     int bview_tab_width;
     int no_mouse;
+    char * start_dir;
 };
 
 // srule_def_t

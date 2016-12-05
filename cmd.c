@@ -830,8 +830,16 @@ int cmd_close(cmd_context_t* ctx) {
     int num_closed;
     if (_cmd_pre_close(ctx->editor, ctx->bview) == MLE_ERR) return MLE_OK;
     num_open = editor_bview_edit_count(ctx->editor);
-    editor_close_bview(ctx->editor, ctx->bview, &num_closed);
-    ctx->loop_ctx->should_exit = num_closed == num_open ? 1 : 0;
+
+    if (num_open == 1 && ctx->editor->start_dir && !MLE_BVIEW_IS_MENU(ctx->bview)) {
+      char * path = ctx->editor->start_dir;
+      int path_len = strlen(path);
+      editor_open_bview(ctx->editor, NULL, MLE_BVIEW_TYPE_EDIT, path, path_len, 1, 0, NULL, NULL, NULL);
+      editor_close_bview(ctx->editor, ctx->bview, &num_closed);
+    } else {
+      editor_close_bview(ctx->editor, ctx->bview, &num_closed);
+      ctx->loop_ctx->should_exit = num_closed == num_open ? 1 : 0;
+    }
   }
   return MLE_OK;
 }

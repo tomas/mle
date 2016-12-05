@@ -295,6 +295,20 @@ int editor_menu(editor_t* editor, cmd_func_t callback, char* opt_buf_data, int o
     return MLE_OK;
 }
 
+int _editor_open_dir(editor_t* editor, bview_t * bview, char* opt_path, int opt_path_len) {
+  cmd_context_t ctx;
+  memset(&ctx, 0, sizeof(cmd_context_t));
+  ctx.editor = editor;
+  ctx.static_param = strndup(opt_path, opt_path_len);
+  ctx.bview = bview;
+  bview->is_menu = 1;
+  cmd_browse(&ctx);
+  editor_close_bview(editor, bview, NULL);
+  free(ctx.static_param);
+  ctx.static_param = NULL;
+  return MLE_OK;
+}
+
 // Open a bview
 int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_path, int opt_path_len, int make_active, bint_t linenum, bview_rect_t* opt_rect, buffer_t* opt_buffer, bview_t** optret_bview) {
     bview_t* bview;
@@ -320,16 +334,7 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
         *optret_bview = bview;
     }
     if (opt_path && util_is_dir(opt_path)) {
-        // TODO This is hacky
-        cmd_context_t ctx;
-        memset(&ctx, 0, sizeof(cmd_context_t));
-        ctx.editor = editor;
-        ctx.static_param = strndup(opt_path, opt_path_len);
-        ctx.bview = bview;
-        cmd_browse(&ctx);
-        editor_close_bview(editor, bview, NULL);
-        free(ctx.static_param);
-        ctx.static_param = NULL;
+      _editor_open_dir(editor, bview, opt_path, opt_path_len);
     }
     return MLE_OK;
 }
@@ -2187,8 +2192,8 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
     while (rv == MLE_OK && (c = getopt(argc, argv, "ha:b:c:gn:H:K:k:l:M:m:Nn:p:S:s:t:vw:x:y:z:")) != -1) {
         switch (c) {
             case 'h':
-                printf("mle version %s\n\n", MLE_VERSION);
-                printf("Usage: mle [options] [file:line]...\n\n");
+                printf("eon version %s\n\n", MLE_VERSION);
+                printf("Usage: eon [options] [file:line]...\n\n");
                 printf("    -h           Show this message\n");
                 printf("    -a <1|0>     Enable/disable tab_to_space (default: %d)\n", MLE_DEFAULT_TAB_TO_SPACE);
                 printf("    -b <1|0>     Enable/disbale highlight bracket pairs (default: %d)\n", MLE_DEFAULT_HILI_BRACKET_PAIRS);
@@ -2299,7 +2304,7 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
                 editor->tab_width = atoi(optarg);
                 break;
             case 'v':
-                printf("mle version %s\n", MLE_VERSION);
+                printf("eon version %s\n", MLE_VERSION);
                 rv = MLE_ERR;
                 break;
             case 'w':
@@ -2355,6 +2360,12 @@ static void _editor_init_bviews(editor_t* editor, int argc, char** argv) {
         for (i = optind; i < argc; i++) {
             path = argv[i];
             path_len = strlen(path);
+            
+            // if a single path was provided, keep a reference
+            if (i == optind && i+1 == argc && util_is_dir(path)) {
+              editor->start_dir = path;
+            }
+
             editor_open_bview(editor, NULL, MLE_BVIEW_TYPE_EDIT, path, path_len, 1, 0, NULL, NULL, NULL);
         }
     }

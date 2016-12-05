@@ -3,15 +3,15 @@ DESTDIR?=/usr/local/bin/
 CC=gcc
 
 eon_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
-eon_ldlibs:=$(LDLIBS) -lm -lpcre
+eon_ldlibs:=$(LDLIBS) -lm 
 eon_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
 eon_static:=
 
 UNAME := $(shell uname -s)
 ifeq ($(UNAME),Darwin)
-	eon_ldlibs:= -L /usr/local/Cellar/pcre/8.38/lib 
+	eon_ldlibs:= -L /usr/local/Cellar/pcre/8.38/lib -lpcre
 else
-	eon_ldlibs:= -lrt
+	eon_ldlibs:= -lrt -lpcre
 endif
 
 all: eon

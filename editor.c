@@ -1028,20 +1028,20 @@ struct click {
     struct timespec ts;
 };
 
-static int mouse_down = 0;
 static struct click last_click = {-1, -1, { 0, 0 } };
-static double time_diff;
 
+#ifdef __linux__
+
+static double time_diff;
 static double _get_timediff(struct timespec start, struct timespec end) {
    return ((double)end.tv_sec + 1.0e-9*end.tv_nsec) - ((double)start.tv_sec + 1.0e-9*start.tv_nsec);
 }
 
 static int _is_double_click(int x, int y) {
-
-    if (last_click.ts.tv_sec == -1 || x != last_click.x) {
-      clock_gettime(CLOCK_MONOTONIC, &last_click.ts);
-      return 0;
-    }
+  if (last_click.ts.tv_sec == -1 || x != last_click.x) {
+    clock_gettime(CLOCK_MONOTONIC, &last_click.ts);
+    return 0;
+  }
 
   struct timespec now = {0, 0};
   clock_gettime(CLOCK_MONOTONIC, &now);
@@ -1050,6 +1050,15 @@ static int _is_double_click(int x, int y) {
   return time_diff < 0.5 ? 1 : 0;
 }
 
+#else // TODO
+
+static int _is_double_click(int x, int y) {
+  return 0;
+}
+
+#endif
+
+static int mouse_down = 0;
 static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
   switch (ev.key) {
     case TB_KEY_MOUSE_LEFT:

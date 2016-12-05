@@ -53,11 +53,29 @@ Yes, `eon` have a very sane set of default keybindings. `Ctrl-C` copies, `Ctrl-V
 
 Meta keys are supported, so you can also hit `Shift+Arrow Keys` to select text and then cut-and-paste it as you please. Last but not least, `eon` supports multi-cursor editing. To insert new cursors, either hit `Ctrl+Shift+Up/Down` or `Ctrl+Alt+Up/Down`. To cancel multi-cursor mode hit `Ctrl-D` or the `Esc` key.
 
-The reason why `eon` has two keybindings for a few things is because every terminal supports a different set of key combos. The officially list of supported terminals is currently xterm, urxvt (rxvt-unicode), mrxvt, xfce4-terminal and iTerm. Please don't try to use `eon` from within the default OSX terminal, as most key combos won't work so you won't get the full `eon` experience.
+The reason why `eon` has two keybindings for a few things is because every terminal supports a different set of key combos. The officially list of supported terminals is currently xterm, urxvt (rxvt-unicode), mrxvt, xfce4-terminal and iTerm. Please don't try to use `eon` from within the default OSX terminal, as most key combos won't work so you won't get the full `eon` experience. If you really want to, then read below for a few configuration tips.
 
 ## Mouse mode
 
 If you want to disable the mouse mode you can toggle it by hitting `Alt-Backspace` or `Shift-Backspace`. This is useful if you want to copy or paste a chunk of text from or to another window in your session.
+
+## Setting up OSX Terminal
+
+Apple's official terminal doesn't handle two 'meta' keys simultaneously (like Ctrl or Alt + Shift) and by default doesn't event send even the basic escape sequences other terminals do. However you can change the latter so at least some of the key combinations will work. To do this, open up the app's Preferences pane and open the "Keyboard" tab within Settings. Tick the "Use option as meta key" checkbox, and then hit the Plus sign above to add the following:
+
+ - key: cursor up,    modifier: control, action: send string to shell --> \033Oa
+ - key: cursor down,  modifier: control, action: send string to shell --> \033Ob
+ - key: cursor right, modifier: control, action: send string to shell --> \033Oc
+ - key: cursor left,  modifier: control, action: send string to shell --> \033Ob
+
+ - key: cursor up,    modifier: shift,   action: send string to shell --> \033[a
+ - key: cursor down,  modifier: shift,   action: send string to shell --> \033[b
+ - key: cursor right, modifier: shift,   action: send string to shell --> \033[c
+ - key: cursor left,  modifier: shift,   action: send string to shell --> \033[b
+
+These will let you use Shift and Control + Arrow Keys. Note that you might have some of these combinations assigned to Mission Control functions (e.g. Move left a space). In this case you'll 
+need to decide which one you'll want to keep. My suggestion is to remove them given that most of
+these commands can be accessed via mouse gestures.
 
 ## TODO
 

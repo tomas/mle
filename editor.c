@@ -2369,7 +2369,7 @@ static void _editor_init_bviews(editor_t* editor, int argc, char** argv) {
         for (i = optind; i < argc; i++) {
             path = argv[i];
             path_len = strlen(path);
-            
+
             // if a single path was provided, keep a reference
             if (i == optind && i+1 == argc && util_is_dir(path)) {
               editor->start_dir = path;

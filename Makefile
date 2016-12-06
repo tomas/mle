@@ -2,8 +2,8 @@ SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
 
-eon_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
-eon_ldlibs:=$(LDLIBS) -lm 
+eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
+eon_ldlibs:=$(LDLIBS) -lm
 eon_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
 eon_static:=
 

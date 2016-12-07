@@ -13,7 +13,7 @@ function M.remove_trailing_lines()
 
   for i=1, line_count, 1 do
     line = get_buffer_at_line(i-1)
-    for str in string.gmatch(line, "([ ]+)$") do
+    for str in string.gmatch(line, "([ \t]+)$") do
       trim_count = trim_count+1
       trimmed = M.rtrim(line)
       -- len = string.len(line) - string.len(trimmed)
@@ -24,7 +24,6 @@ function M.remove_trailing_lines()
 
   return trim_count
 end
-
 
 M.name  = "Trailing Lines"
 M.ptype = "text"

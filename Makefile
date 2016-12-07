@@ -6,7 +6,7 @@ CC=gcc
 
 eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
 eon_ldlibs:=$(LDLIBS) -lm -ldl
-eon_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
+eon_objects:=$(patsubst %.c,%.o,$(wildcard src/*.c))
 eon_static:=
 
 UNAME := $(shell uname -s)
@@ -17,8 +17,11 @@ else
 endif
 
 ifdef WITH_PLUGINS
-	eon_cflags+=`pkg-config --cflags luajit`
+	eon_cflags+=`-DWITH_PLUGINS pkg-config --cflags luajit`
 	eon_ldlibs+=`pkg-config --libs luajit`
+else
+  # remove plugins.o from list of objects
+	eon_objects:=$(subst src/plugins.o ,,$(eon_objects))
 endif
 
 all: eon

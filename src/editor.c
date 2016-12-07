@@ -8,10 +8,11 @@
 #include "mlbuf.h"
 #include "colors.h"
 
-// plugins
+#ifdef WITH_PLUGINS
 int load_plugins(editor_t * editor);
 int unload_plugins(void);
 int trigger_plugin_event(char * event, cmd_context_t ctx);
+#endif
 
 static int _editor_set_macro_toggle_key(editor_t* editor, char* key);
 static int _editor_bview_exists(editor_t* editor, bview_t* bview);
@@ -157,7 +158,9 @@ int editor_init(editor_t* editor, int argc, char** argv) {
     // Init headless mode
     _editor_init_startup_macro(editor);
 
+#ifdef WITH_PLUGINS
     load_plugins(editor);
+#endif
 
   } while (0);
 
@@ -191,7 +194,9 @@ int editor_deinit(editor_t* editor) {
   prompt_hnode_t* prompt_hnode_tmp1;
   prompt_hnode_t* prompt_hnode_tmp2;
 
+#ifdef WITH_PLUGINS
   unload_plugins();
+#endif
 
   _editor_init_or_deinit_commands(editor, 1);
 
@@ -959,17 +964,21 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
       cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
       cmd_ctx.buffer = cmd_ctx.bview->buffer;
 
+#ifdef WITH_PLUGINS
       if (cmd->name[0] != '_') {
         snprintf(event_name, strlen(cmd->name) + 10, "before_%s", cmd->name);
         trigger_plugin_event(event_name, cmd_ctx);
       }
+#endif
 
       cmd->func(&cmd_ctx); // call the function itself
 
+#ifdef WITH_PLUGINS
       if (cmd->name[0] != '_') {
         snprintf(event_name, strlen(cmd->name) + 11, "after_%s", cmd->name);
         trigger_plugin_event(event_name, cmd_ctx);
       }
+#endif
 
       loop_ctx->binding_node = NULL;
       loop_ctx->wildcard_params_len = 0;

@@ -4,7 +4,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-#include "mle.h"
+#include "eon.h"
 
 // our very own vector implementation. from:
 // http://eddmann.com/posts/implementing-a-dynamic-vector-array-in-c/

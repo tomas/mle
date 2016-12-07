@@ -1,6 +1,6 @@
 #include <setjmp.h>
 #include <ctype.h>
-#include "mle.h"
+#include "eon.h"
 #include "mlbuf.h"
 
 typedef struct lel_pstate_s lel_pstate_t;
@@ -206,7 +206,7 @@ int cmd_lel(cmd_context_t* ctx) {
         cmd = strdup(ctx->static_param);
     } else {
         editor_prompt(ctx->editor, "lel: Cmd?", NULL, &cmd);
-        if (!cmd) return MLE_OK;
+        if (!cmd) return EON_OK;
     }
 
     // Parse lel cmd
@@ -215,7 +215,7 @@ int cmd_lel(cmd_context_t* ctx) {
     lel_parse.cur = cmd;
     lel_tree = _lel_accept_cmds(&lel_parse);
     free(cmd);
-    if (!lel_tree) return MLE_ERR;
+    if (!lel_tree) return EON_ERR;
 
     // Setup a cursor to use for the lel program
     lel_ctx.ctx = ctx;
@@ -258,7 +258,7 @@ int cmd_lel(cmd_context_t* ctx) {
     mark_destroy(lel_ctx.orig);
     bview_remove_cursor(ctx->bview, lel_ctx.cursor);
 
-    return MLE_OK;
+    return EON_OK;
 }
 
 static void _lel_takeover_first_active_cursor(cursor_t* main) {
@@ -643,7 +643,7 @@ static void _lel_func_text_change_inner(lel_pnode_t* node, lel_ectx_t* ectx, int
     if (shell) {
         mark_get_between_mark(mark_a, mark_b, &shell_in, &shell_in_len);
         if (shell_in_len > 0
-            && util_shell_exec(ectx->ctx->editor, node->param1, 1, shell_in, (size_t)shell_in_len, NULL, &shell_out, &shell_out_len) == MLE_OK
+            && util_shell_exec(ectx->ctx->editor, node->param1, 1, shell_in, (size_t)shell_in_len, NULL, &shell_out, &shell_out_len) == EON_OK
             && shell_out_len > 0
         ) {
             repl = shell_out;

@@ -1112,6 +1112,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
         }
       break;
     case TB_KEY_MOUSE_RIGHT:
+      cmd_toggle_mouse_mode(ctx);
       break;
     case TB_KEY_MOUSE_WHEEL_UP:
       cmd_scroll_up(ctx);

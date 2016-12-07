@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
@@ -94,7 +93,7 @@ int unload_plugins(void) {
 }
 
 void init_plugins(void) {
-  printf("Initializing plugins...\n");
+  // printf("Initializing plugins...\n");
 
   unload_plugins();
 
@@ -124,7 +123,7 @@ void load_plugin(const char * name) {
   char path[128];
   sprintf(path, "%s/%s.lua", plugin_path, name);
 
-  printf("Loading plugin: %s\n", path);
+  printf("Loading plugin in path '%s': %s\n", plugin_path, name);
 
   /* Load the plugin. */
   if (luaL_dofile(luaMain, path)) {

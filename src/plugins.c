@@ -60,34 +60,39 @@ cmd_context_t * current_ctx;
 int plugins_count = 2;
 const char * plugin_path = "plugins";
 const char * plugins[2] = {
-  "upper", "lower"
+  "trailing", "lower"
 };
 
-static int eon_copy(lua_State *L) {
-  int res = cmd_copy(current_ctx);
-  lua_pushnumber(L, res);
-  return 1; // one ret
+static int get_line_count(lua_State * L) {
+  int line_count = current_ctx->bview->buffer->line_count;
+  lua_pushnumber(L, line_count);
+  return 1; // one argument
 }
-static int eon_cut(lua_State *L) {
-  int res = cmd_cut(current_ctx);
+
+static int get_buffer_at_line(lua_State *L) {
+  int nargs = lua_gettop(L);
+  int line_index = lua_tointeger(L, 1);
+
+  bline_t * line;
+  buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+  lua_pushlstring(L, line->data, line->data_len);
+  return 1; // one argument
+};
+
+static int set_buffer_at_line(lua_State *L) {
+  int nargs = lua_gettop(L);
+  int line_index = lua_tointeger(L, 1);
+  const char *newbuf = luaL_checkstring(L, 2);
+
+  bline_t * line;
+  buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+
+  int col = 0;
+  int res = bline_replace(line, col, line->data_len, (char *)newbuf, strlen(newbuf));
+
   lua_pushnumber(L, res);
-  return 1; // one ret
-}
-static int eon_indent(lua_State *L) {
-  int res = cmd_indent(current_ctx);
-  lua_pushnumber(L, res);
-  return 1; // one ret
-}
-static int eon_undo(lua_State *L) {
-  int res = cmd_undo(current_ctx);
-  lua_pushnumber(L, res);
-  return 1; // one ret
-}
-static int eon_redo(lua_State *L) {
-  int res = cmd_redo(current_ctx);
-  lua_pushnumber(L, res);
-  return 1; // one ret
-}
+  return 1; // one argument
+};
 
 int unload_plugins(void) {
   if (luaMain == NULL)
@@ -113,16 +118,12 @@ void init_plugins(void) {
   luaMain = luaL_newstate();
   luaL_openlibs(luaMain);
 
-  lua_pushcfunction(luaMain, eon_cut);
-  lua_setglobal(luaMain, "eon_cut");
-  lua_pushcfunction(luaMain, eon_copy);
-  lua_setglobal(luaMain, "eon_copy");
-  lua_pushcfunction(luaMain, eon_indent);
-  lua_setglobal(luaMain, "eon_indent");
-  lua_pushcfunction(luaMain, eon_undo);
-  lua_setglobal(luaMain, "eon_undo");
-  lua_pushcfunction(luaMain, eon_redo);
-  lua_setglobal(luaMain, "eon_redo");
+  lua_pushcfunction(luaMain, get_line_count);
+  lua_setglobal(luaMain, "get_line_count");
+  lua_pushcfunction(luaMain, get_buffer_at_line);
+  lua_setglobal(luaMain, "get_buffer_at_line");
+  lua_pushcfunction(luaMain, set_buffer_at_line);
+  lua_setglobal(luaMain, "set_buffer_at_line");
 }
 
 void load_plugin(const char * name) {
@@ -270,12 +271,12 @@ int call_plugin(const char * pname, const char * func, cmd_context_t ctx) {
 }
 
 int trigger_plugin_event(const char * event, cmd_context_t ctx) {
-
   current_ctx = &ctx;
 
   const char * pname;
   int i, res;
 
+  // printf(" ---->Triggering event: %s\n", event);
   for (i = 0; i < vector_size(&pluginNames); i++) {
     pname = vector_get(&pluginNames, i);
     res = call_plugin(pname, event, ctx);

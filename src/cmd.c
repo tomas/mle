@@ -1252,33 +1252,34 @@ static int _cmd_indent(cmd_context_t* ctx, int outdent) {
   int column = 0;
   use_tabs = ctx->bview->tab_to_space ? 0 : 1;
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        start = ctx->cursor->mark->bline;
-                        int start_of_line = ctx->cursor->mark->col == 0;
+    start = ctx->cursor->mark->bline;
+    int start_of_line = ctx->cursor->mark->col == 0;
 
-  if (ctx->cursor->is_anchored) {
-  end = ctx->cursor->anchor->bline;
+    if (ctx->cursor->is_anchored) {
+      end = ctx->cursor->anchor->bline;
 
-  if (start->line_index > end->line_index) {
-      cur = end;
-      end = start_of_line ? start->prev : start;
-      start = cur;
+      if (start->line_index > end->line_index) {
+        cur = end;
+        end = start_of_line ? start->prev : start;
+        start = cur;
+      } else if (start_of_line) { // selecting up
+        end = end->prev;
+      }
 
-    } else if (start_of_line) { // selecting up
-      end = end->prev;
+    } else {
+      end = start;
+      column = ctx->cursor->mark->col; // set column to cursor pos
     }
 
-  } else {
-    end = start;
-    column = ctx->cursor->mark->col; // set column to cursor pos
-  }
-  ctx->buffer->is_style_disabled++;
+    ctx->buffer->is_style_disabled++;
 
-  for (cur = start; cur != end->next; cur = cur->next) {
-  _cmd_indent_line(cur, use_tabs, outdent, column);
-  }
-  ctx->buffer->is_style_disabled--;
-  buffer_apply_styles(ctx->buffer, start, 0);
-                       );
+    for (cur = start; cur != end->next; cur = cur->next) {
+      _cmd_indent_line(cur, use_tabs, outdent, column);
+    }
+
+    ctx->buffer->is_style_disabled--;
+    buffer_apply_styles(ctx->buffer, start, 0);
+  );
   return EON_OK;
 }
 

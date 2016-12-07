@@ -567,12 +567,12 @@ int cmd_drop_cursor_column(cmd_context_t* ctx) {
 // Search for a regex
 int cmd_search(cmd_context_t* ctx) {
   char* regex;
-  int regex_len;
+  int regex_len, res;
   mark_t* search_mark;
 
   char * prompt;
   char * default_str = "Regex";
-  asprintf(&prompt, "search: [%s]", ctx->bview->last_search ? ctx->bview->last_search : default_str);
+  res = asprintf(&prompt, "search: [%s]", ctx->bview->last_search ? ctx->bview->last_search : default_str);
 
   editor_prompt(ctx->editor, prompt, NULL, &regex);
 
@@ -823,7 +823,7 @@ int cmd_grep(cmd_context_t* ctx) {
 
   path_arg = util_escape_shell_arg(path, strlen(path));
   free(path);
-  asprintf(&cmd, grep_fmt, path_arg);
+  int res = asprintf(&cmd, grep_fmt, path_arg);
   free(path_arg);
 
   if (!cmd) {
@@ -844,7 +844,7 @@ int cmd_browse(cmd_context_t* ctx) {
   bview_t* menu;
   async_proc_t* aproc;
   char* cmd;
-  asprintf(&cmd, "tree --charset C -n -f -L 2 %s 2>/dev/null", ctx->static_param ? ctx->static_param : "");
+  int res = asprintf(&cmd, "tree --charset C -n -f -L 2 %s 2>/dev/null", ctx->static_param ? ctx->static_param : "");
   aproc = async_proc_new(ctx->editor, ctx->bview, &(ctx->bview->async_proc), cmd, 0, _cmd_aproc_bview_passthru_cb);
   free(cmd);
 
@@ -1123,7 +1123,7 @@ int cmd_set_opt(cmd_context_t* ctx) {
 
   if (!ctx->static_param) return EON_ERR;
 
-  asprintf(&prompt, "set_opt: %s?", ctx->static_param);
+  int res = asprintf(&prompt, "set_opt: %s?", ctx->static_param);
   editor_prompt(ctx->editor, prompt, NULL, &val);
   free(prompt);
 
@@ -1375,7 +1375,7 @@ int cmd_less(cmd_context_t* ctx) {
              "LESSEDIT=echo %%lt >%s; kill 0\" | lesskey -o $tmp_lesskey -- -;"
              "less +%ld -j%ld -k $tmp_lesskey -SN %s;"
              "rm -f $tmp_lesskey";
-    asprintf(&sh, sh_fmt, tmp_linenum, ctx->cursor->mark->bline->line_index + 1, screen_y + 1, tmp_buf);
+    int res = asprintf(&sh, sh_fmt, tmp_linenum, ctx->cursor->mark->bline->line_index + 1, screen_y + 1, tmp_buf);
     tb_shutdown();
 
     if (EON_ERR == util_shell_exec(ctx->editor, sh, -1, NULL, 0, "bash", NULL, NULL)) {
@@ -1782,6 +1782,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
   char* cwd;
   char* corrected_path;
   bview_t* new_bview;
+  int res;
 
   // Get path from tree output
   line = strndup(ctx->bview->active_cursor->mark->bline->data, ctx->bview->active_cursor->mark->bline->data_len);
@@ -1809,8 +1810,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
 #endif
 
   if (strcmp(cwd, ctx->bview->init_cwd) != 0) {
-    asprintf(&corrected_path, "%s/%s", ctx->bview->init_cwd, path);
-
+    res = asprintf(&corrected_path, "%s/%s", ctx->bview->init_cwd, path);
   } else {
     corrected_path = strdup(path);
   }
@@ -1819,7 +1819,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
   new_bview = NULL;
 
   if (util_is_dir(corrected_path)) {
-    chdir(corrected_path);
+    res = chdir(corrected_path);
     ctx->bview = ctx->editor->active_edit;
     cmd_browse(ctx);
 

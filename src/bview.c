@@ -45,7 +45,8 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
   self->viewport_scope_x = editor->viewport_scope_x;
   self->viewport_scope_y = editor->viewport_scope_y;
 
-  getcwd(self->init_cwd, PATH_MAX + 1);
+  char * res;
+  res = getcwd(self->init_cwd, PATH_MAX + 1);
 
   if (opt_buffer) { // Open buffer
     buffer = opt_buffer;

@@ -118,7 +118,7 @@ int editor_init(editor_t* editor, int argc, char** argv) {
       home_rc = NULL;
 
       if (getenv("HOME")) {
-        asprintf(&home_rc, "%s/%s", getenv("HOME"), ".eonrc");
+        int res = asprintf(&home_rc, "%s/%s", getenv("HOME"), ".eonrc");
 
         if (util_is_file(home_rc, "rb", &rc)) {
           rv = _editor_init_from_rc(editor, rc, home_rc);
@@ -644,7 +644,7 @@ static int _editor_prompt_input_complete(cmd_context_t* ctx) {
               loop_ctx->tab_complete_term,
               strlen(loop_ctx->tab_complete_term)
             );
-  asprintf(&cmd, "compgen -f %s 2>/dev/null | sort", cmd_arg);
+  int res = asprintf(&cmd, "compgen -f %s 2>/dev/null | sort", cmd_arg);
 
   // Run compgen command
   terms = NULL;
@@ -2300,7 +2300,7 @@ static int _editor_init_from_rc_read(editor_t* editor, FILE* rc, char** ret_rc_d
   *ret_rc_data_len = (size_t)ftell(rc);
   fseek(rc, 0L, SEEK_SET);
   *ret_rc_data = malloc(*ret_rc_data_len + 1);
-  fread(*ret_rc_data, *ret_rc_data_len, 1, rc);
+  int res = fread(*ret_rc_data, *ret_rc_data_len, 1, rc);
   (*ret_rc_data)[*ret_rc_data_len] = '\0';
   return EON_OK;
 }

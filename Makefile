@@ -1,23 +1,23 @@
 WITH_PLUGINS=1
-
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
 
-eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
+WARNINGS=-Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-but-set-variable
+eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/
 eon_ldlibs:=$(LDLIBS) -lm -ldl
 eon_objects:=$(patsubst %.c,%.o,$(wildcard src/*.c))
 eon_static:=
 
 UNAME := $(shell uname -s)
 ifeq ($(UNAME),Darwin)
-	eon_ldlibs+= -L /usr/local/Cellar/pcre/8.38/lib -lpcre
+	eon_ldlibs+=-L /usr/local/Cellar/pcre/8.38/lib -lpcre
 else
-	eon_ldlibs+= -lrt -lpcre
+	eon_ldlibs+=-lrt -lpcre
 endif
 
 ifdef WITH_PLUGINS
-	eon_cflags+=`-DWITH_PLUGINS pkg-config --cflags luajit`
+	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
 	eon_ldlibs+=`pkg-config --libs luajit`
 else
   # remove plugins.o from list of objects
@@ -66,7 +66,7 @@ install: eon
 	install -v -m 755 eon $(DESTDIR)
 
 clean:
-	rm -f *.o eon.bak.* gmon.out perf.data perf.data.old eon
+	rm -f src/*.o eon.bak.* gmon.out perf.data perf.data.old eon
 	$(MAKE) -C mlbuf clean
 	$(MAKE) -C tests clean
 	rm -Rf termbox/build

@@ -127,7 +127,6 @@ void init_plugins(void) {
 }
 
 void load_plugin(const char * name) {
-  const char * ptype;
   const char * pname;
   const char * pver;
 
@@ -141,23 +140,6 @@ void load_plugin(const char * name) {
     printf("Could not load plugin: %s\n", lua_tostring(luaMain, -1));
     return;
   }
-
-  /* Get and check the plugin has a ptype */
-  lua_getfield(luaMain, -1, "ptype");
-  if (lua_isnil(luaMain, -1)) {
-    printf("Could not load file %s: ptype missing\n", path);
-    lua_pop(luaMain, 2);
-    return;
-  }
-
-  ptype = lua_tostring(luaMain, -1);
-  if (strcmp(ptype, "text") != 0) {
-    printf("Could not load file %s: ptype is not supported: %s\n", path, ptype);
-    lua_pop(luaMain, 2);
-    return;
-  }
-
-  lua_pop(luaMain, 1);
 
   /* Get and check the plugin has a name*/
   lua_getfield(luaMain, -1, "name");

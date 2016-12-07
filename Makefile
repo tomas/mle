@@ -1,9 +1,11 @@
+WITH_PLUGINS=1
+
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
 
 eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
-eon_ldlibs:=$(LDLIBS) -lm
+eon_ldlibs:=$(LDLIBS) -lm -ldl
 eon_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
 eon_static:=
 
@@ -12,6 +14,11 @@ ifeq ($(UNAME),Darwin)
 	eon_ldlibs+= -L /usr/local/Cellar/pcre/8.38/lib -lpcre
 else
 	eon_ldlibs+= -lrt -lpcre
+endif
+
+ifdef WITH_PLUGINS
+	eon_cflags+=`pkg-config --cflags luajit`
+	eon_ldlibs+=`pkg-config --libs luajit`
 endif
 
 all: eon

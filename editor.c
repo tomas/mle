@@ -143,6 +143,9 @@ int editor_init(editor_t* editor, int argc, char** argv) {
 
         // Init headless mode
         _editor_init_startup_macro(editor);
+
+        load_plugins(editor);
+
     } while(0);
 
     editor->is_in_init = 0;
@@ -174,10 +177,13 @@ int editor_deinit(editor_t* editor) {
     prompt_hnode_t* prompt_hnode;
     prompt_hnode_t* prompt_hnode_tmp1;
     prompt_hnode_t* prompt_hnode_tmp2;
-    uscript_t* uscript;
-    uscript_t* uscript_tmp;
+
+    unload_plugins();
+
     _editor_init_or_deinit_commands(editor, 1);
+
     if (editor->status) bview_destroy(editor->status);
+
     CDL_FOREACH_SAFE2(editor->all_bviews, bview, bview_tmp1, bview_tmp2, all_prev, all_next) {
         CDL_DELETE2(editor->all_bviews, bview, all_prev, all_next);
         bview_destroy(bview);
@@ -210,19 +216,18 @@ int editor_deinit(editor_t* editor) {
         }
         free(prompt_history);
     }
-    DL_FOREACH_SAFE(editor->uscripts, uscript, uscript_tmp) {
-        DL_DELETE(editor->uscripts, uscript);
-        uscript_destroy(uscript);
-    }
+
     if (editor->macro_record) {
         if (editor->macro_record->inputs) free(editor->macro_record->inputs);
         free(editor->macro_record);
     }
+
     _editor_destroy_syntax_map(editor->syntax_map);
     if (editor->kmap_init_name) free(editor->kmap_init_name);
     if (editor->insertbuf) free(editor->insertbuf);
     if (editor->ttyfd) close(editor->ttyfd);
     if (editor->startup_macro_name) free(editor->startup_macro_name);
+
     return MLE_OK;
 }
 
@@ -2191,14 +2196,13 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
     int rv;
     kmap_t* cur_kmap;
     syntax_t* cur_syntax;
-    uscript_t* uscript;
     int c;
     rv = MLE_OK;
 
     cur_kmap = NULL;
     cur_syntax = NULL;
     optind = 0;
-    while (rv == MLE_OK && (c = getopt(argc, argv, "ha:b:c:gn:H:K:k:l:M:m:Nn:p:S:s:t:vw:x:y:z:")) != -1) {
+    while (rv == MLE_OK && (c = getopt(argc, argv, "ha:b:c:gn:H:K:k:l:M:m:Nn:p:S:s:t:vw:y:z:")) != -1) {
         switch (c) {
             case 'h':
                 printf("eon version %s\n\n", MLE_VERSION);
@@ -2222,7 +2226,6 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
                 printf("    -t <size>    Set tab size (default: %d)\n", MLE_DEFAULT_TAB_WIDTH);
                 printf("    -v           Print version and exit\n");
                 printf("    -w <1|0>     Enable/disable soft word wrap (default: %d)\n", MLE_DEFAULT_SOFT_WRAP);
-                printf("    -x <script>  Run userscript\n");
                 printf("    -y <syntax>  Set override syntax for files opened at start up\n");
                 printf("    -z <1|0>     Enable/disable trim_paste (default: %d)\n", MLE_DEFAULT_TRIM_PASTE);
                 printf("\n");
@@ -2318,14 +2321,6 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
                 break;
             case 'w':
                 editor->soft_wrap = atoi(optarg);
-                break;
-            case 'x':
-                if (!(uscript = uscript_run(editor, optarg))) {
-                    MLE_LOG_ERR("Could not run uscript: %s", optarg);
-                    editor->exit_code = EXIT_FAILURE;
-                    rv = MLE_ERR;
-                }
-                DL_APPEND(editor->uscripts, uscript);
                 break;
             case 'y':
                 editor->syntax_override = optarg;

@@ -809,6 +809,7 @@ static int _editor_prompt_isearch_drop_cursors(cmd_context_t* ctx) {
 static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
     cmd_t* cmd;
     cmd_context_t cmd_ctx;
+    char event_name[64];
 
     // Increment loop_depth
     editor->loop_depth += 1;
@@ -867,7 +868,19 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
             cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
             cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
             cmd_ctx.buffer = cmd_ctx.bview->buffer;
-            cmd->func(&cmd_ctx);
+
+            if (cmd->name[0] != '_') {
+                snprintf(event_name, strlen(cmd->name) + 10, "before_%s", cmd->name);
+                trigger_plugin_event(event_name, cmd_ctx);
+            }
+
+            cmd->func(&cmd_ctx); // call the function itself
+
+            if (cmd->name[0] != '_') {
+                snprintf(event_name, strlen(cmd->name) + 11, "after_%s", cmd->name);
+                trigger_plugin_event(event_name, cmd_ctx);
+            }
+
             loop_ctx->binding_node = NULL;
             loop_ctx->wildcard_params_len = 0;
             loop_ctx->numeric_params_len = 0;

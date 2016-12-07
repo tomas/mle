@@ -56,20 +56,35 @@ lua_State *luaMain = NULL;
 vector pluginNames;
 vector pluginVersions;
 
+cmd_context_t * current_ctx;
+
 int plugins_count = 2;
 const char * plugin_path = "plugins";
 const char * plugins[2] = {
   "upper", "lower"
 };
 
-static int api_test(lua_State *L) {
-  return 0;
+static int eon_copy(lua_State *L) {
+  cmd_copy(current_ctx);
+}
+static int eon_cut(lua_State *L) {
+  cmd_cut(current_ctx);
+}
+static int eon_indent(lua_State *L) {
+  cmd_indent(current_ctx);
+}
+static int eon_undo(lua_State *L) {
+  cmd_undo(current_ctx);
+}
+static int eon_redo(lua_State *L) {
+  cmd_redo(current_ctx);
 }
 
 int unload_plugins(void) {
   if (luaMain == NULL)
     return 0;
 
+  printf("Unloading plugins...\n");
   lua_close(luaMain);
   luaMain = NULL;
 
@@ -79,6 +94,8 @@ int unload_plugins(void) {
 }
 
 void init_plugins(void) {
+  printf("Initializing plugins...\n");
+
   unload_plugins();
 
   vector_init(&pluginNames, 1);
@@ -87,8 +104,16 @@ void init_plugins(void) {
   luaMain = luaL_newstate();
   luaL_openlibs(luaMain);
 
-  lua_pushcfunction(luaMain, api_test);
-  lua_setglobal(luaMain, "test");
+  lua_pushcfunction(luaMain, eon_cut);
+  lua_setglobal(luaMain, "eon_cut");
+  lua_pushcfunction(luaMain, eon_copy);
+  lua_setglobal(luaMain, "eon_copy");
+  lua_pushcfunction(luaMain, eon_indent);
+  lua_setglobal(luaMain, "eon_indent");
+  lua_pushcfunction(luaMain, eon_undo);
+  lua_setglobal(luaMain, "eon_undo");
+  lua_pushcfunction(luaMain, eon_redo);
+  lua_setglobal(luaMain, "eon_redo");
 }
 
 void load_plugin(const char * name) {
@@ -200,7 +225,7 @@ void show_plugins() {
   }
 }
 
-void call_plugin(const char * pname, const char * func, bview_t * view) {
+int call_plugin(const char * pname, const char * func, cmd_context_t ctx) {
   lua_State  *L;
   char text[7] = "foobar";
 
@@ -209,37 +234,43 @@ void call_plugin(const char * pname, const char * func, bview_t * view) {
   if (lua_isnil(L, -1)) {
     printf("Fatal: Could not get plugin: %s\n", pname);
     lua_pop(luaMain, 1);
-    return;
+    return -1;
   }
 
   /* Run the plugin's run function providing it with the text. */
   lua_getfield(L, -1, func);
   lua_pushstring(L, text);
+
   if (lua_pcall(L, 1, LUA_MULTRET, 0) != 0) {
-    printf("Fatal: Could not run plugin: %s\n", pname);
+    // printf("Fatal: Could not run %s function on plugin: %s\n", func, pname);
     lua_pop(luaMain, 1);
-    return;
+    return -1;
   }
 
   if (lua_gettop(L) == 3) {
     printf("Fatal: plugin failed: %s\n", pname);
     lua_pop(luaMain, 1);
-    return;
+    return NULL;
   } else {
-    printf("result: %s\n", lua_tostring(L, -1));
+    // printf("Result from %s: %s\n", func, lua_tostring(L, -1));
   }
 
   lua_pop(luaMain, 1);
+  return 0;
 }
 
-int trigger_plugin_event(const char * event, bview_t * view) {
-  int i;
-  char * func;
+int trigger_plugin_event(const char * event, cmd_context_t ctx) {
+
+  current_ctx = &ctx;
+
   const char * pname;
+  int i, res;
+
   for (i = 0; i < vector_size(&pluginNames); i++) {
     pname = vector_get(&pluginNames, i);
-    sprintf(func, "on_%s", event);
-    call_plugin(pname, func, view);
+    res = call_plugin(pname, event, ctx);
+
+    // if (res == -1) unload_plugin(pname); // TODO: stop further calls to this guy.
   }
 
   return 0;

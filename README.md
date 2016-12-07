@@ -4,7 +4,7 @@ A clever little console text editor. Written in C, forked out of [mle](https://g
 
 ## Building
 
-Install deps first:
+Install main deps first:
 
     $ apt install tree cmake libpcre-dev # or brew install / apk add
 
@@ -28,15 +28,15 @@ You can run `make eon_static` instead to build a static binary.
 You can open `eon` by providing a directory or a file name. In the first case, it'll show a list of files within that directory (provided you installed the `tree` command).
 
     $ eon path/to/stuff
-    
+
 In the second case it will, ehm, open the file.
-    
+
     $ eon index.js
 
 You can also pass a line number if you want to:
 
     $ eon index.js:82
-    
+
 Or simply start with an empty document:
 
     $ eon
@@ -73,9 +73,13 @@ Apple's official terminal doesn't handle two 'meta' keys simultaneously (like Ct
  - key: cursor right, modifier: shift,   action: send string to shell --> \033[c
  - key: cursor left,  modifier: shift,   action: send string to shell --> \033[b
 
-These will let you use Shift and Control + Arrow Keys. Note that you might have some of these combinations assigned to Mission Control functions (e.g. Move left a space). In this case you'll 
+These will let you use Shift and Control + Arrow Keys. Note that you might have some of these combinations assigned to Mission Control functions (e.g. Move left a space). In this case you'll
 need to decide which one you'll want to keep. My suggestion is to remove them given that most of
 these commands can be accessed via mouse gestures.
+
+## Setting up xfce4-terminal
+
+By default Xfce's terminal maps Shift+Up/Down to scroll-one-line behaviour. In order to deactivate this so you regain that mapping for `eon`, just untick the "Scroll single line using Shift-Up/Down keys" option in the app's preferences pane.
 
 ## TODO
 

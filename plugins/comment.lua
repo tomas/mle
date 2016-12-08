@@ -13,7 +13,9 @@ local function toggle_comment_on(line_number)
     delete_chars_at_line(line_number, column-1, count)
   else
     first = string.find(line, "[^ \t]")
-    if not first or first < 2 then
+    if not first then -- empty line, continue
+      return false
+    elseif first < 2 then
       prepend_buffer_at_line(line_number, comment)
     else
       insert_buffer_at_line(line_number, comment, first - 1)

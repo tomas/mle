@@ -20,7 +20,7 @@ endif
 
 ifdef WITH_PLUGINS
 	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
-	eon_ldlibs+=`pkg-config --libs luajit` -lm -ldl
+	eon_ldlibs+=`pkg-config --libs-only-l --libs-only-L luajit` -lm -ldl
 else
 	eon_ldlibs+=-lm
 	# remove plugins stuff from list of objects

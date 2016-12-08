@@ -1,4 +1,4 @@
-# WITH_PLUGINS=1
+WITH_PLUGINS=1
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
@@ -6,7 +6,7 @@ STRIP=strip
 
 WARNINGS=-Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-but-set-variable
 eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/
-eon_ldlibs:=$(LDLIBS) -lm -ldl
+eon_ldlibs:=$(LDLIBS)
 eon_objects:=$(patsubst %.c,%.o,$(wildcard src/*.c))
 eon_static:=
 
@@ -19,8 +19,9 @@ endif
 
 ifdef WITH_PLUGINS
 	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
-	eon_ldlibs+=`pkg-config --libs luajit`
+	eon_ldlibs+=`pkg-config --libs luajit` -lm -ldl
 else
+	eon_ldlibs+=-lm
 	# remove plugins stuff from list of objects
 	eon_objects:=$(subst src/plugins.o ,,$(eon_objects))
 	eon_objects:=$(subst src/plugin_api.o ,,$(eon_objects))

@@ -111,9 +111,9 @@ int cmd_insert_data(cmd_context_t* ctx) {
 // Insert newline above current line
 int cmd_insert_newline_above(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        mark_move_bol(cursor->mark);
-                        mark_insert_after(cursor->mark, "\n", 1);
-                       );
+    mark_move_bol(cursor->mark);
+    mark_insert_after(cursor->mark, "\n", 1);
+  );
   return EON_OK;
 }
 
@@ -121,8 +121,8 @@ int cmd_insert_newline_above(cmd_context_t* ctx) {
 int cmd_delete_before(cmd_context_t* ctx) {
   if (ctx->cursor->is_anchored) {
     EON_MULTI_CURSOR_CODE(ctx->cursor,
-                          mark_delete_between_mark(cursor->mark, cursor->anchor);
-                         );
+      mark_delete_between_mark(cursor->mark, cursor->anchor);
+    );
     cursor_toggle_anchor(ctx->cursor, 0);
   } else {
     bint_t offset;
@@ -140,8 +140,8 @@ int cmd_delete_before(cmd_context_t* ctx) {
 int cmd_delete_after(cmd_context_t* ctx) {
   if (ctx->cursor->is_anchored) {
     EON_MULTI_CURSOR_CODE(ctx->cursor,
-                          mark_delete_between_mark(cursor->mark, cursor->anchor);
-                         );
+      mark_delete_between_mark(cursor->mark, cursor->anchor);
+    );
     cursor_toggle_anchor(ctx->cursor, 0);
   } else {
     EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_delete_after, 1);
@@ -184,29 +184,40 @@ int cmd_scroll_down(cmd_context_t * ctx) {
 int cmd_move_bol(cmd_context_t* ctx) {
   uint32_t ch;
   mark_t* mark;
+
+  if (ctx->cursor->is_anchored) {
+    cursor_toggle_anchor(ctx->cursor, 0);
+  }
+
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        mark_clone(cursor->mark, &mark);
-                        mark_move_bol(mark);
-                        mark_get_char_after(mark, &ch);
 
-  if (isspace((int)ch)) {
-  mark_move_next_re(mark, "\\S", 2);
-  }
+    mark_clone(cursor->mark, &mark);
+    mark_move_bol(mark);
+    mark_get_char_after(mark, &ch);
 
-  if (mark->col < cursor->mark->col) {
-  mark_join(cursor->mark, mark);
+    if (isspace((int)ch)) {
+      mark_move_next_re(mark, "\\S", 2);
+    }
 
-  } else {
-    mark_move_bol(cursor->mark);
-  }
-  mark_destroy(mark);
-                       );
+    if (mark->col < cursor->mark->col) {
+      mark_join(cursor->mark, mark);
+    } else {
+      mark_move_bol(cursor->mark);
+    }
+
+    mark_destroy(mark);
+  );
+
   bview_rectify_viewport(ctx->bview);
   return EON_OK;
 }
 
 // Move cursor to end of line
 int cmd_move_eol(cmd_context_t* ctx) {
+  if (ctx->cursor->is_anchored) {
+    cursor_toggle_anchor(ctx->cursor, 0);
+  }
+
   EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_eol);
   bview_rectify_viewport(ctx->bview);
   return EON_OK;
@@ -359,11 +370,11 @@ int cmd_move_bracket_back(cmd_context_t* ctx) {
 int cmd_delete_word_before(cmd_context_t* ctx) {
   mark_t* tmark;
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        mark_clone(cursor->mark, &tmark);
-                        mark_move_prev_re(tmark, EON_RE_WORD_BACK, sizeof(EON_RE_WORD_BACK) - 1);
-                        mark_delete_between_mark(cursor->mark, tmark);
-                        mark_destroy(tmark);
-                       );
+    mark_clone(cursor->mark, &tmark);
+    mark_move_prev_re(tmark, EON_RE_WORD_BACK, sizeof(EON_RE_WORD_BACK) - 1);
+    mark_delete_between_mark(cursor->mark, tmark);
+    mark_destroy(tmark);
+  );
   return EON_OK;
 }
 
@@ -371,134 +382,122 @@ int cmd_delete_word_before(cmd_context_t* ctx) {
 int cmd_delete_word_after(cmd_context_t* ctx) {
   mark_t* tmark;
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        mark_clone(cursor->mark, &tmark);
-                        mark_move_next_re(tmark, EON_RE_WORD_FORWARD, sizeof(EON_RE_WORD_FORWARD) - 1);
-                        mark_delete_between_mark(cursor->mark, tmark);
-                        mark_destroy(tmark);
-                       );
+    mark_clone(cursor->mark, &tmark);
+    mark_move_next_re(tmark, EON_RE_WORD_FORWARD, sizeof(EON_RE_WORD_FORWARD) - 1);
+    mark_delete_between_mark(cursor->mark, tmark);
+    mark_destroy(tmark);
+  );
   return EON_OK;
 }
 
 // Toggle sel bound on cursors
 int cmd_toggle_anchor(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        cursor_toggle_anchor(cursor, 1);
-                       );
+    cursor_toggle_anchor(cursor, 1);
+  );
   return EON_OK;
 }
 
 int cmd_select_bol(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-                        cmd_move_bol(ctx);
-                       );
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_bol);
+  );
 
   return EON_OK;
 }
 
 int cmd_select_eol(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-                        cmd_move_eol(ctx);
-                       );
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_eol);
+  );
 
   return EON_OK;
 }
 
 int cmd_select_up(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
 
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    // move up
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, -1);
+  );
 
-                        // move up
-                        EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, -1);
-                        bview_rectify_viewport(ctx->bview);
-                       );
-
+  bview_rectify_viewport(ctx->bview);
   return EON_OK;
 }
 
 int cmd_select_down(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
 
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    // move down
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, 1);
+  );
 
-                        // move down
-                        EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, 1);
-                        bview_rectify_viewport(ctx->bview);
-                       );
-
+  bview_rectify_viewport(ctx->bview);
   return EON_OK;
 }
 
 int cmd_select_left(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
 
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-
-                        // move left
-                        EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, -1);
-                        bview_rectify_viewport(ctx->bview);
-                       );
+    // move left
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, -1);
+  );
 
   return EON_OK;
 }
 
 int cmd_select_right(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
 
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-
-                        // move right
-                        EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, 1);
-                        bview_rectify_viewport(ctx->bview);
-                       );
+    // move right
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_by, 1);
+  );
 
   return EON_OK;
 }
 
 int cmd_select_word_back(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-                        cmd_move_word_back(ctx);
-                       );
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    cmd_move_word_back(ctx);
+  );
 
   return EON_OK;
 }
 
 int cmd_select_word_forward(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-                        if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
-                        cmd_move_word_forward(ctx);
-                       );
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    cmd_move_word_forward(ctx);
+  );
 
   return EON_OK;
 }
 
 int cmd_select_current_word(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-                        if (cursor->is_anchored) cursor_toggle_anchor(cursor, 0);
-                        cmd_move_word_back(ctx);
-                        cursor_toggle_anchor(cursor, 1);
-                        cmd_move_word_forward(ctx);
-                       );
+    if (cursor->is_anchored) cursor_toggle_anchor(cursor, 0);
+    cmd_move_word_back(ctx);
+    cursor_toggle_anchor(cursor, 1);
+    cmd_move_word_forward(ctx);
+  );
 
   return EON_OK;
 }
 
 int cmd_select_current_line(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-                        if (cursor->is_anchored) cursor_toggle_anchor(cursor, 0);
-                        cmd_move_bol(ctx);
-                        cursor_toggle_anchor(cursor, 1);
-                        cmd_move_eol(ctx);
-                       );
+    if (cursor->is_anchored) cursor_toggle_anchor(cursor, 0);
+    cmd_move_bol(ctx);
+    cursor_toggle_anchor(cursor, 1);
+    cmd_move_eol(ctx);
+  );
 
   return EON_OK;
 }
@@ -541,10 +540,9 @@ int cmd_drop_cursor_column(cmd_context_t* ctx) {
   mark_t* lo;
   mark_t* hi;
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-                        if (!cursor->is_anchored) continue;
-                        col = cursor->mark->col;
-                        cursor_get_lo_hi(cursor, &lo, &hi);
+  if (!cursor->is_anchored) continue;
+  col = cursor->mark->col;
+  cursor_get_lo_hi(cursor, &lo, &hi);
   for (bline = lo->bline; bline != hi->bline->next; bline = bline->next) {
     MLBUF_BLINE_ENSURE_CHARS(bline);
 
@@ -560,7 +558,7 @@ int cmd_drop_cursor_column(cmd_context_t* ctx) {
       }
     }
   cursor_toggle_anchor(cursor, 1);
-                       );
+  );
   return EON_OK;
 }
 
@@ -609,8 +607,8 @@ int cmd_search_next(cmd_context_t* ctx) {
   regex_len = strlen(ctx->bview->last_search);
   search_mark = buffer_add_mark(ctx->bview->buffer, NULL, 0);
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        _cmd_search_next(ctx->bview, cursor, search_mark, ctx->bview->last_search, regex_len);
-                       );
+    _cmd_search_next(ctx->bview, cursor, search_mark, ctx->bview->last_search, regex_len);
+  );
   mark_destroy(search_mark);
   return EON_OK;
 }
@@ -669,7 +667,7 @@ int cmd_find_word(cmd_context_t* ctx) {
 
     free(re);
   }
-                       );
+  );
   bview_rectify_viewport(ctx->bview);
   return EON_OK;
 }
@@ -695,8 +693,8 @@ int cmd_cut(cmd_context_t* ctx) {
   int append;
   append = ctx->loop_ctx->last_cmd && ctx->loop_ctx->last_cmd->func == cmd_cut ? 1 : 0;
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        cursor_cut_copy(cursor, 1, 1, append);
-                       );
+    cursor_cut_copy(cursor, 1, 1, append);
+  );
   return EON_OK;
 }
 
@@ -706,8 +704,8 @@ int cmd_copy(cmd_context_t* ctx) {
     return EON_OK;
 
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        cursor_cut_copy(cursor, 0, 1, 0);
-                       );
+    cursor_cut_copy(cursor, 0, 1, 0);
+  );
   return EON_OK;
 }
 
@@ -718,30 +716,28 @@ int cmd_uncut(cmd_context_t* ctx) {
   }
 
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        cursor_uncut(cursor);
-                       );
+    cursor_uncut(cursor);
+  );
   return EON_OK;
 }
 
 // Copy in between chars
 int cmd_copy_by(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-  if (cursor_select_by(cursor, ctx->static_param) == EON_OK) {
-  cursor_cut_copy(cursor, 0, 0, 0);
-  }
-                       );
+    if (cursor_select_by(cursor, ctx->static_param) == EON_OK) {
+      cursor_cut_copy(cursor, 0, 0, 0);
+    }
+  );
   return EON_OK;
 }
 
 // Cut in between chars
 int cmd_cut_by(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-
-  if (cursor_select_by(cursor, ctx->static_param) == EON_OK) {
-  cursor_cut_copy(cursor, 1, 0, 0);
-  }
-                       );
+    if (cursor_select_by(cursor, ctx->static_param) == EON_OK) {
+      cursor_cut_copy(cursor, 1, 0, 0);
+    }
+  );
   return EON_OK;
 }
 
@@ -875,7 +871,6 @@ int cmd_save(cmd_context_t* ctx) {
 int cmd_open_file(cmd_context_t* ctx) {
   char* path;
   editor_prompt(ctx->editor, "new_open: File?", NULL, &path);
-
   if (!path) return EON_OK;
 
   editor_open_bview(ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, path, strlen(path), 1, 0, &ctx->editor->rect_edit, NULL, NULL);
@@ -897,7 +892,6 @@ int cmd_open_replace_file(cmd_context_t* ctx) {
 
   path = NULL;
   editor_prompt(ctx->editor, "replace_open: Path?", NULL, &path);
-
   if (!path) return EON_OK;
 
   bview_open(ctx->bview, path, strlen(path));
@@ -1079,8 +1073,8 @@ int cmd_undo(cmd_context_t* ctx) {
   }
 
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        buffer_undo(ctx->bview->buffer);
-                       );
+    buffer_undo(ctx->bview->buffer);
+  );
   return EON_OK;
 }
 
@@ -1104,8 +1098,8 @@ int cmd_redo(cmd_context_t* ctx) {
   }
 
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        buffer_redo(ctx->bview->buffer);
-                       );
+    buffer_redo(ctx->bview->buffer);
+  );
   return EON_OK;
 }
 
@@ -1174,37 +1168,36 @@ int cmd_shell(cmd_context_t* ctx) {
   // Loop for each cursor
   EON_MULTI_CURSOR_CODE(ctx->cursor,
 
-                        // Get data to send to stdin
-  if (ctx->cursor->is_anchored) {
-  mark_get_between_mark(cursor->mark, cursor->anchor, &input, &input_len);
-    // Add a newline
-    input = realloc(input, input_len + 2);
-    input[input_len] = '\n';
-    input[input_len + 1] = '\0';
-    input_len += 1;
-
-  } else {
-    input = NULL;
-    input_len = 0;
-  }
-
-  // Run cmd
-  output = NULL;
-           output_len = 0;
-
-  if (util_shell_exec(ctx->editor, cmd, 1, input, input_len, NULL, &output, &output_len) == EON_OK && output_len > 0) {
-  // Write output to buffer
-  if (cursor->is_anchored) {
-      mark_delete_between_mark(cursor->mark, cursor->anchor);
+    // Get data to send to stdin
+    if (ctx->cursor->is_anchored) {
+      mark_get_between_mark(cursor->mark, cursor->anchor, &input, &input_len);
+      // Add a newline
+      input = realloc(input, input_len + 2);
+      input[input_len] = '\n';
+      input[input_len + 1] = '\0';
+      input_len += 1;
+    } else {
+      input = NULL;
+      input_len = 0;
     }
 
-    mark_insert_before(cursor->mark, output, output_len);
-  }
+    // Run cmd
+    output = NULL;
+    output_len = 0;
 
-  // Free input and output
-  if (input) free(input);
-  if (output) free(output);
-                         ); // Loop for next cursor
+    if (util_shell_exec(ctx->editor, cmd, 1, input, input_len, NULL, &output, &output_len) == EON_OK && output_len > 0) {
+      // Write output to buffer
+      if (cursor->is_anchored) {
+        mark_delete_between_mark(cursor->mark, cursor->anchor);
+      }
+
+      mark_insert_before(cursor->mark, output, output_len);
+    }
+
+    // Free input and output
+    if (input) free(input);
+    if (output) free(output);
+  ); // Loop for next cursor
 
   free(cmd);
   return EON_OK;
@@ -1575,8 +1568,7 @@ static int _cmd_pre_close(editor_t* editor, bview_t* bview) {
     EON_RETURN_ERR(editor, "Cannot close bview %p when loop_depth > 1", bview);
 
   } else if (!bview->buffer->is_unsaved || EON_BVIEW_IS_MENU(bview)
-             || editor_count_bviews_by_buffer(editor, bview->buffer) > 1
-            ) {
+             || editor_count_bviews_by_buffer(editor, bview->buffer) > 1) {
     return EON_OK;
   }
 

@@ -957,7 +957,6 @@ static void _bview_draw_status(bview_t* self) {
 
   tb_printf(editor->rect_status, editor->rect_status.w - 11, 0, TB_WHITE | TB_BOLD, RECT_STATUS_BG, " eon %s", EON_VERSION);
 
-
   // Overlay errstr if present
 _bview_draw_status_end:
 

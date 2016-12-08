@@ -925,13 +925,22 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
       break;
     }
 
+// #define SHOW_KEYS 1
+#ifdef SHOW_KEYS
+    if (cmd_ctx.is_user_input) {
+      //  tb_printf(editor->rect_status, editor->rect_status.w - 20, 0, TB_DEFAULT, TB_DEFAULT,
+      //    "k:%d/ch:%d/m:%d", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
+      printf("k:%d/ch:%d/m:%d", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
+    }
+#endif
+
     // Toggle macro?
     if (_editor_maybe_toggle_macro(editor, &cmd_ctx.input)) {
       continue;
     }
 
     if ((cmd = _editor_get_command(editor, &cmd_ctx, NULL)) != NULL) {
-      //printf("cmd: %s\n", cmd->name);
+      // printf("cmd: %s\n", cmd->name);
 
       // Found cmd in kmap trie, now execute
       if (cmd_ctx.is_user_input && cmd->func == cmd_insert_data) {

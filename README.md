@@ -8,7 +8,11 @@ Install main deps first:
 
     $ apt install tree cmake libpcre-dev # or brew install / apk add
 
-The `tree` command is for browsing directories. It's optional but you definitely want it.
+The `tree` command is for browsing directories. It's optional but you definitely want it. 
+
+If you want to try the experimental plugin system, you'll need to install LuaJIT:
+
+    $ apt install libluajit-5.1-dev # brew install luajit, etc
 
 Clone the repo and initialize submodules:
 
@@ -21,7 +25,7 @@ And off you go!
 
     $ make
 
-You can run `make eon_static` instead to build a static binary.
+To disable the plugin system open the Makefile and comment the WITH_MODULES line at the top. You can also run `make eon_static` in which case you'll get a static binary.
 
 ## Usage
 
@@ -85,8 +89,9 @@ By default Xfce's terminal maps Shift+Up/Down to scroll-one-line behaviour. In o
 
 A bunch of stuff, but most importantly:
 
+ - [ ] update this readme
  - [ ] the ability to customize keybindings
- - [ ] code snippets
+ - [ ] code snippets, probably via a plugin
  - [ ] language-specific syntax highlighting (it currently uses a generic highlighter for all languages)
  - [ ] ability to customize syntax highlighting colours
 

@@ -86,6 +86,7 @@ int editor_init(editor_t* editor, int argc, char** argv) {
   rv = EON_OK;
 
   do {
+
     // Set editor defaults
     editor->is_in_init = 1;
     editor->tab_width = EON_DEFAULT_TAB_WIDTH;
@@ -99,18 +100,11 @@ int editor_init(editor_t* editor, int argc, char** argv) {
     editor->color_col = -1;
     editor->exit_code = EXIT_SUCCESS;
     editor->headless_mode = isatty(STDIN_FILENO) == 0 ? 1 : 0;
+
     _editor_set_macro_toggle_key(editor, EON_DEFAULT_MACRO_TOGGLE_KEY);
-
-    // Init signal handlers
     _editor_init_signal_handlers(editor);
-
-    // Register commands
     _editor_register_cmds(editor);
-
-    // Init kmaps
     _editor_init_kmaps(editor);
-
-    // Init syntaxes
     _editor_init_syntaxes(editor);
 
     // Parse rc files
@@ -142,19 +136,10 @@ int editor_init(editor_t* editor, int argc, char** argv) {
     rv = _editor_init_from_args(editor, argc, argv);
     if (rv != EON_OK) break;
 
-    // Init status bar
     _editor_init_status(editor);
-
-    // Init bviews
     _editor_init_bviews(editor, argc, argv);
-
-    // Init commands
     _editor_init_or_deinit_commands(editor, 0);
-
-    // Init startup macro
     _editor_init_headless_mode(editor);
-
-    // Init headless mode
     _editor_init_startup_macro(editor);
 
 #ifdef WITH_PLUGINS
@@ -332,15 +317,19 @@ int editor_menu(editor_t* editor, cmd_func_t callback, char* opt_buf_data, int o
 
 int _editor_open_dir(editor_t* editor, bview_t * bview, char* opt_path, int opt_path_len) {
   cmd_context_t ctx;
+
   memset(&ctx, 0, sizeof(cmd_context_t));
   ctx.editor = editor;
   ctx.static_param = strndup(opt_path, opt_path_len);
   ctx.bview = bview;
   bview->is_menu = 1;
+
   cmd_browse(&ctx);
+
   editor_close_bview(editor, bview, NULL);
   free(ctx.static_param);
   ctx.static_param = NULL;
+
   return EON_OK;
 }
 
@@ -596,10 +585,12 @@ static int _editor_destroy_cmd(editor_t* editor, cmd_t* cmd) {
 static int _editor_prompt_input_submit(cmd_context_t* ctx) {
   bint_t answer_len;
   char* answer;
+
   buffer_get(ctx->bview->buffer, &answer, &answer_len);
   ctx->loop_ctx->prompt_answer = strndup(answer, answer_len);
   _editor_prompt_history_append(ctx, ctx->loop_ctx->prompt_answer);
   ctx->loop_ctx->should_exit = 1;
+
   return EON_OK;
 }
 
@@ -607,11 +598,14 @@ static int _editor_prompt_input_submit(cmd_context_t* ctx) {
 static int _editor_prompt_input_complete(cmd_context_t* ctx) {
   loop_context_t* loop_ctx;
   loop_ctx = ctx->loop_ctx;
+
   char* cmd;
   char* cmd_arg;
   char* terms;
+
   size_t terms_len;
   int num_terms;
+
   char* term;
   int term_index;
 
@@ -931,11 +925,6 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
       break;
     }
 
-    // if (cmd_ctx->input->key == TB_KEY_ESC) {
-    //    cmd_close(&cmd_ctx);
-    //    continue;
-    // }
-
     // Toggle macro?
     if (_editor_maybe_toggle_macro(editor, &cmd_ctx.input)) {
       continue;
@@ -1062,7 +1051,6 @@ static void _editor_resize(editor_t* editor, int w, int h) {
 
     } else {
       if (bview->split_parent) continue;
-
       bounds = &editor->rect_edit;
     }
 
@@ -1157,7 +1145,6 @@ struct click {
 };
 
 static struct click last_click = { -1, -1, { 0, 0 } };
-
 #ifdef __linux__
 
 static double time_diff;
@@ -1172,11 +1159,9 @@ static int _is_double_click(int x, int y) {
   }
 
   struct timespec now = {0, 0};
-
   clock_gettime(CLOCK_MONOTONIC, &now);
 
   time_diff = _get_timediff(last_click.ts, now);
-
   last_click.ts.tv_sec = -1;
 
   return time_diff < 0.5 ? 1 : 0;
@@ -2087,25 +2072,22 @@ static void _editor_destroy_kmap(kmap_t* kmap, kbinding_t* trie) {
   kbinding_t* binding_tmp;
   int is_top;
   is_top = (trie == kmap->bindings ? 1 : 0);
+
   HASH_ITER(hh, trie, binding, binding_tmp) {
+
     if (binding->children) {
       _editor_destroy_kmap(kmap, binding->children);
     }
 
     HASH_DELETE(hh, trie, binding);
-
     if (binding->static_param) free(binding->static_param);
-
     if (binding->cmd_name) free(binding->cmd_name);
-
     if (binding->key_patt) free(binding->key_patt);
-
     free(binding);
   }
 
   if (is_top) {
     if (kmap->name) free(kmap->name);
-
     free(kmap);
   }
 }
@@ -2248,7 +2230,6 @@ static void _editor_init_syntax_add_rule(syntax_t* syntax, srule_def_t* def) {
 
   if (def->re_end) {
     node->srule = srule_new_multi(def->re, strlen(def->re), def->re_end, strlen(def->re_end), def->fg, def->bg);
-
   } else {
     node->srule = srule_new_single(def->re, strlen(def->re), 0, def->fg, def->bg);
   }
@@ -2378,7 +2359,6 @@ static int _editor_init_from_rc(editor_t* editor, FILE* rc, char* rc_path) {
 
     while (bol < rc_data_stop) {
       eol = strchr(bol, '\n');
-
       if (!eol) eol = rc_data_stop - 1;
 
       if (*bol != ';') { // Treat semicolon lines as comments
@@ -2386,10 +2366,8 @@ static int _editor_init_from_rc(editor_t* editor, FILE* rc, char* rc_path) {
           *eol = '\0';
           fargv[fargc] = bol;
         }
-
         fargc += 1;
       }
-
       bol = eol + 1;
     }
 

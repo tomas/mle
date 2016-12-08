@@ -66,15 +66,15 @@ If you want to disable the mouse mode you can toggle it by hitting `Alt-Backspac
 
 Apple's official terminal doesn't handle two 'meta' keys simultaneously (like Ctrl or Alt + Shift) and by default doesn't event send even the basic escape sequences other terminals do. However you can change the latter so at least some of the key combinations will work. To do this, open up the app's Preferences pane and open the "Keyboard" tab within Settings. Tick the "Use option as meta key" checkbox, and then hit the Plus sign above to add the following:
 
- - key: cursor up,    modifier: control, action: send string to shell --> \033Oa
- - key: cursor down,  modifier: control, action: send string to shell --> \033Ob
- - key: cursor right, modifier: control, action: send string to shell --> \033Oc
- - key: cursor left,  modifier: control, action: send string to shell --> \033Ob
+     - key: cursor up,    modifier: control, action: send string to shell --> \033Oa
+     - key: cursor down,  modifier: control, action: send string to shell --> \033Ob
+     - key: cursor right, modifier: control, action: send string to shell --> \033Oc
+     - key: cursor left,  modifier: control, action: send string to shell --> \033Ob
 
- - key: cursor up,    modifier: shift,   action: send string to shell --> \033[a
- - key: cursor down,  modifier: shift,   action: send string to shell --> \033[b
- - key: cursor right, modifier: shift,   action: send string to shell --> \033[c
- - key: cursor left,  modifier: shift,   action: send string to shell --> \033[b
+     - key: cursor up,    modifier: shift,   action: send string to shell --> \033[a
+     - key: cursor down,  modifier: shift,   action: send string to shell --> \033[b
+     - key: cursor right, modifier: shift,   action: send string to shell --> \033[c
+     - key: cursor left,  modifier: shift,   action: send string to shell --> \033[b
 
 These will let you use Shift and Control + Arrow Keys. Note that you might have some of these combinations assigned to Mission Control functions (e.g. Move left a space). In this case you'll
 need to decide which one you'll want to keep. My suggestion is to remove them given that most of
@@ -88,11 +88,12 @@ By default Xfce's terminal maps Shift+Up/Down to scroll-one-line behaviour. In o
 
 A bunch of stuff, but most importantly:
 
- - [ ] update this readme
- - [ ] the ability to customize keybindings
- - [ ] code snippets, probably via a plugin
+ - [ ] finish the plugin API (currently in the works)
+ - [ ] provide the ability to customize keybindings
+ - [ ] autocompletion (keywords, code snippets, etc), probably via a plugin
  - [ ] language-specific syntax highlighting (it currently uses a generic highlighter for all languages)
- - [ ] ability to customize syntax highlighting colours
+ - [ ] ability to customize colours for syntax highlight and parts of the UI
+ - [ ] update this readme
 
 ## Credits
 

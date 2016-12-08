@@ -83,24 +83,24 @@ static int get_selection(lua_State * L) {
   mark_t * last;
 
   if (mark->bline->line_index < anchor->bline->line_index) {
-    first = anchor; last = mark;
+    first = mark; last = anchor;
   } else if (mark->bline->line_index > anchor->bline->line_index) {
-    first = mark; last = anchor;
-  } else if (mark->col > anchor->col) {
-    first = mark; last = anchor;
-  } else {
     first = anchor; last = mark;
+  } else if (mark->col > anchor->col) {
+    first = anchor; last = mark;
+  } else {
+    first = mark; last = anchor;
   }
 
   lua_createtable(L, 4, 0);
   lua_pushinteger(L, first->bline->line_index);
-  lua_rawseti(L,-2, 2);
+  lua_rawseti(L, -2, 0);
   lua_pushinteger(L, first->col);
-  lua_rawseti(L,-2, 3);
+  lua_rawseti(L, -2, 1);
   lua_pushinteger(L, last->bline->line_index);
-  lua_rawseti(L,-2, 0);
+  lua_rawseti(L, -2, 2);
   lua_pushinteger(L, last->col);
-  lua_rawseti(L,-2, 1);
+  lua_rawseti(L, -2, 3);
 
   return 1;
 }

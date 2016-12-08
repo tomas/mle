@@ -713,6 +713,10 @@ int cmd_copy(cmd_context_t* ctx) {
 
 // Paste text
 int cmd_uncut(cmd_context_t* ctx) {
+  if (ctx->cursor->is_anchored) { // delete selection first
+    cmd_delete_before(ctx);
+  }
+
   EON_MULTI_CURSOR_CODE(ctx->cursor,
                         cursor_uncut(cursor);
                        );

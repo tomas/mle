@@ -1,4 +1,4 @@
-WITH_PLUGINS=1
+# WITH_PLUGINS=1
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
@@ -20,8 +20,9 @@ ifdef WITH_PLUGINS
 	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
 	eon_ldlibs+=`pkg-config --libs luajit`
 else
-  # remove plugins.o from list of objects
+	# remove plugins stuff from list of objects
 	eon_objects:=$(subst src/plugins.o ,,$(eon_objects))
+	eon_objects:=$(subst src/plugin_api.o ,,$(eon_objects))
 endif
 
 all: eon

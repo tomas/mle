@@ -26,7 +26,7 @@ And off you go!
 
     $ make
 
-To disable the plugin system open the Makefile and comment the WITH_MODULES line at the top. You can also run `make eon_static` in which case you'll get a static binary.
+To disable the plugin system open the Makefile and comment the WITH_PLUGINS line at the top. You can also run `make eon_static` in which case you'll get a static binary.
 
 ## Usage
 
@@ -100,7 +100,7 @@ A bunch of stuff, but most importantly:
 ## Credits
 
 Original code by [Adam Saponara](http://github.com/adsr).
-Modifications by Tomás Pollak.
+Refactoring and additional features by Tomás Pollak.
 Contributions by you, hopefully. :)
 
 ## Copyright

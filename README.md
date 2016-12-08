@@ -1,232 +1,101 @@
-# mle
+# eon
 
-mle is a small but powerful console text editor written in C.
+A clever little console text editor. Written in C, forked out of [mle](https://github.com/adsr/mle).
 
-[![Build Status](https://travis-ci.org/adsr/mle.svg?branch=master)](https://travis-ci.org/adsr/mle)
+## Building
 
-### Features
+Install main deps first:
 
-* Small codebase (~10k sloc)
-* Only 1 out-of-repo dependency (pcre)
-* Full UTF-8 support
-* Syntax highlighting
-* Stackable key maps (modes)
-* Extensible via stdio
-* Scriptable rc file
-* Built-in text editing language (lel)
-* Key macros
-* Multiple splittable windows
-* Regex search and replace
-* Large file support
-* Incremental search
-* Linear undo and redo
-* Multiple cursors
-* Headless mode
-* Movement via [less](https://www.gnu.org/software/less/)
-* Fuzzy file search via [fzf](https://github.com/junegunn/fzf)
-* File browsing via [tree](http://mama.indstate.edu/users/ice/tree/)
-* File grep via [grep](https://www.gnu.org/software/grep/)
+    $ apt install tree cmake libpcre-dev # or brew install / apk add
 
-### Building
+The `tree` command is for browsing directories. It's optional but you definitely want it.
 
-    $ git clone https://github.com/adsr/mle.git
-    $ cd mle
+Clone the repo and initialize submodules:
+
+    $ git clone https://github.com/tomas/eon.git
+    $ cd eon
+    $ git checkout origin/work2 -b work2 # this is where I'm working right now
     $ git submodule update --init --recursive
-    $ sudo apt-get install libpcre3-dev # or yum install pcre-devel, etc
+
+And off you go!
+
     $ make
 
-You can run `make mle_static` instead to build a static binary.
+You can run `make eon_static` instead to build a static binary.
 
-### Demos
+## Usage
 
-![mle demo](http://i.imgur.com/7xGs8fM.gif)
+You can open `eon` by providing a directory or a file name. In the first case, it'll show a list of files within that directory (provided you installed the `tree` command).
 
-View more demos [here](http://imgur.com/a/ZBmmQ).
+    $ eon path/to/stuff
 
-View large-file startup benchmark [here](http://i.imgur.com/VGGMmGg.gif).
+In the second case it will, ehm, open the file.
 
-### mlerc
+    $ eon index.js
 
-mle is customized via an rc file, `~/.mlerc` (or `/etc/mlerc`). The contents of
-the rc file are any number of cli options separated by newlines. (Run `mle -h`
-to view all cli options.) Lines that begin with a semi-colon are comments.
+You can also pass a line number if you want to:
 
-Alternatively, if `~/.mlerc` is executable, mle executes it and interprets the
-resulting stdout as described above.
+    $ eon index.js:82
 
-For example, my rc file is an executable php script, and includes the following
-snippet, which overrides `grep` with `git grep` if `.git` exists in the current
-working directory.
+Or simply start with an empty document:
 
-    <?php if (file_exists('.git')): ?>
-    -kcmd_grep,M-q,git grep --color=never -P -i -I -n %s 2>/dev/null
-    <?php endif; ?>
+    $ eon
 
-### Scripting
+## Tabs
 
-mle is extensible via any program capable of standard I/O. A simple
-line-based request/response protocol enables user scripts to register commands
-and invoke internal editor functions in order to perform complex editing tasks.
-All messages are URL-encoded and end with a newline.
+To open a new tab within the editor, you can either hit `Ctrl-B` or `Ctrl-N`. The former will open a new file browser view, and the latter will start a new empty document.
 
-Example exchange between a user script and mle:
+As you'll see, `eon` fully supports mouse movement, so you can move around by clicking in a tab, and you can also click the middle button to close one. Double click is supported (word select on editor view and open file in file browser view) as well as text selection. Like you'd expect on the 21st century. :)
 
-    usx -> mle    method=editor_register_cmd&params%5B%5D=hello&id=57cc98bb168ae
-    mle -> usx    result%5Brc%5D=0&id=57cc98bb168ae
-    ...
-    mle -> usx    method=hello&params%5Bmark%5D=76d6e0&params%5Bstatic_param%5D=&id=0x76d3a0-0
-    usx -> mle    method=mark_insert_before&params%5B%5D=76d6e0&params%5B%5D=hello%3F&params%5B%5D=5&id=57cc98bb6ab3d
-    mle -> usx    result%5Brc%5D=0&id=57cc98bb6ab3d
-    usx -> mle    result%5Brc%5D=0&error=&id=0x76d3a0-0
+## Keybindings
 
-In the example above, the user script registers a command called `hello` at
-startup, and mle replies with success. Later, the end-user invokes the `hello`
-command, so mle sends a request to the user script. The user script receives the
-request and sends a sub-request invoking `mark_insert_before`, to which mle
-replies with success. Finally the user script returns overall success for the
-`hello` command.
+Yes, `eon` have a very sane set of default keybindings. `Ctrl-C` copies, `Ctrl-V` pastes, `Ctrl-Z` performs an undo and `Ctrl-Shift-Z` triggers a redo. `Ctrl-F` starts the incremental search function. To exit, either hit `Ctrl-D` or `Ctrl-Q`.
 
-Currently, mle only accepts requests from user scripts while a request to the
-user script itself is pending. (In other words, mle enforces an "only do stuff
-if I ask you to" policy.) The exception to this is `editor_register_cmd` which
-can be invoked by user scripts at startup time.
+Meta keys are supported, so you can also hit `Shift+Arrow Keys` to select text and then cut-and-paste it as you please. Last but not least, `eon` supports multi-cursor editing. To insert new cursors, either hit `Ctrl+Shift+Up/Down` or `Ctrl+Alt+Up/Down`. To cancel multi-cursor mode hit `Ctrl-D` or the `Esc` key.
 
-For end-users, user scripts are loaded via the `-x` cli option. Commands
-registered by user scripts can be mapped to keys as normal via `-k`.
+The reason why `eon` has two keybindings for a few things is because every terminal supports a different set of key combos. The officially list of supported terminals is currently xterm, urxvt (rxvt-unicode), mrxvt, xfce4-terminal and iTerm. Please don't try to use `eon` from within the default OSX terminal, as most key combos won't work so you won't get the full `eon` experience. If you really want to, then read below for a few configuration tips.
 
-### lel: edit language
+## Mouse mode
 
-mle comes with a built-in text editing language called lel, inspired by the
-[sam command language](http://doc.cat-v.org/bell_labs/sam_lang_tutorial/). lel
-commands can be entered manually at a prompt, or bound to any key via
-`-kcmd_lel,<key>,<lelcmd>`.
+If you want to disable the mouse mode you can toggle it by hitting `Alt-Backspace` or `Shift-Backspace`. This is useful if you want to copy or paste a chunk of text from or to another window in your session.
 
-Motions
+## Setting up OSX Terminal
 
-    /re/        next regex
-    ?re?        prev regex
-    'str'       next string
-    "str"       prev string
-    r/re/       next regex (/ is any delim)
-    R/re/       prev regex
-    f/str/      next string (/ is any delim)
-    F/str/      prev string
-    ta          next char (a is any char)
-    Ta          prev char
-    w           next word outer
-    W           prev word outer
-    n           next word inner
-    N           next word inner
-    l0          line absolute
-    l-2         line relative
-    #5          column absolute
-    #+1         column relative
-    ^           beginning of line
-    $           end of line
-    g           beginning of file
-    G           end of file
-    h           beginning of sel
-    H           end of sel
-    ma          mark (a is [a-z])
-    ~           origin mark
+Apple's official terminal doesn't handle two 'meta' keys simultaneously (like Ctrl or Alt + Shift) and by default doesn't event send even the basic escape sequences other terminals do. However you can change the latter so at least some of the key combinations will work. To do this, open up the app's Preferences pane and open the "Keyboard" tab within Settings. Tick the "Use option as meta key" checkbox, and then hit the Plus sign above to add the following:
 
-Actions
+ - key: cursor up,    modifier: control, action: send string to shell --> \033Oa
+ - key: cursor down,  modifier: control, action: send string to shell --> \033Ob
+ - key: cursor right, modifier: control, action: send string to shell --> \033Oc
+ - key: cursor left,  modifier: control, action: send string to shell --> \033Ob
 
-    a/str/      insert string before cursor (/ is any delim)
-    c/str/      change sel to string
-    i/str/      insert string after cursor
-    d           delete sel
-    s/re/x/     regex replace sel
-    k           cut sel
-    y           copy sel
-    Y           copy append sel
-    v           paste
-    |`cmd`      pipe sel to shell cmd (` is any delim)
+ - key: cursor up,    modifier: shift,   action: send string to shell --> \033[a
+ - key: cursor down,  modifier: shift,   action: send string to shell --> \033[b
+ - key: cursor right, modifier: shift,   action: send string to shell --> \033[c
+ - key: cursor left,  modifier: shift,   action: send string to shell --> \033[b
 
-Cursors
+These will let you use Shift and Control + Arrow Keys. Note that you might have some of these combinations assigned to Mission Control functions (e.g. Move left a space). In this case you'll
+need to decide which one you'll want to keep. My suggestion is to remove them given that most of
+these commands can be accessed via mouse gestures anyway.
 
-    D           drop cursor anchor
-    U           lift cursor anchor
-    z           drop sleeping cursor
-    Z           awake all cursors
-    .           collapse cursors
-    O           swap cursor mark with anchor
-    Ma          drop mark (a is [a-z])
-    !           move user cursor to lel cursor
+## Setting up xfce4-terminal
 
-Registers
+By default Xfce's terminal maps Shift+Up/Down to scroll-one-line behaviour. In order to deactivate this so you regain that mapping for `eon`, just untick the "Scroll single line using Shift-Up/Down keys" option in the app's preferences pane.
 
-    <a          prepend sel to register (a is [a-z])
-    >a          append sel to register
-    =a          set register to sel
-    _a          clear register
-    Aa          write out register (before cursor)
-    Ia          write out register (after cursor)
-    Sa/re/str/  like A, but regex replace output
+## TODO
 
-Loops, conditionals, etc
+A bunch of stuff, but most importantly:
 
-    L cmd       foreach line, do cmd
-    x/re/cmd    foreach regex match, do cmd (/ is any delim)
-    X/re/cmd    ditto, with dropped anchor
-    q/re/cmd    if re matches sel, do cmd
-    Q/re/cmd    if re does not match sel, do cmd
-    { c1 c2 }   group commands
-    9cmd        repeat command (9 is any number)
+ - [ ] the ability to customize keybindings
+ - [ ] code snippets
+ - [ ] language-specific syntax highlighting (it currently uses a generic highlighter for all languages)
+ - [ ] ability to customize syntax highlighting colours
 
-Examples
+## Credits
 
-    Delete next 4 lines
-        4d
-    Find first occurrence of 'int'
-        g 'int' !
-    Find last occurrence of 'int'
-        G "int" !
-    Remove all tabs from file
-        L s/\t//
-    Multi-cursor select all matches of 'var'
-        X/var/z Z
-    Hard wrap file at column 79
-        g D G |`fold -sw79`
-    Comment out lines containing 'todo'
-        L q/todo/ { ^ a|//| }
-    Copy func protos here, replacing bracket with semi-colon
-        x/^static.*{/>a ~ Sa/ {/;/ _a
+Original code by [Adam Saponara](http://github.com/adsr).
+Modifications by Tomás Pollak.
+Contributions by you, hopefully. :)
 
-### Headless mode
+## Copyright
 
-mle provides support for non-interactive editing which may be useful for using
-the editor as a regular command line tool. In headless mode, mle reads stdin
-into a buffer, applies a startup macro if specified, and then writes the buffer
-contents to stdout. For example:
-
-    $ echo -n hello | mle -M 'test C-e space w o r l d enter' -p test
-    hello world
-
-If stdin is a pipe, mle goes into headless mode automatically. Headless mode can
-be explicitly enabled or disabled with the `-H` option.
-
-### Runtime dependencies (optional)
-
-The following programs will enable or enhance certain features of mle if they
-exist in `PATH`.
-
-* [bash](https://www.gnu.org/software/bash/) (tab completion)
-* [fzf](https://github.com/junegunn/fzf) (fuzzy file search)
-* [grep](https://www.gnu.org/software/grep/) (file grep)
-* [less](https://www.gnu.org/software/less/) (less integration)
-* [tree](http://mama.indstate.edu/users/ice/tree/) (file browsing)
-
-### Known bugs
-
-* Multi-line style rules don't work properly when overlapped/staggered.
-* There's a segfault lurking in the window split code. I can't reliably
-  reproduce it.
-
-### Acknowledgements
-
-mle makes extensive use of the following libraries.
-
-* [uthash](https://troydhanson.github.io/uthash) for hash maps and linked lists
-* [termbox](https://github.com/nsf/termbox) for TUI
-* [PCRE](http://www.pcre.org/) for syntax highlighting and search
+(c) Apache License 2.0

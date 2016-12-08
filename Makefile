@@ -1,33 +1,60 @@
-SHELL=/bin/bash
-DESTDIR?=/usr/bin/
-mle_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -Wno-missing-braces -g -I./mlbuf/ -I./termbox/src/
-mle_ldlibs:=$(LDLIBS) -lm -lpcre
-mle_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
-mle_static:=
+WITH_PLUGINS=1
+SHELL=/bin/sh
+DESTDIR?=/usr/local/bin/
+CC=gcc
 
-all: mle
+WARNINGS=-Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-but-set-variable
+eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/
+eon_ldlibs:=$(LDLIBS) -lm -ldl
+eon_objects:=$(patsubst %.c,%.o,$(wildcard src/*.c))
+eon_static:=
 
-mle: $(mle_objects) ./mlbuf/libmlbuf.a ./termbox/build/src/libtermbox.a
-	$(CC) $(mle_objects) $(mle_static) ./mlbuf/libmlbuf.a ./termbox/build/src/libtermbox.a $(mle_ldlibs) -o mle
+UNAME := $(shell uname -s)
+ifeq ($(UNAME),Darwin)
+	eon_ldlibs+=-L /usr/local/Cellar/pcre/8.38/lib -lpcre
+else
+	eon_ldlibs+=-lrt -lpcre
+endif
 
-mle_static: mle_static:=-static
-mle_static: mle_ldlibs:=$(mle_ldlibs) -lpthread
-mle_static: mle
+ifdef WITH_PLUGINS
+	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
+	eon_ldlibs+=`pkg-config --libs luajit`
+else
+  # remove plugins.o from list of objects
+	eon_objects:=$(subst src/plugins.o ,,$(eon_objects))
+endif
 
-$(mle_objects): %.o: %.c
-	$(CC) -c $(mle_cflags) $< -o $@
+all: eon
 
-./mlbuf/libmlbuf.a:
+eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_objects)
+	$(CC) $(eon_objects) $(eon_static) ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_ldlibs) -o eon
+
+eon_static: eon_static:=-static
+eon_static: eon_ldlibs:=$(eon_ldlibs) -lpthread
+eon_static: eon
+
+$(eon_objects): %.o: %.c
+	$(CC) -c $(eon_cflags) $< -o $@
+
+./mlbuf/libmlbuf.a: ./mlbuf/patched
 	$(MAKE) -C mlbuf
 
-./termbox/build/src/libtermbox.a:
-	pushd termbox && ./waf configure &>/dev/null && ./waf &>/dev/null && popd
+./mlbuf/patched: 01-mlbuf-makefile.patch
+	@echo "Patching mlbuf..."
+	if [ -e $@ ]; then cd mlbuf; git reset --hard HEAD; cd ..; fi
+	cd mlbuf; patch -p1 < ../$<; cd ..
+	cp $< $@
 
-test: mle test_mle
+./termbox/build/libtermbox.a:
+	@echo "Building termbox..."
+	if [ ! -e termbox/build ]; then mkdir termbox/build; cd termbox/build; cmake ..; cd ..; fi
+	cd termbox/build && make
+
+test: eon test_eon
 	$(MAKE) -C mlbuf test
 
-test_mle: mle
-	$(MAKE) -C tests && ./mle -v
+test_eon: eon
+	$(MAKE) -C tests && ./eon -v
 
 sloc:
 	find . -name '*.c' -or -name '*.h' | \
@@ -35,13 +62,13 @@ sloc:
 		xargs -rn1 cat | \
 		wc -l
 
-install: mle
-	install -v -m 755 mle $(DESTDIR)
+install: eon
+	install -v -m 755 eon $(DESTDIR)
 
 clean:
-	rm -f *.o mle.bak.* gmon.out perf.data perf.data.old mle
+	rm -f src/*.o eon.bak.* gmon.out perf.data perf.data.old eon
 	$(MAKE) -C mlbuf clean
 	$(MAKE) -C tests clean
-	pushd termbox && ./waf clean &>/dev/null && popd
+	rm -Rf termbox/build
 
-.PHONY: all mle_static test test_mle sloc install clean
+.PHONY: all eon_static test test_eon sloc install clean

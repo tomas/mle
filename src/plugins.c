@@ -409,18 +409,3 @@ int trigger_plugin_event(const char * event, cmd_context_t ctx) {
 
   return 0;
 }
-
-
-/*
-int main() {
-  printf("Loading plugins...\n");
-  load_plugins();
-  printf("Getting plugin info...\n");
-  show_plugins();
-  printf("Running plugins...\n");
-  call_plugin("upper", "run");
-  printf("Unloading plugins...\n");
-  unload_plugins();
-  printf("Plugins unloaded!\n");
-}
-*/

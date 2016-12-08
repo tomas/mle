@@ -545,6 +545,7 @@ void str_append_replace_with_backrefs(str_t* str, char* subj, char* repl, int pc
 
 // Globals
 extern editor_t _editor;
+extern cmd_context_t * plugin_ctx;
 
 // Macros
 #define EON_VERSION "1.1.1"
@@ -617,7 +618,6 @@ extern editor_t _editor;
 )
 
 #define EON_BRACKET_PAIR_MAX_SEARCH 10000
-
 #define EON_RE_WORD_FORWARD "((?<=\\w)\\W|$)"
 #define EON_RE_WORD_BACK "((?<=\\W)\\w|^)"
 

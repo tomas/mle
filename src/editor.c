@@ -140,7 +140,6 @@ int editor_init(editor_t* editor, int argc, char** argv) {
 
     // Parse cli args
     rv = _editor_init_from_args(editor, argc, argv);
-
     if (rv != EON_OK) break;
 
     // Init status bar
@@ -177,7 +176,6 @@ int editor_run(editor_t* editor) {
   return EON_OK;
 }
 
-// Deinit editor
 int editor_deinit(editor_t* editor) {
   bview_t* bview;
   bview_t* bview_tmp1;
@@ -199,36 +197,35 @@ int editor_deinit(editor_t* editor) {
 #endif
 
   _editor_init_or_deinit_commands(editor, 1);
-
   if (editor->status) bview_destroy(editor->status);
 
   CDL_FOREACH_SAFE2(editor->all_bviews, bview, bview_tmp1, bview_tmp2, all_prev, all_next) {
     CDL_DELETE2(editor->all_bviews, bview, all_prev, all_next);
     bview_destroy(bview);
   }
+
   HASH_ITER(hh, editor->kmap_map, kmap, kmap_tmp) {
     HASH_DEL(editor->kmap_map, kmap);
     _editor_destroy_kmap(kmap, kmap->bindings->children);
-
     if (kmap->default_cmd_name) free(kmap->default_cmd_name);
 
     free(kmap->bindings);
     free(kmap->name);
     free(kmap);
   }
+
   HASH_ITER(hh, editor->macro_map, macro, macro_tmp) {
     HASH_DEL(editor->macro_map, macro);
-
     if (macro->inputs) free(macro->inputs);
-
     if (macro->name) free(macro->name);
-
     free(macro);
   }
+
   HASH_ITER(hh, editor->cmd_map, cmd, cmd_tmp) {
     HASH_DEL(editor->cmd_map, cmd);
     _editor_destroy_cmd(editor, cmd);
   }
+
   HASH_ITER(hh, editor->prompt_history, prompt_history, prompt_history_tmp) {
     HASH_DEL(editor->prompt_history, prompt_history);
     free(prompt_history->prompt_str);
@@ -241,19 +238,16 @@ int editor_deinit(editor_t* editor) {
   }
 
   if (editor->macro_record) {
-    if (editor->macro_record->inputs) free(editor->macro_record->inputs);
+    if (editor->macro_record->inputs)
+      free(editor->macro_record->inputs);
 
     free(editor->macro_record);
   }
 
   _editor_destroy_syntax_map(editor->syntax_map);
-
   if (editor->kmap_init_name) free(editor->kmap_init_name);
-
   if (editor->insertbuf) free(editor->insertbuf);
-
   if (editor->ttyfd) close(editor->ttyfd);
-
   if (editor->startup_macro_name) free(editor->startup_macro_name);
 
   return EON_OK;

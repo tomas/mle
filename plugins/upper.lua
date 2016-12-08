@@ -4,16 +4,14 @@ ffi.cdef([[
   void printf(const char * fmt, ...);
 ]])
 
-local M = {}
+local plugin   = {}
+plugin.name    = "Upper"
+plugin.version = "1.3"
 
-M.name  = "Upper"
-M.ptype = "text"
-M.pver  = "1.3"
-
-function M.run(text)
+function plugin.run(text)
   ffi.C.printf("integer value: %d\n", 10)
   test(1)
   return tostring(text):upper()
 end
 
-return M
+return plugin

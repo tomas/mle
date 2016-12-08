@@ -1,7 +1,7 @@
-local M = {}
+local plugin = {}
 
-M.name = "Trailing Lines"
-M.pver = "1.0"
+plugin.name    = "Trailing Lines"
+plugin.version = "1.0"
 
 local function remove_trailing_lines()
   trim_count = 0
@@ -19,9 +19,9 @@ local function remove_trailing_lines()
   return trim_count
 end
 
-function M.before_cmd_save()
+function plugin.before_cmd_save()
   res = remove_trailing_lines()
   return res
 end
 
-return M
+return plugin

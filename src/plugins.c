@@ -282,7 +282,7 @@ void load_plugin(const char * name) {
   lua_pop(luaMain, 1);
 
   /* Get the plugin version (optional attribute). */
-  lua_getfield(luaMain, -1, "pver");
+  lua_getfield(luaMain, -1, "version");
   pver = lua_tostring(luaMain, -1);
   lua_pop(luaMain, 1);
 

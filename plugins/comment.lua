@@ -1,7 +1,6 @@
-local M = {}
-
-M.name = "Comment Lines"
-M.pver = "1.0"
+local plugin   = {}
+plugin.name    = "Comment Lines"
+plugin.version = "1.0"
 
 local function toggle_comment_on(line_number)
   line = get_buffer_at_line(line_number)
@@ -22,11 +21,11 @@ local function toggle_comment_on(line_number)
   end
 end
 
-function M.onload()
+function plugin.onload()
   add_keybinding("C-/", "toggle_comment")
 end
 
-function M.before_cmd_grep()
+function plugin.before_cmd_grep()
   if has_selection() then
     selection = get_selection() -- start line, start col, end line, end col
     local first_line = selection[0]
@@ -41,4 +40,4 @@ function M.before_cmd_grep()
   return res
 end
 
-return M
+return plugin

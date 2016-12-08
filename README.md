@@ -89,3 +89,13 @@ A bunch of stuff, but most importantly:
  - [ ] code snippets
  - [ ] language-specific syntax highlighting (it currently uses a generic highlighter for all languages)
  - [ ] ability to customize syntax highlighting colours
+
+## Credits
+
+Original code by [Adam Saponara](http://github.com/adsr).
+Modifications by Tomás Pollak.
+Contributions by you, hopefully. :)
+
+## Copyright
+
+(c) Apache License 2.0

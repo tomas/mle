@@ -75,7 +75,7 @@ Apple's official terminal doesn't handle two 'meta' keys simultaneously (like Ct
 
 These will let you use Shift and Control + Arrow Keys. Note that you might have some of these combinations assigned to Mission Control functions (e.g. Move left a space). In this case you'll
 need to decide which one you'll want to keep. My suggestion is to remove them given that most of
-these commands can be accessed via mouse gestures.
+these commands can be accessed via mouse gestures anyway.
 
 ## Setting up xfce4-terminal
 

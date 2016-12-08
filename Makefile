@@ -2,6 +2,7 @@
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 CC=gcc
+STRIP=strip
 
 WARNINGS=-Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-but-set-variable
 eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/
@@ -29,6 +30,7 @@ all: eon
 
 eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_objects)
 	$(CC) $(eon_objects) $(eon_static) ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_ldlibs) -o eon
+	$(STRIP) eon
 
 eon_static: eon_static:=-static
 eon_static: eon_ldlibs:=$(eon_ldlibs) -lpthread

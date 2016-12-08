@@ -13,7 +13,7 @@ local function remove_trailing_lines()
   trim_count = 0
   line_count = get_line_count()
 
-  for i=1, line_count, 1 do
+  for i = 1, line_count, 1 do
     line = get_buffer_at_line(i-1)
     for str in string.gmatch(line, "([ \t]+)$") do
       trim_count = trim_count+1

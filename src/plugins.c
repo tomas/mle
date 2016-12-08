@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <dirent.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
@@ -57,11 +58,53 @@ vector pluginVersions;
 
 cmd_context_t * current_ctx;
 
-int plugins_count = 2;
 const char * plugin_path = "plugins";
-const char * plugins[2] = {
-  "trailing", "lower"
-};
+
+// int = current_line_number()
+static int current_line_number(lua_State * L) {
+  int line_number = current_ctx->cursor->mark->bline->line_index;
+  lua_pushnumber(L, line_number);
+  return 1;
+}
+
+// bool = has_selection()
+static int has_selection(lua_State * L) {
+  int anchored = current_ctx->cursor->is_anchored;
+  lua_pushboolean(L, anchored);
+  return 1;
+}
+
+// selection = get_selection()
+// selection.from.col, selection.from.line
+// selection.to.col, selection.to.line
+static int get_selection(lua_State * L) {
+  mark_t * mark = current_ctx->cursor->mark;
+  mark_t * anchor = current_ctx->cursor->anchor;
+  mark_t * first;
+  mark_t * last;
+
+  if (mark->bline->line_index < anchor->bline->line_index) {
+    first = anchor; last = mark;
+  } else if (mark->bline->line_index > anchor->bline->line_index) {
+    first = mark; last = anchor;
+  } else if (mark->col > anchor->col) {
+    first = mark; last = anchor;
+  } else {
+    first = anchor; last = mark;
+  }
+
+  lua_createtable(L, 4, 0);
+  lua_pushinteger(L, first->bline->line_index);
+  lua_rawseti(L,-2, 2);
+  lua_pushinteger(L, first->col);
+  lua_rawseti(L,-2, 3);
+  lua_pushinteger(L, last->bline->line_index);
+  lua_rawseti(L,-2, 0);
+  lua_pushinteger(L, last->col);
+  lua_rawseti(L,-2, 1);
+
+  return 1;
+}
 
 static int get_line_count(lua_State * L) {
   int line_count = current_ctx->bview->buffer->line_count;
@@ -70,7 +113,7 @@ static int get_line_count(lua_State * L) {
 }
 
 static int get_buffer_at_line(lua_State *L) {
-  int nargs = lua_gettop(L);
+  // int nargs = lua_gettop(L);
   int line_index = lua_tointeger(L, 1);
 
   bline_t * line;
@@ -79,20 +122,82 @@ static int get_buffer_at_line(lua_State *L) {
   return 1; // one argument
 };
 
+// set_buffer_at_line(number, buffer)
 static int set_buffer_at_line(lua_State *L) {
-  int nargs = lua_gettop(L);
+  // int nargs = lua_gettop(L);
   int line_index = lua_tointeger(L, 1);
-  const char *newbuf = luaL_checkstring(L, 2);
+  const char *buf = luaL_checkstring(L, 2);
 
   bline_t * line;
   buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
 
   int col = 0;
-  int res = bline_replace(line, col, line->data_len, (char *)newbuf, strlen(newbuf));
+  int res = bline_replace(line, col, line->data_len, (char *)buf, strlen(buf));
 
   lua_pushnumber(L, res);
   return 1; // one argument
 };
+
+// insert_buffer_at_line(line_number, buffer, column)
+static int insert_buffer_at_line(lua_State *L) {
+  int line_index = lua_tointeger(L, 1);
+  const char *buf = luaL_checkstring(L, 2);
+  int column = lua_tointeger(L, 3);
+
+  bline_t * line;
+  buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+
+  bint_t ret_chars;
+  bline_insert(line, column, (char *)buf, strlen(buf), &ret_chars);
+
+  lua_pushnumber(L, ret_chars);
+  return 1;
+};
+
+// delete_chars_at_line(line_number, column, count)
+static int delete_chars_at_line(lua_State *L) {
+  int line_index = lua_tointeger(L, 1);
+  int column = lua_tointeger(L, 2);
+  int count = lua_tointeger(L, 3);
+
+  bline_t * line;
+  buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+
+  int res = bline_delete(line, column, count);
+  lua_pushnumber(L, res);
+  return 1;
+};
+
+// prepend_buffer_at_line(line_number, buffer)
+static int prepend_buffer_at_line(lua_State *L) {
+  int line_index = lua_tointeger(L, 1);
+  const char *buf = luaL_checkstring(L, 2);
+
+  bline_t * line;
+  buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+
+  bint_t ret_chars;
+  bline_insert(line, 0, (char *)buf, strlen(buf), &ret_chars);
+
+  lua_pushnumber(L, ret_chars);
+  return 0;
+};
+
+// append_buffer_at_line(line_number, buffer)
+static int append_buffer_at_line(lua_State *L) {
+  int line_index = lua_tointeger(L, 1);
+  const char *buf = luaL_checkstring(L, 2);
+
+  bline_t * line;
+  buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+
+  bint_t ret_chars;
+  bline_insert(line, line->data_len, (char *)buf, strlen(buf), &ret_chars);
+
+  lua_pushnumber(L, ret_chars);
+  return 0;
+};
+
 
 int unload_plugins(void) {
   if (luaMain == NULL)
@@ -109,7 +214,6 @@ int unload_plugins(void) {
 
 void init_plugins(void) {
   // printf("Initializing plugins...\n");
-
   unload_plugins();
 
   vector_init(&pluginNames, 1);
@@ -118,12 +222,28 @@ void init_plugins(void) {
   luaMain = luaL_newstate();
   luaL_openlibs(luaMain);
 
+  lua_pushcfunction(luaMain, has_selection);
+  lua_setglobal(luaMain, "has_selection");
+  lua_pushcfunction(luaMain, get_selection);
+  lua_setglobal(luaMain, "get_selection");
+  lua_pushcfunction(luaMain, current_line_number);
+  lua_setglobal(luaMain, "current_line_number");
+
   lua_pushcfunction(luaMain, get_line_count);
   lua_setglobal(luaMain, "get_line_count");
   lua_pushcfunction(luaMain, get_buffer_at_line);
   lua_setglobal(luaMain, "get_buffer_at_line");
   lua_pushcfunction(luaMain, set_buffer_at_line);
   lua_setglobal(luaMain, "set_buffer_at_line");
+
+  lua_pushcfunction(luaMain, insert_buffer_at_line);
+  lua_setglobal(luaMain, "insert_buffer_at_line");
+  lua_pushcfunction(luaMain, delete_chars_at_line);
+  lua_setglobal(luaMain, "delete_chars_at_line");
+  lua_pushcfunction(luaMain, prepend_buffer_at_line);
+  lua_setglobal(luaMain, "prepend_buffer_at_line");
+  lua_pushcfunction(luaMain, append_buffer_at_line);
+  lua_setglobal(luaMain, "append_buffer_at_line");
 }
 
 void load_plugin(const char * name) {
@@ -131,7 +251,7 @@ void load_plugin(const char * name) {
   const char * pver;
 
   char path[128];
-  sprintf(path, "%s/%s.lua", plugin_path, name);
+  sprintf(path, "%s/%s", plugin_path, name);
 
   printf("Loading plugin in path '%s': %s\n", plugin_path, name);
 
@@ -168,9 +288,20 @@ int load_plugins(editor_t * editor) {
   if (luaMain == NULL)
     init_plugins();
 
-  int c;
-  for (c = 0; c < plugins_count; c++)
-    load_plugin(plugins[c]);
+  DIR *dir;
+  struct dirent *ent;
+  if ((dir = opendir(plugin_path)) != NULL) {
+    while ((ent = readdir(dir)) != NULL) {
+      if ((strcmp(ent->d_name, ".") != 0) && (strcmp(ent->d_name, "..") != 0)) {
+        load_plugin(strdup(ent->d_name));
+      }
+    }
+    free(ent);
+    closedir(dir);
+  } else {
+    printf("Unable to open plugin directory: %s\n", plugin_path);
+    return -1;
+  }
 
   /* Create a global table with name = version of loaded plugins. */
   lua_createtable(luaMain, 0, vector_size(&pluginNames));
@@ -222,6 +353,8 @@ int call_plugin(const char * pname, const char * func, cmd_context_t ctx) {
   lua_State  *L;
   char text[7] = "foobar";
 
+  // printf(" ---->Triggering event %s on plugin %s\n", func, pname);
+
   L = lua_newthread(luaMain);
   lua_getglobal(L, pname);
   if (lua_isnil(L, -1)) {
@@ -262,7 +395,6 @@ int trigger_plugin_event(const char * event, cmd_context_t ctx) {
   for (i = 0; i < vector_size(&pluginNames); i++) {
     pname = vector_get(&pluginNames, i);
     res = call_plugin(pname, event, ctx);
-
     // if (res == -1) unload_plugin(pname); // TODO: stop further calls to this guy.
   }
 

@@ -15,10 +15,10 @@ local function remove_trailing_lines()
 
   for i = 1, line_count, 1 do
     line = get_buffer_at_line(i-1)
-    for str in string.gmatch(line, "([ \t]+)$") do
+    col = string.find(line, "([ \t]+)$")
+    if col then
       trim_count = trim_count+1
-      trimmed = rtrim(line)
-      set_buffer_at_line(i-1, trimmed)
+      delete_chars_at_line(i-1, col-1)
     end
   end
 

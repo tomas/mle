@@ -113,23 +113,24 @@ static int get_line_count(lua_State * L) {
 }
 
 static int get_buffer_at_line(lua_State *L) {
-  // int nargs = lua_gettop(L);
   int line_index = lua_tointeger(L, 1);
 
   bline_t * line;
   buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+  if (!line) return 0;
+
   lua_pushlstring(L, line->data, line->data_len);
   return 1; // one argument
 };
 
 // set_buffer_at_line(number, buffer)
 static int set_buffer_at_line(lua_State *L) {
-  // int nargs = lua_gettop(L);
   int line_index = lua_tointeger(L, 1);
   const char *buf = luaL_checkstring(L, 2);
 
   bline_t * line;
   buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+  if (!line) return 0;
 
   int col = 0;
   int res = bline_replace(line, col, line->data_len, (char *)buf, strlen(buf));
@@ -143,9 +144,11 @@ static int insert_buffer_at_line(lua_State *L) {
   int line_index = lua_tointeger(L, 1);
   const char *buf = luaL_checkstring(L, 2);
   int column = lua_tointeger(L, 3);
+  if (!column || column < 0) return 0;
 
   bline_t * line;
   buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+  if (!line) return 0;
 
   bint_t ret_chars;
   bline_insert(line, column, (char *)buf, strlen(buf), &ret_chars);
@@ -159,9 +162,13 @@ static int delete_chars_at_line(lua_State *L) {
   int line_index = lua_tointeger(L, 1);
   int column = lua_tointeger(L, 2);
   int count = lua_tointeger(L, 3);
+  if (line_index < 0 || column < 0) return 0;
 
   bline_t * line;
   buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+  if (!line) return 0;
+
+  if (!count) count = line->data_len - column;
 
   int res = bline_delete(line, column, count);
   lua_pushnumber(L, res);
@@ -172,9 +179,11 @@ static int delete_chars_at_line(lua_State *L) {
 static int prepend_buffer_at_line(lua_State *L) {
   int line_index = lua_tointeger(L, 1);
   const char *buf = luaL_checkstring(L, 2);
+  if (line_index < 0) return 0;
 
   bline_t * line;
   buffer_get_bline(current_ctx->bview->buffer, line_index, &line);
+  if (!line) return 0;
 
   bint_t ret_chars;
   bline_insert(line, 0, (char *)buf, strlen(buf), &ret_chars);

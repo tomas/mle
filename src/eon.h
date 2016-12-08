@@ -527,6 +527,7 @@ int util_popen2(char* cmd, char* opt_shell, int* optret_fdread, int* optret_fdwr
 int util_get_bracket_pair(uint32_t ch, int* optret_is_closing);
 int util_is_file(char* path, char* opt_mode, FILE** optret_file);
 int util_is_dir(char* path);
+void util_expand_tilde(char* path, int path_len, char** ret_path);
 int util_pcre_match(char* re, char* subject);
 int util_pcre_replace(char* re, char* subj, char* repl, char** ret_result, int* ret_result_len);
 int util_timeval_is_gt(struct timeval* a, struct timeval* b);

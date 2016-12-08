@@ -231,6 +231,23 @@ int util_is_dir(char* path) {
   return 1;
 }
 
+// Attempt to replace leading ~/ with $HOME
+void util_expand_tilde(char* path, int path_len, char** ret_path) {
+  char* homedir;
+  char* newpath;
+
+  if (!util_is_file("~", NULL, NULL) && strncmp(path, "~/", 2) == 0
+      && (homedir = getenv("HOME")) != NULL
+     ) {
+    newpath = malloc(strlen(homedir) + 1 + (path_len - 2) + 1);
+    sprintf(newpath, "%s/%.*s", homedir, path_len - 2, path + 2);
+    *ret_path = newpath;
+    return;
+  }
+
+  *ret_path = strndup(path, path_len);
+}
+
 // Return 1 if re matches subject
 int util_pcre_match(char* re, char* subject) {
   int rc;

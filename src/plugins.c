@@ -57,8 +57,7 @@ vector pluginNames;
 vector pluginVersions;
 
 cmd_context_t * current_ctx;
-
-const char * plugin_path = "plugins";
+const char * plugin_path = "~/.config/eon/plugins";
 
 // int = current_line_number()
 static int current_line_number(lua_State * L) {
@@ -255,14 +254,14 @@ void init_plugins(void) {
   lua_setglobal(luaMain, "append_buffer_at_line");
 }
 
-void load_plugin(const char * name) {
+void load_plugin(const char * dir, const char * name) {
   const char * pname;
   const char * pver;
 
   char path[128];
-  sprintf(path, "%s/%s", plugin_path, name);
+  sprintf(path, "%s/%s", dir, name);
 
-  printf("Loading plugin in path '%s': %s\n", plugin_path, name);
+  printf("Loading plugin in path '%s': %s\n", path, name);
 
   /* Load the plugin. */
   if (luaL_dofile(luaMain, path)) {
@@ -297,12 +296,15 @@ int load_plugins(editor_t * editor) {
   if (luaMain == NULL)
     init_plugins();
 
+  char* expanded_path;
+  util_expand_tilde((char *)plugin_path, strlen(plugin_path), &expanded_path);
+
   DIR *dir;
   struct dirent *ent;
-  if ((dir = opendir(plugin_path)) != NULL) {
+  if ((dir = opendir(expanded_path)) != NULL) {
     while ((ent = readdir(dir)) != NULL) {
       if ((strcmp(ent->d_name, ".") != 0) && (strcmp(ent->d_name, "..") != 0)) {
-        load_plugin(strdup(ent->d_name));
+        load_plugin(expanded_path, strdup(ent->d_name));
       }
     }
     free(ent);

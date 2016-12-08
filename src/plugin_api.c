@@ -6,6 +6,31 @@
 
 cmd_context_t * plugin_ctx; // shared global, from eon.h
 
+int test_callback(lua_State * L){
+  // if called with one argument and that argument is a function
+  if (lua_gettop(L) == 1 && lua_isfunction(L, -1)) {
+    // push arg to function
+    lua_pushnumber(L, 3);
+    // call function with one argument and no return values
+    lua_pcall(L, 1, 0, 0);
+  }
+  return 0; // no return value
+}
+
+static int prompt_user(lua_State * L) {
+  const char *prompt = luaL_checkstring(L, 1);
+  const char *placeholder = luaL_checkstring(L, 2);
+
+  char * reply;
+  editor_prompt(plugin_ctx->editor, (char *)prompt, &(editor_prompt_params_t) {
+    .data = placeholder ? (char *)placeholder : "",
+    .data_len = placeholder ? strlen(placeholder) : 0
+  }, &reply);
+
+  lua_pushstring(L, reply);
+  return 1;
+}
+
 // int = current_line_number()
 static int current_line_number(lua_State * L) {
   int line_number = plugin_ctx->cursor->mark->bline->line_index;
@@ -178,4 +203,8 @@ void load_plugin_api(lua_State *luaMain) {
   lua_setglobal(luaMain, "prepend_buffer_at_line");
   lua_pushcfunction(luaMain, append_buffer_at_line);
   lua_setglobal(luaMain, "append_buffer_at_line");
+
+  lua_pushcfunction(luaMain, prompt_user);
+  lua_setglobal(luaMain, "prompt_user");
+
 }

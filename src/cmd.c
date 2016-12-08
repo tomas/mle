@@ -1610,7 +1610,7 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
       // Prompt for name
       editor_prompt(editor, "save: Save as? (C-c=cancel)", &(editor_prompt_params_t) {
         .data = bview->buffer->path ? bview->buffer->path : "",
-         .data_len = bview->buffer->path ? strlen(bview->buffer->path) : 0
+        .data_len = bview->buffer->path ? strlen(bview->buffer->path) : 0
       }, &path);
 
       if (!path) return EON_ERR;

@@ -23,14 +23,14 @@ int util_shell_exec(editor_t* editor, char* cmd, long timeout_s, char* input, si
   pid_t pid;
   str_t readbuf = {0};
 
-  do_read = optret_output != NULL ? 1 : 0;
-  do_write = input && input_len > 0 ? 1 : 0;
-  readfd = -1;
-  writefd = -1;
-  pid = -1;
   readbuf.inc = -2; // double capacity on each allocation
-  rv = EON_OK;
-  nbytes = 0;
+  do_read  = optret_output != NULL ? 1 : 0;
+  do_write = input && input_len > 0 ? 1 : 0;
+  readfd   = -1;
+  writefd  = -1;
+  pid      = -1;
+  nbytes   = 0;
+  rv       = EON_OK;
 
   if (do_read) {
     *optret_output = NULL;
@@ -38,13 +38,7 @@ int util_shell_exec(editor_t* editor, char* cmd, long timeout_s, char* input, si
   }
 
   // Open cmd
-  if (!util_popen2(
-        cmd,
-        opt_shell,
-        do_read ? &readfd : NULL,
-        do_write ? &writefd : NULL,
-        &pid
-      )) {
+  if (!util_popen2(cmd, opt_shell, do_read ? &readfd : NULL, do_write ? &writefd : NULL, &pid)) {
     EON_RETURN_ERR(editor, "Failed to exec shell cmd: %s", cmd);
   }
 
@@ -118,9 +112,7 @@ int util_shell_exec(editor_t* editor, char* cmd, long timeout_s, char* input, si
 
   // Close pipes and reap child proc
   if (readfd >= 0) close(readfd);
-
   if (writefd >= 0) close(writefd);
-
   waitpid(pid, NULL, do_read ? WNOHANG : 0);
 
   if (do_read) {
@@ -153,12 +145,12 @@ int util_popen2(char* cmd, char* opt_shell, int* optret_fdread, int* optret_fdwr
   // Fork
   pid = fork();
 
-  if (pid < 0) {
-    // Fork failed
+  if (pid < 0) { // Fork failed
+
     return 0;
 
-  } else if (pid == 0) {
-    // Child
+  } else if (pid == 0) { // Child
+
     if (do_read) {
       close(pout[0]);
       dup2(pout[1], STDOUT_FILENO);
@@ -188,7 +180,6 @@ int util_popen2(char* cmd, char* opt_shell, int* optret_fdread, int* optret_fdwr
   }
 
   if (optret_pid) *optret_pid = pid;
-
   return 1;
 }
 
@@ -234,16 +225,40 @@ void util_expand_tilde(char* path, int path_len, char** ret_path) {
   char* newpath;
 
   if (!util_is_file("~", NULL, NULL) && strncmp(path, "~/", 2) == 0
-      && (homedir = getenv("HOME")) != NULL
-     ) {
+      && (homedir = getenv("HOME")) != NULL) {
+
     newpath = malloc(strlen(homedir) + 1 + (path_len - 2) + 1);
     sprintf(newpath, "%s/%.*s", homedir, path_len - 2, path + 2);
     *ret_path = newpath;
+
     return;
   }
 
   *ret_path = strndup(path, path_len);
 }
+
+// autocomplete-like function
+/*
+int util_find_starting_with(char * partial, vector list, vector &matches, int min) {
+  vector_clear(matches);
+
+  // Handle trivial case.
+  unsigned int length = strlen(partial);
+  if (length) {
+    for (i = 0; i < vector_size(list); i++) {
+      item = vector_get(list, i);
+
+      if (strcmp(item, partial) == 0) {
+        add_vector(matches, item);
+        return 1;
+      } else if (strtr(item, partial)) {
+        add_vector(matches, item);
+      }
+    }
+    
+  return vector_size(matches);
+}
+*/
 
 // Return 1 if re matches subject
 int util_pcre_match(char* re, char* subject) {
@@ -252,11 +267,11 @@ int util_pcre_match(char* re, char* subject) {
   const char *error;
   int erroffset;
   cre = pcre_compile((const char*)re, PCRE_NO_AUTO_CAPTURE | PCRE_CASELESS, &error, &erroffset, NULL);
-
   if (!cre) return 0;
 
   rc = pcre_exec(cre, NULL, subject, strlen(subject), 0, 0, NULL, 0);
   pcre_free(cre);
+
   return rc >= 0 ? 1 : 0;
 }
 

@@ -15,11 +15,11 @@ git.commit = function(msg)
   exec(string.format("git commit -m '%s'", msg))
 end
 
-plugin.commit_file = function()
+plugin.before_cmd_search = function()
   file = get_current_file()
   if git.file_changed(file.name) then
     default_msg = string.format("Update %s", file.name)
-    commit_msg  = show_prompt("Commit message:", default_msg)
+    commit_msg  = prompt_user("Commit message:", default_msg)
     if not commit_msg then -- cancelled
       return 0
     else

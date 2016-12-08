@@ -210,7 +210,6 @@ int util_get_bracket_pair(uint32_t ch, int* optret_is_closing) {
 // Return 1 if path is file
 int util_is_file(char* path, char* opt_mode, FILE** optret_file) {
   struct stat sb;
-
   if (stat(path, &sb) != 0 || !S_ISREG(sb.st_mode)) return 0;
 
   if (opt_mode && optret_file) {
@@ -225,9 +224,7 @@ int util_is_file(char* path, char* opt_mode, FILE** optret_file) {
 // Return 1 if path is dir
 int util_is_dir(char* path) {
   struct stat sb;
-
   if (stat(path, &sb) != 0 || !S_ISDIR(sb.st_mode)) return 0;
-
   return 1;
 }
 
@@ -386,22 +383,6 @@ char* util_escape_shell_arg(char* str, int l) {
   cmd[y] = '\0';
 
   return cmd;
-}
-
-// Adapted from termbox src/demo/keyboard.c
-int tb_print(int x, int y, uint16_t fg, uint16_t bg, char *str) {
-  uint32_t uni;
-  int c;
-  c = 0;
-
-  while (*str) {
-    str += utf8_char_to_unicode(&uni, str, NULL);
-    tb_change_cell(x, y, uni, fg, bg);
-    x++;
-    c++;
-  }
-
-  return c;
 }
 
 // Adapted from termbox src/demo/keyboard.c

@@ -21,8 +21,7 @@ static int has_selection(lua_State * L) {
 }
 
 // selection = get_selection()
-// selection.from.col, selection.from.line
-// selection.to.col, selection.to.line
+// --> [start_line, start_col, end_line, end_col]
 static int get_selection(lua_State * L) {
   mark_t * mark = plugin_ctx->cursor->mark;
   mark_t * anchor = plugin_ctx->cursor->anchor;
@@ -52,12 +51,15 @@ static int get_selection(lua_State * L) {
   return 1;
 }
 
+// returns total number of lines in current view
 static int get_line_count(lua_State * L) {
   int line_count = plugin_ctx->bview->buffer->line_count;
   lua_pushnumber(L, line_count);
   return 1; // one argument
 }
 
+// get_buffer_at_line(number)
+// returns buffer at line N
 static int get_buffer_at_line(lua_State *L) {
   int line_index = lua_tointeger(L, 1);
 

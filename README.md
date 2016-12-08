@@ -18,7 +18,6 @@ Clone the repo and initialize submodules:
 
     $ git clone https://github.com/tomas/eon.git
     $ cd eon
-    $ git checkout origin/work2 -b work2 # this is where I'm working right now
     $ git submodule update --init --recursive
 
 And off you go!

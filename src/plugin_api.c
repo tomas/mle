@@ -32,14 +32,25 @@ static int prompt_user(lua_State * L) {
   return 1;
 }
 
+// open_new_tab(title, content, close_current)
 static int open_new_tab(lua_State * L) {
-  const char *buffer = luaL_checkstring(L, 1);
-  int close_current = lua_tointeger(L, 2);
+  const char *title = luaL_checkstring(L, 1);
+  const char *buf   = luaL_checkstring(L, 2);
+  int close_current = lua_tointeger(L, 3);
 
-  // TODO
-  // bview_open(plugin_ctx->editor, NULL);
-  // if (close_current) bview_close();
-  return 0;
+  bview_t * view;
+  int res = editor_open_bview(plugin_ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, (char *)title, strlen(title), 1, 0, &plugin_ctx->editor->rect_edit, NULL, &view);
+  view->is_menu = 1;
+  // view->callback = callback;
+
+  if (res == EON_OK) {
+    mark_insert_before(view->active_cursor->mark, (char *)buf, strlen(buf));
+    mark_move_to(view->active_cursor->mark, 0, 0);
+    if (close_current) editor_close_bview(plugin_ctx->editor, plugin_ctx->editor->active_edit, NULL);
+  }
+
+  lua_pushnumber(L, res);
+  return 1;
 }
 
 static int draw(lua_State * L) {
@@ -71,6 +82,8 @@ static int current_position(lua_State * L) {
 
   return 1;
 }
+
+
 
 // bool = has_selection()
 static int has_selection(lua_State * L) {
@@ -108,6 +121,17 @@ static int get_selection(lua_State * L) {
   lua_rawseti(L, -2, 3);
 
   return 1;
+}
+
+// int = current_line_number()
+static int current_file_path(lua_State * L) {
+  if (EON_BVIEW_IS_EDIT(plugin_ctx->bview) && plugin_ctx->bview->path) {
+    int len = strlen(plugin_ctx->bview->path);
+    lua_pushlstring(L, plugin_ctx->bview->path, len);
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 // returns total number of lines in current view
@@ -219,6 +243,9 @@ void load_plugin_api(lua_State *luaMain) {
   lua_setglobal(luaMain, "current_line_number");
   lua_pushcfunction(luaMain, current_position);
   lua_setglobal(luaMain, "current_position");
+
+  lua_pushcfunction(luaMain, current_file_path);
+  lua_setglobal(luaMain, "current_file_path");
 
   lua_pushcfunction(luaMain, has_selection);
   lua_setglobal(luaMain, "has_selection");

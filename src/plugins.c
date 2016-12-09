@@ -97,7 +97,7 @@ void load_plugin(const char * dir, const char * name) {
   const char * pver;
 
   char path[128];
-  sprintf(path, "%s/%s", dir, name);
+  sprintf(path, "%s/%s/plugin.lua", dir, name);
   // printf("Loading plugin in path '%s': %s\n", path, name);
 
   /* Load the plugin. */
@@ -127,6 +127,8 @@ void load_plugin(const char * dir, const char * name) {
 
   vector_add(&pluginNames, (void *)name);
   vector_add(&pluginVersions, (void *)pver);
+
+  printf("Loaded plugin: %s\n", name);
 }
 
 int load_plugins(editor_t * editor) {
@@ -140,7 +142,7 @@ int load_plugins(editor_t * editor) {
   struct dirent *ent;
   if ((dir = opendir(expanded_path)) != NULL) {
     while ((ent = readdir(dir)) != NULL) {
-      if ((strcmp(ent->d_name, ".") != 0) && (strcmp(ent->d_name, "..") != 0)) {
+      if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0) {
         load_plugin(expanded_path, strdup(ent->d_name));
       }
     }

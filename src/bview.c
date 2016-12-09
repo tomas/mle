@@ -1034,10 +1034,10 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
       }
 
       if (EON_BVIEW_IS_MENU(bview_tmp)) {
-        desc = "Results";
+        desc = bview_tmp->path ? bview_tmp->path : "Results";
 
       } else {
-        desc = bview_tmp->buffer->path ? basename(bview_tmp->buffer->path) : "Untitled";
+        desc = bview_tmp->path ? basename(bview_tmp->path) : "Untitled";
       }
 
       if (offset + self->editor->bview_tab_width <= w) {

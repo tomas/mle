@@ -74,7 +74,7 @@ int unload_plugins(void) {
   return 0;
 }
 
-void init_plugins(void) {
+int init_plugins(void) {
   // printf("Initializing plugins...\n");
   unload_plugins();
 
@@ -82,8 +82,14 @@ void init_plugins(void) {
   vector_init(&pluginVersions, 1);
 
   luaMain = luaL_newstate();
+  if (!luaMain) {
+    fprintf(stderr, "Unable to initialize Lua context for plugins.\n");
+    return -1;
+  }
+
   luaL_openlibs(luaMain);
   load_plugin_api(luaMain);
+  return 0;
 }
 
 void load_plugin(const char * dir, const char * name) {
@@ -124,8 +130,8 @@ void load_plugin(const char * dir, const char * name) {
 }
 
 int load_plugins(editor_t * editor) {
-  if (luaMain == NULL)
-    init_plugins();
+  if (luaMain == NULL && init_plugins() == -1)
+    return -1;
 
   char* expanded_path;
   util_expand_tilde((char *)plugin_path, strlen(plugin_path), &expanded_path);

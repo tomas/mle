@@ -21,6 +21,9 @@ endif
 ifdef WITH_PLUGINS
 	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
 	eon_ldlibs+=`pkg-config --libs-only-l --libs-only-L luajit` -lm -ldl
+ifeq ($(UNAME),Darwin) # needed for luajit to work
+	eon_ldlibs+=-pagezero_size 10000 -image_base 100000000
+endif
 else
 	eon_ldlibs+=-lm
 	# remove plugins stuff from list of objects

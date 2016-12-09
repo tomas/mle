@@ -26,7 +26,7 @@ plugin.on_item_select = function(tab_id, line)
 end
 ]]--
 
-plugin.run_eslint = function()
+plugin.check_current_file = function()
   filename = current_file_path()
   -- filename = '/home/tomas/code/packages/js/needle/lib/needle.js'
   if not filename then return 0 end
@@ -43,12 +43,10 @@ plugin.run_eslint = function()
   open_new_tab(title, out)
 end
 
-plugin.on_boot = function()
-  add_keybinding("CS-L", "eslint", "run_eslint")
-end
-
-plugin.before_cmd_search = function()
-  plugin.run_eslint()
+plugin.boot = function()
+  register_function("check_current_file")
+  add_keybinding("CS-L", "check_current_file")
+  after("git.commit_changes", "check_current_file")
 end
 
 return plugin

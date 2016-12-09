@@ -23,11 +23,7 @@ local function toggle_comment_on(line_number)
   end
 end
 
-function plugin.onload()
-  add_keybinding("C-/", "toggle_comment")
-end
-
-function plugin.before_cmd_grep()
+function plugin.toggle()
   if has_selection() then
     selection = get_selection() -- start line, start col, end line, end col
     local first_line = selection[0]
@@ -40,6 +36,11 @@ function plugin.before_cmd_grep()
   end
 
   return res
+end
+
+function plugin.boot()
+  register_function("toggle")
+  add_keybinding("C-/", "toggle")
 end
 
 return plugin

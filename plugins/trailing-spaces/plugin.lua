@@ -1,9 +1,8 @@
-local plugin = {}
-
-plugin.name    = "Trailing Lines"
+local plugin   = {}
+plugin.name    = "Remove Trailing Spaces on Save"
 plugin.version = "1.0"
 
-local function remove_trailing_lines()
+local function remove_trailing_spaces()
   trim_count = 0
   line_count = get_line_count()
 
@@ -22,6 +21,12 @@ end
 function plugin.before_cmd_save()
   res = remove_trailing_lines()
   return res
+end
+
+function plugin.boot()
+  -- register_command("trailing-spaces", "remove_trailing_spaces")
+  before("save", "remove_trailing_spaces")
+  -- after("git.commit_changes", "remove_trailing_spaces")
 end
 
 return plugin

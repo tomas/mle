@@ -15,7 +15,7 @@ git.commit = function(msg)
   exec(string.format("git commit -m '%s'", msg))
 end
 
-plugin.before_cmd_search = function()
+plugin.commit_changes = function()
   file = get_current_file()
   if git.file_changed(file.name) then
     default_msg = string.format("Update %s", file.name)
@@ -27,6 +27,11 @@ plugin.before_cmd_search = function()
       return git.commit(commit_msg)
     end
   end
+end
+
+function plugin.boot()
+  register_function("commit_changes")
+  add_keybinding("CS-c", "commit-changes") -- Ctrl+Shift+C
 end
 
 return plugin

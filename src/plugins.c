@@ -9,6 +9,15 @@
 
 void load_plugin_api(lua_State *luaMain);
 
+
+int _editor_register_cmd_fn(editor_t* editor, char* name, int (*func)(cmd_context_t* ctx)) {
+  return 0;
+}
+
+int _editor_init_kmap_by_str(editor_t* editor, kmap_t** ret_kmap, char* str);
+int _editor_init_kmap_add_binding_by_str(editor_t* editor, kmap_t* kmap, char* str);
+
+
 /*-----------------------------------------------------*/
 
 // our very own vector implementation. from:
@@ -59,6 +68,7 @@ void vector_free(vector *v) {
 lua_State *luaMain = NULL;
 vector pluginNames;
 vector pluginVersions;
+char * booting_plugin;
 const char * plugin_path = "~/.config/eon/plugins";
 
 int call_plugin(const char * pname, const char * func);
@@ -133,9 +143,11 @@ void load_plugin(const char * dir, const char * name) {
   printf("Loaded plugin: %s\n", name);
 
   // run on_boot function, if present
-  lua_getfield(luaMain, 0, "on_boot");
+  lua_getfield(luaMain, 0, "boot");
   if (!lua_isnil(luaMain, -1)) { // not nil, so present
-    call_plugin(name, "on_boot");
+    booting_plugin = (char *)name;
+    call_plugin(name, "boot");
+    booting_plugin = NULL;
   }
 
 }
@@ -208,6 +220,33 @@ void show_plugins() {
   }
 }
 
+///////////////////////////////////////////////////////
+
+int run_plugin_function(cmd_context_t * ctx) {
+  // cmd name should be "plugin_name:function_name"
+  char * cmd = ctx->cmd->name;
+  char * delim;
+  int pos, len;
+
+  // so get the position of the :
+  delim = strchr(cmd, ':');
+  pos = (int)(delim - cmd);
+
+  // get the name of the plugin
+  len = pos;
+  char plugin[len];
+  strncpy(plugin, cmd, len);
+
+  // and the name of the function
+  len = strlen(cmd) - pos;
+  char func[len];
+  strncpy(func, cmd + pos, len);
+
+  // and then call it
+  plugin_ctx = ctx;
+  return call_plugin(plugin, func);
+}
+
 int call_plugin(const char * pname, const char * func) {
   lua_State  *L;
   char text[7] = "foobar";
@@ -257,4 +296,59 @@ int trigger_plugin_event(const char * event, cmd_context_t ctx) {
   }
 
   return 0;
+}
+
+
+int add_listener(const char * when, const char * event, const char * func) {
+
+  char * plugin = booting_plugin;
+  if (!plugin) {
+    fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
+    return -1;
+  }
+
+  printf("[%s] adding listener %s %s --> %s\n", plugin, when, event, func);
+  // TODO
+  return 0;
+}
+
+int register_func_as_command(const char * func) {
+  char * cmd; // for editor
+  char * plugin = booting_plugin;
+  if (!plugin) {
+    fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
+    return -1;
+  }
+
+  int len = strlen(plugin) * strlen(func) + 1;
+  cmd = malloc(len);
+  snprintf(cmd, len, "%s.%s", (char *)plugin, (char *)func);
+
+  printf("[%s] registering cmd --> %s\n", plugin, cmd);
+
+  return 0;
+  // return _editor_register_cmd_fn(plugin_ctx->editor, cmd, run_plugin_function);
+}
+
+int add_plugin_keybinding(const char * keys, const char * func) {
+
+  char * plugin = booting_plugin;
+  if (!plugin) {
+    fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
+    return -1;
+  }
+
+  printf("[%s] mapping %s to --> %s\n", plugin, keys, func);
+
+  return 0;
+
+/*
+  kmap_t* kmap;
+  if (_editor_init_kmap_by_str(plugin_ctx->editor, &kmap, (char *)keymap_name) != EON_OK)
+    return 0;
+
+  int res = _editor_init_kmap_add_binding_by_str(plugin_ctx->editor, kmap, (char *)command_name);
+  lua_pushnumber(L, res);
+  return 1;
+*/
 }

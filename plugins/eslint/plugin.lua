@@ -44,7 +44,7 @@ plugin.run_eslint = function()
 end
 
 plugin.on_boot = function()
-  add_keybinding("CS-L", "run_eslint")
+  add_keybinding("CS-L", "eslint", "run_eslint")
 end
 
 plugin.before_cmd_search = function()

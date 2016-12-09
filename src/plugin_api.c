@@ -6,6 +6,14 @@
 #include "termbox.h"
 
 cmd_context_t * plugin_ctx; // shared global, from eon.h
+int call_plugin(const char * pname, const char * func);
+
+int _editor_register_cmd_fn(editor_t* editor, char* name, int (*func)(cmd_context_t* ctx)) {
+  return 0;
+}
+
+int _editor_init_kmap_by_str(editor_t* editor, kmap_t** ret_kmap, char* str);
+int _editor_init_kmap_add_binding_by_str(editor_t* editor, kmap_t* kmap, char* str);
 
 int test_callback(lua_State * L){
   // if called with one argument and that argument is a function
@@ -16,6 +24,65 @@ int test_callback(lua_State * L){
     lua_pcall(L, 1, 0, 0);
   }
   return 0; // no return value
+}
+
+int run_plugin_function(cmd_context_t * ctx) {
+  // cmd name should be "plugin_name:function_name"
+  char * cmd = ctx->cmd->name;
+  char * delim;
+  int pos, len;
+
+  // so get the position of the :
+  delim = strchr(cmd, ':');
+  pos = (int)(delim - cmd);
+
+  // get the name of the plugin
+  len = pos;
+  char plugin[len];
+  strncpy(plugin, cmd, len);
+
+  // and the name of the function
+  len = strlen(cmd) - pos;
+  char func[len];
+  strncpy(func, cmd + pos, len);
+
+  // and then call it
+  plugin_ctx = ctx;
+  return call_plugin(plugin, func);
+}
+
+static int register_command(lua_State * L) {
+  char * cmd; // for editor
+
+  const char * plugin_name = luaL_checkstring(L, 1);
+  const char * func  = luaL_checkstring(L, 2);
+
+  int len = strlen(plugin_name) * strlen(func) + 1;
+  cmd = malloc(len);
+  snprintf(cmd, len, "%s:%s", (char *)plugin_name, (char *)func);
+
+  int res = _editor_register_cmd_fn(plugin_ctx->editor, cmd, run_plugin_function);
+  lua_pushnumber(L, res);
+  return 1;
+}
+
+static int add_keybinding(lua_State * L) {
+  // const char *keymap_name  = luaL_checkstring(L, 1);
+  const char *keybinding   = luaL_checkstring(L, 1);
+  const char *command_name = luaL_checkstring(L, 2);
+
+  printf("Adding keybinding: %s --> %s", keybinding, command_name);
+  return 0;
+
+/*
+  kmap_t* kmap;
+  if (_editor_init_kmap_by_str(plugin_ctx->editor, &kmap, (char *)keymap_name) != EON_OK)
+    return 0;
+
+  int res = _editor_init_kmap_add_binding_by_str(plugin_ctx->editor, kmap, (char *)command_name);
+  lua_pushnumber(L, res);
+  return 1;
+*/
 }
 
 static int prompt_user(lua_State * L) {
@@ -82,8 +149,6 @@ static int current_position(lua_State * L) {
 
   return 1;
 }
-
-
 
 // bool = has_selection()
 static int has_selection(lua_State * L) {
@@ -238,6 +303,8 @@ static int append_buffer_at_line(lua_State *L) {
   return 0;
 };
 
+
+
 void load_plugin_api(lua_State *luaMain) {
   lua_pushcfunction(luaMain, current_line_number);
   lua_setglobal(luaMain, "current_line_number");
@@ -275,4 +342,8 @@ void load_plugin_api(lua_State *luaMain) {
   lua_pushcfunction(luaMain, draw);
   lua_setglobal(luaMain, "draw");
 
+  lua_pushcfunction(luaMain, add_keybinding);
+  lua_setglobal(luaMain, "add_keybinding");
+  lua_pushcfunction(luaMain, register_command);
+  lua_setglobal(luaMain, "register_command");
 }

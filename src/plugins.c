@@ -61,6 +61,8 @@ vector pluginNames;
 vector pluginVersions;
 const char * plugin_path = "~/.config/eon/plugins";
 
+int call_plugin(const char * pname, const char * func);
+
 int unload_plugins(void) {
   if (luaMain == NULL)
     return 0;
@@ -117,7 +119,7 @@ void load_plugin(const char * dir, const char * name) {
   pname = lua_tostring(luaMain, -1);
   lua_pop(luaMain, 1);
 
-  /* Get the plugin version (optional attribute). */
+  // get version
   lua_getfield(luaMain, -1, "version");
   pver = lua_tostring(luaMain, -1);
   lua_pop(luaMain, 1);
@@ -129,6 +131,13 @@ void load_plugin(const char * dir, const char * name) {
   vector_add(&pluginVersions, (void *)pver);
 
   printf("Loaded plugin: %s\n", name);
+
+  // run on_boot function, if present
+  lua_getfield(luaMain, 0, "on_boot");
+  if (!lua_isnil(luaMain, -1)) { // not nil, so present
+    call_plugin(name, "on_boot");
+  }
+
 }
 
 int load_plugins(editor_t * editor) {
@@ -199,7 +208,7 @@ void show_plugins() {
   }
 }
 
-int call_plugin(const char * pname, const char * func, cmd_context_t ctx) {
+int call_plugin(const char * pname, const char * func) {
   lua_State  *L;
   char text[7] = "foobar";
   // printf(" ---->Triggering event %s on plugin %s\n", func, pname);
@@ -243,7 +252,7 @@ int trigger_plugin_event(const char * event, cmd_context_t ctx) {
   // printf(" ---->Triggering event: %s\n", event);
   for (i = 0; i < vector_size(&pluginNames); i++) {
     pname = vector_get(&pluginNames, i);
-    res = call_plugin(pname, event, ctx);
+    res = call_plugin(pname, event);
     // if (res == -1) unload_plugin(pname); // TODO: stop further calls to this guy.
   }
 

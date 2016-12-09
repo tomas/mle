@@ -1801,7 +1801,9 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
 
   // Fix cwd if it changed
 #ifdef __APPLE__
-  getcwd(cwd, NULL);
+  int max_path_len = 128;
+  cwd = malloc(sizeof(char) * max_path_len);
+  getcwd(cwd, max_path_len);
 #else
   cwd = get_current_dir_name();
 #endif

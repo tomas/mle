@@ -12,9 +12,9 @@ Install main deps first:
 
 The `tree` command is for browsing directories. It's optional but you definitely want it. 
 
-If you want to try the experimental plugin system, you'll need to install LuaJIT:
+If you want to try the experimental plugin system, you'll need to install LuaJIT and pkg-config:
 
-    $ apt install libluajit-5.1-dev # brew install luajit, etc
+    $ apt install libluajit-5.1-dev pkg-config # brew install luajit pkg-config, etc
 
 Clone the repo and initialize submodules:
 

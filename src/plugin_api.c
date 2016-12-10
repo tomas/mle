@@ -252,7 +252,7 @@ static int prepend_buffer_at_line(lua_State *L) {
   bline_insert(line, 0, (char *)buf, strlen(buf), &ret_chars);
 
   lua_pushnumber(L, ret_chars);
-  return 0;
+  return 1;
 };
 
 // append_buffer_at_line(line_number, buffer)
@@ -262,13 +262,24 @@ static int append_buffer_at_line(lua_State *L) {
 
   bline_t * line;
   buffer_get_bline(plugin_ctx->bview->buffer, line_index, &line);
+  if (!line) return 0;
 
   bint_t ret_chars;
   bline_insert(line, line->data_len, (char *)buf, strlen(buf), &ret_chars);
 
   lua_pushnumber(L, ret_chars);
-  return 0;
+  return 1;
 };
+
+static int set_line_bg_color(lua_State * L) {
+  int line_index = lua_tointeger(L, 1);
+  int color = lua_tointeger(L, 2);
+
+  int res = bview_set_line_bg(plugin_ctx->bview, line_index, color);
+
+  lua_pushnumber(L, res);
+  return 1;
+}
 
 void load_plugin_api(lua_State *luaMain) {
   lua_pushcfunction(luaMain, current_line_number);
@@ -299,6 +310,9 @@ void load_plugin_api(lua_State *luaMain) {
   lua_setglobal(luaMain, "prepend_buffer_at_line");
   lua_pushcfunction(luaMain, append_buffer_at_line);
   lua_setglobal(luaMain, "append_buffer_at_line");
+
+  lua_pushcfunction(luaMain, set_line_bg_color);
+  lua_setglobal(luaMain, "set_line_bg_color");
 
   lua_pushcfunction(luaMain, prompt_user);
   lua_setglobal(luaMain, "prompt_user");

@@ -47,7 +47,7 @@ $(eon_objects): %.o: %.c
 ./mlbuf/libmlbuf.a: ./mlbuf/patched
 	$(MAKE) -C mlbuf
 
-./mlbuf/patched: 01-mlbuf-makefile.patch
+./mlbuf/patched: 01-mlbuf-patch.diff
 	@echo "Patching mlbuf..."
 	if [ -e $@ ]; then cd mlbuf; git reset --hard HEAD; cd ..; fi
 	cd mlbuf; patch -p1 < ../$<; cd ..

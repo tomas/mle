@@ -384,6 +384,16 @@ int bview_move_to_line(bview_t* self, bint_t number) {
   return EON_OK;
 }
 
+int bview_set_line_bg(bview_t * self, bint_t line_index, int color) {
+  bline_t* bline;
+  buffer_get_bline(self->buffer, line_index, &bline);
+
+  if (!bline) return EON_ERR;
+
+  bline->bg = color;
+  return EON_OK;
+}
+
 int bview_scroll_viewport(bview_t* self, int offset) {
   bint_t y;
 
@@ -1114,16 +1124,15 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
 
     if (self->editor->linenum_type == EON_LINENUM_TYPE_ABS
         || self->editor->linenum_type == EON_LINENUM_TYPE_BOTH
-        || (self->editor->linenum_type == EON_LINENUM_TYPE_REL && is_cursor_line)
-       ) {
-      tb_printf(self->rect_lines, 0, rect_y, linenum_fg, 0, "%*d", self->abs_linenum_width, (int)(bline->line_index + 1) % (int)pow(10, self->linenum_width));
+        || (self->editor->linenum_type == EON_LINENUM_TYPE_REL && is_cursor_line)) {
+      tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->abs_linenum_width, (int)(bline->line_index + 1) % (int)pow(10, self->linenum_width));
 
       if (self->editor->linenum_type == EON_LINENUM_TYPE_BOTH) {
-        tb_printf(self->rect_lines, self->abs_linenum_width, rect_y, linenum_fg, 0, " %*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
+        tb_printf(self->rect_lines, self->abs_linenum_width, rect_y, linenum_fg, LINENUM_BG, " %*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
       }
 
     } else if (self->editor->linenum_type == EON_LINENUM_TYPE_REL) {
-      tb_printf(self->rect_lines, 0, rect_y, linenum_fg, 0, "%*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
+      tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
     }
 
     tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", viewport_x > 0 && bline->char_count > 0 ? '^' : ' ');
@@ -1144,7 +1153,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
     if (char_col < bline->char_count) {
       ch = bline->chars[char_col].ch;
       fg = bline->chars[char_col].style.fg;
-      bg = bline->chars[char_col].style.bg;
+      bg = bline->bg > 0 ? bline->bg : bline->chars[char_col].style.bg;
       char_w = char_col == bline->char_count - 1
                ? bline->char_vwidth - bline->chars[char_col].vcol
                : bline->chars[char_col + 1].vcol - bline->chars[char_col].vcol;

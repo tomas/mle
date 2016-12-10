@@ -70,6 +70,7 @@
 
 #define LINENUM_FG TB_DEFAULT
 #define LINENUM_FG_CURSOR TB_BOLD
+#define LINENUM_BG TB_DEFAULT
 
 // syntax highlighting
 #define KEYWORD_FG TB_BLUE

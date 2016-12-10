@@ -898,11 +898,11 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
   // Init cmd_context
   memset(&cmd_ctx, 0, sizeof(cmd_context_t));
-  cmd_ctx.editor = editor;
+  cmd_ctx.editor   = editor;
   cmd_ctx.loop_ctx = loop_ctx;
-  cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
-  cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
-  cmd_ctx.buffer = cmd_ctx.bview->buffer;
+  cmd_ctx.cursor   = editor->active ? editor->active->active_cursor : NULL;
+  cmd_ctx.bview    = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
+  cmd_ctx.buffer   = cmd_ctx.bview->buffer;
 
   // Loop until editor should exit
   while (!loop_ctx->should_exit) {
@@ -942,6 +942,12 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
     if ((cmd = _editor_get_command(editor, &cmd_ctx, NULL)) != NULL) {
       // printf("cmd: %s\n", cmd->name);
 
+      // ensure these are set before performing any checks.
+      cmd_ctx.cmd    = cmd;
+      cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
+      cmd_ctx.bview  = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
+      cmd_ctx.buffer = cmd_ctx.bview->buffer;
+
       // Found cmd in kmap trie, now execute
       if (cmd_ctx.is_user_input && cmd->func == cmd_insert_data) {
         if (cmd_ctx.cursor->is_anchored) {
@@ -950,11 +956,6 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
         _editor_ingest_paste(editor, &cmd_ctx);
       }
-
-      cmd_ctx.cmd = cmd;
-      cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
-      cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
-      cmd_ctx.buffer = cmd_ctx.bview->buffer;
 
 #ifdef WITH_PLUGINS
       if (cmd->name[0] != '_') {

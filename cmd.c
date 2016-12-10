@@ -1097,8 +1097,10 @@ static int _cmd_indent(cmd_context_t* ctx, int outdent) {
             end = ctx->cursor->anchor->bline;
             if (start->line_index > end->line_index) {
                 cur = end;
-                end = start;
+                end = start->prev;
                 start = cur;
+            } else { // selecting up
+                end = end->prev;
             }
         } else {
             end = start;
@@ -1333,11 +1335,11 @@ static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent) {
         }
         if (num_to_del > 0) bline_delete(bline, 0, num_to_del);
     } else {
-        if (bline->char_count > 0) {
+        // if (bline->char_count > 0) {
             for (i = 0; i < num_chars; i++) {
                 bline_insert(bline, 0, &tab_char, 1, &ig);
             }
-        }
+        // }
     }
     return MLE_OK;
 }

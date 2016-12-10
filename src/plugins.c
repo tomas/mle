@@ -6,6 +6,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include "eon.h"
+#include "utlist.h"
 #include "vector.h"
 
 void load_plugin_api(lua_State *luaMain);
@@ -26,10 +27,18 @@ lua_State *luaMain = NULL;
 vector plugin_names;
 vector plugin_versions;
 vector events;
+vector listeners;
 
-int max_events_for_listening = 128;
-int max_listeners_per_event = 64;
-int listeners[128][64];
+
+typedef struct listener {
+  char plugin[32];
+  char func[32];
+  struct listener *next;
+} listener;
+
+// int max_events_for_listening = 128;
+// int max_listeners_per_event = 64;
+// int listeners[128][64];
 
 int plugin_count = 0;
 char * booting_plugin_name;
@@ -50,24 +59,19 @@ int unload_plugins(void) {
   vector_free(&plugin_versions);
   vector_free(&events);
 
-/*
   int i;
-  vector * temp;
-  for (i = 0; i < vector_size(&event_listeners); i++) {
-    temp = vector_get(&event_listeners, i);
-    if (temp->total > 0) free(temp->items);
+  listener * head = NULL;
+  listener * temp, *el;
+  for (i = 0; i < vector_size(&listeners); i++) {
+    temp = vector_get(&listeners, i);
+
+    LL_FOREACH_SAFE(head, el, temp) {
+      LL_DELETE(head, el);
+      free(el);
+    }
   }
 
-  vector_free(&event_listeners);
-*/
-
-  int i;
-  for (i = 0; i < max_events_for_listening; ++i) {
-    // free(listeners[i]);
-  }
-
-  // free(listeners);
-
+  vector_free(&listeners);
   return 0;
 }
 
@@ -78,7 +82,7 @@ int init_plugins(void) {
   vector_init(&plugin_names, 1);
   vector_init(&plugin_versions, 1);
   vector_init(&events, 1);
-  // vector_init(&event_listeners, 1);
+  vector_init(&listeners, 1);
 
   // int i;
   // for (i = 0; i < max_events_for_listening; i++)
@@ -247,7 +251,7 @@ int run_plugin_function(cmd_context_t * ctx) {
 int call_plugin(const char * pname, const char * func) {
   lua_State  *L;
   char text[7] = "foobar";
-  printf(" ---->Triggering event %s on plugin %s\n", func, pname);
+  // printf(" ---->Triggering event %s on plugin %s\n", func, pname);
 
   L = lua_newthread(luaMain);
   lua_getglobal(L, pname);
@@ -279,21 +283,6 @@ int call_plugin(const char * pname, const char * func) {
   return 0;
 }
 
-/*
-struct listener_list {
-  char name[10]; // name of event
-  int listeners[10];
-  UT_hash_handle hh; // makes this structure hashable
-};
-
-struct listener_list * event_listeners = NULL;
-*/
-
-// events    -> [ 'foo', 'bar' ]
-// listeners -> [ [1, 3, 5], [2, 4] ]
-// foo event has 1, 3, 5 as listeners
-// bar event has 2, 4 as listeners
-
 int get_event_id(const char * event) {
   int i, res = -1;
 
@@ -309,41 +298,25 @@ int get_event_id(const char * event) {
   return res;
 }
 
-int get_last_listener_for(int event_id) {
-  int i, res = -1;
-  for (i = 0; i < max_listeners_per_event; i++) {
-    if (listeners[event_id][i] == 0) {
-      res = i;
-      break;
-    }
-  }
-
-  return res;
-}
-
-
 int trigger_plugin_event(const char * event, cmd_context_t ctx) {
 
   int event_id = get_event_id(event);
-  printf("plugin event: %s -> %d\n", event, event_id);
   if (event_id == -1) return 0; // no listeners
 
   int i, res;
   const char * name;
 
   plugin_ctx = &ctx;
-  int count = get_last_listener_for(event_id);
-  if (count == -1) return -1;
+  // printf("plugin event: %s -> %d\n", event, event_id);
 
-  // printf(" ----> %d listeners for event: %s\n", count, event);
-  int plugin;
-  for (i = 0; i < count; i++) {
-    int plugin = listeners[event_id][i];
-    name = vector_get(&plugin_names, plugin-1); // index starts at zero
+  listener * head, *el;
+  head = vector_get(&listeners, event_id);
 
-    // printf(" - %d %s\n", plugin, name);
-    res = call_plugin(name, event);
-    // if (res == -1) unload_plugin(name); // TODO: stop further calls to this guy.
+  DL_FOREACH(head, el) {
+    if (i++ > 0) {
+      res = call_plugin(el->plugin, el->func);
+      // if (res == -1) unload_plugin(name); // TODO: stop further calls to this guy.
+    }
   }
 
   return 0;
@@ -359,12 +332,14 @@ int add_listener(const char * when, const char * event, const char * func) {
     return -1;
   }
 
-  printf("[%s] adding listener %s %s --> %s\n", plugin, when, event, func);
+  printf("[%s] adding listener %s.%s --> %s\n", plugin, when, event, func);
 
   int len = strlen(when) * strlen(event) + 1;
   char * event_name = malloc(len);
   snprintf(event_name, len, "%s.%s", (char *)when, (char *)event);
 
+
+  listener * head;
   int event_id = get_event_id(event_name);
   if (event_id == -1) {
 
@@ -372,30 +347,32 @@ int add_listener(const char * when, const char * event, const char * func) {
     int count = vector_add(&events, event_name);
     event_id = count - 1;
 
-/*
-    // now initialize the listener list and append to to the main array
-    vector_init(&listeners, 1);
-    res = vector_add(&event_listeners, &listeners);
-
-    if (event_id != res - 1) {
-      fprintf(stderr, "Plugin/event ID mismatch. Please file a bug at github.com/tomas/eon!\n");
-      exit(1);
-    }
+    // we should set this to null, but in that case we'll get a null object afterwards
+    head = (listener *)malloc(sizeof(listener) + 100000);
+    int res = vector_add(&listeners, head);
 
   } else {
 
-    vector * temp = vector_get(&event_listeners, event_id);
-    listeners = *temp;
-
-*/
-
+    head = vector_get(&listeners, event_id);
   }
 
-  int index = get_last_listener_for(event_id);
-  if (index >= 0) listeners[event_id][index] = plugin_count;
+  listener * el;
+  el = (listener *)malloc(sizeof(listener));
+  strcpy(el->plugin, plugin);
+  strcpy(el->func, func);
+  LL_APPEND(head, el);
+
+
+  listener * x;
+  int count;
+  LL_COUNT(head, x, count);
+  // printf("%d listeners for %s\n", count-1, event_name); // subtract the first one (head)
+
 
   // printf("[%s] added new listener: %d, event id is %d, listener count is %d\n", event_name, plugin_count, event_id, index+1);
-  return index;
+  // return index;
+
+  return 0;
 }
 
 int register_func_as_command(const char * func) {

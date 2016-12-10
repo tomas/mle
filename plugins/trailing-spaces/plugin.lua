@@ -2,7 +2,7 @@ local plugin   = {}
 plugin.name    = "Remove Trailing Spaces on Save"
 plugin.version = "1.0"
 
-local function remove_trailing_spaces()
+function plugin.remove_trailing_spaces()
   trim_count = 0
   line_count = get_line_count()
 

@@ -24,23 +24,28 @@ local function toggle_comment_on(line_number)
 end
 
 function plugin.toggle()
+  lines = 0
+
   if has_selection() then
     selection = get_selection() -- start line, start col, end line, end col
     local first_line = selection[0]
     local last_line = selection[3] == 0 and selection[2]-1 or selection[2]
     for i = first_line, last_line, 1 do
+      lines = lines + 1
       toggle_comment_on(i)
     end
   else
     toggle_comment_on(current_line_number())
+    lines = 1
   end
 
-  return res
+  return lines
 end
 
 function plugin.boot()
   register_function("toggle")
   add_keybinding("C-/", "toggle")
+  -- before("save", "toggle")
 end
 
 return plugin

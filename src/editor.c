@@ -898,11 +898,11 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
   // Init cmd_context
   memset(&cmd_ctx, 0, sizeof(cmd_context_t));
-  cmd_ctx.editor = editor;
+  cmd_ctx.editor   = editor;
   cmd_ctx.loop_ctx = loop_ctx;
-  cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
-  cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
-  cmd_ctx.buffer = cmd_ctx.bview->buffer;
+  cmd_ctx.cursor   = editor->active ? editor->active->active_cursor : NULL;
+  cmd_ctx.bview    = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
+  cmd_ctx.buffer   = cmd_ctx.bview->buffer;
 
   // Loop until editor should exit
   while (!loop_ctx->should_exit) {
@@ -930,7 +930,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
     if (cmd_ctx.is_user_input) {
       //  tb_printf(editor->rect_status, editor->rect_status.w - 20, 0, TB_DEFAULT, TB_DEFAULT,
       //    "k:%d/ch:%d/m:%d", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
-      printf("k:%d/ch:%d/m:%d", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
+      printf("k:%d/ch:%d/m:%d\n", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
     }
 #endif
 
@@ -942,6 +942,12 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
     if ((cmd = _editor_get_command(editor, &cmd_ctx, NULL)) != NULL) {
       // printf("cmd: %s\n", cmd->name);
 
+      // ensure these are set before performing any checks.
+      cmd_ctx.cmd    = cmd;
+      cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
+      cmd_ctx.bview  = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
+      cmd_ctx.buffer = cmd_ctx.bview->buffer;
+
       // Found cmd in kmap trie, now execute
       if (cmd_ctx.is_user_input && cmd->func == cmd_insert_data) {
         if (cmd_ctx.cursor->is_anchored) {
@@ -951,14 +957,9 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
         _editor_ingest_paste(editor, &cmd_ctx);
       }
 
-      cmd_ctx.cmd = cmd;
-      cmd_ctx.cursor = editor->active ? editor->active->active_cursor : NULL;
-      cmd_ctx.bview = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
-      cmd_ctx.buffer = cmd_ctx.bview->buffer;
-
 #ifdef WITH_PLUGINS
       if (cmd->name[0] != '_') {
-        snprintf(event_name, strlen(cmd->name) + 10, "before_%s", cmd->name);
+        snprintf(event_name, strlen(cmd->name) + 6, "before.%s", cmd->name + 4);
         trigger_plugin_event(event_name, cmd_ctx);
       }
 #endif
@@ -967,7 +968,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
 #ifdef WITH_PLUGINS
       if (cmd->name[0] != '_') {
-        snprintf(event_name, strlen(cmd->name) + 11, "after_%s", cmd->name);
+        snprintf(event_name, strlen(cmd->name) + 7, "after.%s", cmd->name + 4);
         trigger_plugin_event(event_name, cmd_ctx);
       }
 #endif
@@ -1741,221 +1742,221 @@ static void _editor_register_cmds(editor_t* editor) {
 static void _editor_init_kmaps(editor_t* editor) {
   _editor_init_kmap(editor, &editor->kmap_normal, "eon_normal", "cmd_insert_data", 0, (kbinding_def_t[]) {
     EON_KBINDING_DEF("cmd_show_help", "F2"),
-                     EON_KBINDING_DEF("cmd_delete_before", "backspace"),
-                     EON_KBINDING_DEF("cmd_delete_before", "backspace2"),
-                     EON_KBINDING_DEF("cmd_delete_after", "delete"),
-                     EON_KBINDING_DEF("cmd_insert_newline_above", "C-\\"),
-                     EON_KBINDING_DEF("cmd_move_bol", "C-a"),
-                     EON_KBINDING_DEF("cmd_move_bol", "home"),
-                     EON_KBINDING_DEF("cmd_select_bol", "S-home"),
-                     EON_KBINDING_DEF("cmd_move_eol", "C-e"),
-                     EON_KBINDING_DEF("cmd_move_eol", "end"),
-                     EON_KBINDING_DEF("cmd_select_eol", "S-end"),
-                     EON_KBINDING_DEF("cmd_move_beginning", "M-\\"),
-                     EON_KBINDING_DEF("cmd_move_beginning", "C-home"),
-                     EON_KBINDING_DEF("cmd_move_end", "M-/"),
-                     EON_KBINDING_DEF("cmd_move_end", "C-end"),
-                     EON_KBINDING_DEF("cmd_move_left", "left"),
-                     EON_KBINDING_DEF("cmd_move_right", "right"),
-                     EON_KBINDING_DEF("cmd_move_up", "up"),
-                     EON_KBINDING_DEF("cmd_move_down", "down"),
-                     EON_KBINDING_DEF("cmd_move_page_up", "page-up"),
-                     EON_KBINDING_DEF("cmd_move_page_down", "page-down"),
-                     EON_KBINDING_DEF("cmd_move_to_line", "M-g"),
-                     EON_KBINDING_DEF_EX("cmd_move_relative", "M-y ## u", "up"),
-                     EON_KBINDING_DEF_EX("cmd_move_relative", "M-y ## d", "down"),
-                     EON_KBINDING_DEF("cmd_move_until_forward", "M-' **"),
-                     EON_KBINDING_DEF("cmd_move_until_back", "M-; **"),
-                     EON_KBINDING_DEF("cmd_move_word_forward", "M-f"),
-                     EON_KBINDING_DEF("cmd_move_word_back", "M-b"),
-                     EON_KBINDING_DEF("cmd_move_word_forward", "C-right"),
-                     EON_KBINDING_DEF("cmd_move_word_back", "C-left"),
-                     EON_KBINDING_DEF("cmd_move_bracket_forward", "M-]"),
-                     EON_KBINDING_DEF("cmd_move_bracket_back", "M-["),
-                     EON_KBINDING_DEF("cmd_move_bracket_back", "C-up"),
-                     EON_KBINDING_DEF("cmd_move_bracket_forward", "C-down"),
+    EON_KBINDING_DEF("cmd_delete_before", "backspace"),
+    EON_KBINDING_DEF("cmd_delete_before", "backspace2"),
+    EON_KBINDING_DEF("cmd_delete_after", "delete"),
+    EON_KBINDING_DEF("cmd_insert_newline_above", "C-\\"),
+    EON_KBINDING_DEF("cmd_move_bol", "C-a"),
+    EON_KBINDING_DEF("cmd_move_bol", "home"),
+    EON_KBINDING_DEF("cmd_select_bol", "S-home"),
+    EON_KBINDING_DEF("cmd_move_eol", "C-e"),
+    EON_KBINDING_DEF("cmd_move_eol", "end"),
+    EON_KBINDING_DEF("cmd_select_eol", "S-end"),
+    EON_KBINDING_DEF("cmd_move_beginning", "M-\\"),
+    EON_KBINDING_DEF("cmd_move_beginning", "C-home"),
+    EON_KBINDING_DEF("cmd_move_end", "M-/"),
+    EON_KBINDING_DEF("cmd_move_end", "C-end"),
+    EON_KBINDING_DEF("cmd_move_left", "left"),
+    EON_KBINDING_DEF("cmd_move_right", "right"),
+    EON_KBINDING_DEF("cmd_move_up", "up"),
+    EON_KBINDING_DEF("cmd_move_down", "down"),
+    EON_KBINDING_DEF("cmd_move_page_up", "page-up"),
+    EON_KBINDING_DEF("cmd_move_page_down", "page-down"),
+    EON_KBINDING_DEF("cmd_move_to_line", "M-g"),
+    EON_KBINDING_DEF_EX("cmd_move_relative", "M-y ## u", "up"),
+    EON_KBINDING_DEF_EX("cmd_move_relative", "M-y ## d", "down"),
+    EON_KBINDING_DEF("cmd_move_until_forward", "M-' **"),
+    EON_KBINDING_DEF("cmd_move_until_back", "M-; **"),
+    EON_KBINDING_DEF("cmd_move_word_forward", "M-f"),
+    EON_KBINDING_DEF("cmd_move_word_back", "M-b"),
+    EON_KBINDING_DEF("cmd_move_word_forward", "C-right"),
+    EON_KBINDING_DEF("cmd_move_word_back", "C-left"),
+    EON_KBINDING_DEF("cmd_move_bracket_forward", "M-]"),
+    EON_KBINDING_DEF("cmd_move_bracket_back", "M-["),
+    EON_KBINDING_DEF("cmd_move_bracket_back", "C-up"),
+    EON_KBINDING_DEF("cmd_move_bracket_forward", "C-down"),
 
-                     // EON_KBINDING_DEF("cmd_search", "C-f"),
-                     EON_KBINDING_DEF("cmd_search", "C-w"),
-                     EON_KBINDING_DEF("cmd_search_next", "C-g"),
-                     EON_KBINDING_DEF("cmd_search_next", "F3"),
-                     EON_KBINDING_DEF("cmd_find_word", "C-v"),
-                     EON_KBINDING_DEF("cmd_isearch", "C-f"),
-                     EON_KBINDING_DEF("cmd_replace", "C-r"),
-                     EON_KBINDING_DEF("cmd_cut", "C-k"),
-                     // EON_KBINDING_DEF("cmd_cut", "M-c"),
-                     EON_KBINDING_DEF("cmd_cut_or_close", "C-x"),
-                     EON_KBINDING_DEF("cmd_copy", "M-k"),
-                     EON_KBINDING_DEF("cmd_copy", "C-c"),
-                     EON_KBINDING_DEF("cmd_uncut", "C-u"),
-                     EON_KBINDING_DEF("cmd_uncut", "C-v"),
-                     EON_KBINDING_DEF("cmd_redraw", "M-x l"),
-                     EON_KBINDING_DEF("cmd_lel", "M-x e"),
-                     EON_KBINDING_DEF("cmd_less", "M-l"),
-                     EON_KBINDING_DEF("cmd_viewport_top", "M--"),
-                     EON_KBINDING_DEF("cmd_viewport_mid", "C-l"),
-                     EON_KBINDING_DEF("cmd_viewport_bot", "M-="),
-                     EON_KBINDING_DEF("cmd_push_kmap", "M-x p"),
-                     EON_KBINDING_DEF("cmd_pop_kmap", "M-x P"),
-                     // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c d", "bracket"),
-                     // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c w", "word"),
-                     // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c s", "word_back"),
-                     // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c f", "word_forward"),
-                     // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c a", "bol"),
-                     // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c e", "eol"),
-                     // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c c", "string"),
-                     // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d d", "bracket"),
-                     // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d w", "word"),
-                     // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d s", "word_back"),
-                     // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d f", "word_forward"),
-                     // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d a", "bol"),
-                     // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d e", "eol"),
-                     // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d c", "string"),
-                     EON_KBINDING_DEF("cmd_delete_word_before", "C-h"),
-                     EON_KBINDING_DEF("cmd_delete_word_after", "M-d"),
-                     // EON_KBINDING_DEF("cmd_toggle_anchor", "M-a"),
-                     EON_KBINDING_DEF("cmd_select_up", "S-up"),
-                     EON_KBINDING_DEF("cmd_select_down", "S-down"),
-                     EON_KBINDING_DEF("cmd_select_left", "S-left"),
-                     EON_KBINDING_DEF("cmd_select_right", "S-right"),
+    // EON_KBINDING_DEF("cmd_search", "C-f"),
+    EON_KBINDING_DEF("cmd_search", "C-w"),
+    EON_KBINDING_DEF("cmd_search_next", "C-g"),
+    EON_KBINDING_DEF("cmd_search_next", "F3"),
+    EON_KBINDING_DEF("cmd_find_word", "C-v"),
+    EON_KBINDING_DEF("cmd_isearch", "C-f"),
+    EON_KBINDING_DEF("cmd_replace", "C-r"),
+    EON_KBINDING_DEF("cmd_cut", "C-k"),
+    // EON_KBINDING_DEF("cmd_cut", "M-c"),
+    EON_KBINDING_DEF("cmd_cut_or_close", "C-x"),
+    EON_KBINDING_DEF("cmd_copy", "M-k"),
+    EON_KBINDING_DEF("cmd_copy", "C-c"),
+    EON_KBINDING_DEF("cmd_uncut", "C-u"),
+    EON_KBINDING_DEF("cmd_uncut", "C-v"),
+    EON_KBINDING_DEF("cmd_redraw", "M-x l"),
+    EON_KBINDING_DEF("cmd_lel", "M-x e"),
+    EON_KBINDING_DEF("cmd_less", "M-l"),
+    EON_KBINDING_DEF("cmd_viewport_top", "M--"),
+    EON_KBINDING_DEF("cmd_viewport_mid", "C-l"),
+    EON_KBINDING_DEF("cmd_viewport_bot", "M-="),
+    EON_KBINDING_DEF("cmd_push_kmap", "M-x p"),
+    EON_KBINDING_DEF("cmd_pop_kmap", "M-x P"),
+    // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c d", "bracket"),
+    // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c w", "word"),
+    // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c s", "word_back"),
+    // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c f", "word_forward"),
+    // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c a", "bol"),
+    // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c e", "eol"),
+    // EON_KBINDING_DEF_EX("cmd_copy_by", "C-c c", "string"),
+    // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d d", "bracket"),
+    // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d w", "word"),
+    // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d s", "word_back"),
+    // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d f", "word_forward"),
+    // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d a", "bol"),
+    // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d e", "eol"),
+    // EON_KBINDING_DEF_EX("cmd_cut_by", "C-d c", "string"),
+    EON_KBINDING_DEF("cmd_delete_word_before", "C-h"),
+    EON_KBINDING_DEF("cmd_delete_word_after", "M-d"),
+    // EON_KBINDING_DEF("cmd_toggle_anchor", "M-a"),
+    EON_KBINDING_DEF("cmd_select_up", "S-up"),
+    EON_KBINDING_DEF("cmd_select_down", "S-down"),
+    EON_KBINDING_DEF("cmd_select_left", "S-left"),
+    EON_KBINDING_DEF("cmd_select_right", "S-right"),
 
-                     // for linux terminal, that doesn't have shift+arrows
-                     EON_KBINDING_DEF("cmd_select_up", "M-w"),
-                     EON_KBINDING_DEF("cmd_select_down", "M-s"),
-                     EON_KBINDING_DEF("cmd_select_left", "M-a"),
-                     EON_KBINDING_DEF("cmd_select_right", "M-d"),
+    // for linux terminal, that doesn't have shift+arrows
+    EON_KBINDING_DEF("cmd_select_up", "M-w"),
+    EON_KBINDING_DEF("cmd_select_down", "M-s"),
+    EON_KBINDING_DEF("cmd_select_left", "M-a"),
+    EON_KBINDING_DEF("cmd_select_right", "M-d"),
 
-                     EON_KBINDING_DEF("cmd_select_word_back", "CS-left"),
-                     EON_KBINDING_DEF("cmd_select_word_forward", "CS-right"),
+    EON_KBINDING_DEF("cmd_select_word_back", "CS-left"),
+    EON_KBINDING_DEF("cmd_select_word_forward", "CS-right"),
 
-                     EON_KBINDING_DEF("cmd_select_word_back", "MS-a"), // linux
-                     EON_KBINDING_DEF("cmd_select_word_forward", "MS-d"), // linux
+    EON_KBINDING_DEF("cmd_select_word_back", "MS-a"), // linux
+    EON_KBINDING_DEF("cmd_select_word_forward", "MS-d"), // linux
 
-                     // EON_KBINDING_DEF("cmd_new_cursor_up", "CS-up"),
-                     EON_KBINDING_DEF("cmd_new_cursor_up", "MS-up"),
-                     EON_KBINDING_DEF("cmd_new_cursor_up", "MS-w"), // alt+shift+w, for linux
-                     // EON_KBINDING_DEF("cmd_new_cursor_down", "CS-down"),
-                     EON_KBINDING_DEF("cmd_new_cursor_down", "MS-down"),
-                     EON_KBINDING_DEF("cmd_new_cursor_down", "MS-s"), // alt+shift+s
+    // EON_KBINDING_DEF("cmd_new_cursor_up", "CS-up"),
+    EON_KBINDING_DEF("cmd_new_cursor_up", "MS-up"),
+    EON_KBINDING_DEF("cmd_new_cursor_up", "MS-w"), // alt+shift+w, for linux
+    // EON_KBINDING_DEF("cmd_new_cursor_down", "CS-down"),
+    EON_KBINDING_DEF("cmd_new_cursor_down", "MS-down"),
+    EON_KBINDING_DEF("cmd_new_cursor_down", "MS-s"), // alt+shift+s
 
-                     EON_KBINDING_DEF("cmd_drop_sleeping_cursor", "C-/ ."),
-                     EON_KBINDING_DEF("cmd_wake_sleeping_cursors", "C-/ a"),
-                     EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-/ /"),
-                     EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-2"), // Ctrl+2 or Ctrl+Space
-                     // EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-up"),
-                     // EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-down"),
-                     EON_KBINDING_DEF("cmd_drop_cursor_column", "C-/ '"),
-                     EON_KBINDING_DEF("cmd_apply_macro", "M-j"),
-                     EON_KBINDING_DEF("cmd_apply_macro_by", "M-m **"),
-                     EON_KBINDING_DEF("cmd_prev", "M-,"),
-                     EON_KBINDING_DEF("cmd_next", "M-."),
-                     EON_KBINDING_DEF("cmd_prev", "C-page-down"),
-                     EON_KBINDING_DEF("cmd_next", "C-page-up"),
-                     EON_KBINDING_DEF("cmd_prev", "CS-page-down"),
-                     EON_KBINDING_DEF("cmd_next", "CS-page-up"),
-                     EON_KBINDING_DEF("cmd_split_vertical", "M-v"),
-                     EON_KBINDING_DEF("cmd_split_horizontal", "M-h"),
-                     EON_KBINDING_DEF("cmd_grep", "M-q"),
-                     EON_KBINDING_DEF("cmd_grep", "CS-f"),
-                     EON_KBINDING_DEF("cmd_fsearch", "C-p"),
-                     EON_KBINDING_DEF("cmd_browse", "C-b"),
-                     EON_KBINDING_DEF("cmd_browse", "C-t"),
-                     EON_KBINDING_DEF("cmd_undo", "C-z"),
-                     EON_KBINDING_DEF("cmd_redo", "C-y"),
-                     EON_KBINDING_DEF("cmd_redo", "CS-z"),
-                     EON_KBINDING_DEF("cmd_save", "C-s"),
-                     // EON_KBINDING_DEF("cmd_save_as", "M-s"),
-                     EON_KBINDING_DEF("cmd_save_as", "C-o"),
-                     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o a", "tab_to_space"),
-                     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o t", "tab_width"),
-                     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o y", "syntax"),
-                     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o w", "soft_wrap"),
-                     EON_KBINDING_DEF("cmd_open_new", "C-n"),
-                     // EON_KBINDING_DEF("cmd_open_file", "C-o"),
-                     EON_KBINDING_DEF("cmd_open_replace_new", "C-q n"),
-                     EON_KBINDING_DEF("cmd_open_replace_file", "C-q o"),
-                     EON_KBINDING_DEF_EX("cmd_fsearch", "C-q p", "replace"),
-                     EON_KBINDING_DEF("cmd_indent", "tab"),
-                     // EON_KBINDING_DEF("cmd_outdent", "M-,"),
-                     EON_KBINDING_DEF("cmd_outdent", "S-tab"),
-                     EON_KBINDING_DEF("cmd_shell", "M-e"),
-                     // EON_KBINDING_DEF("cmd_close", "M-c"),
-                     EON_KBINDING_DEF("cmd_toggle_mouse_mode", "M-backspace"),
-                     EON_KBINDING_DEF("cmd_toggle_mouse_mode", "S-delete"),
+    EON_KBINDING_DEF("cmd_drop_sleeping_cursor", "C-/ ."),
+    EON_KBINDING_DEF("cmd_wake_sleeping_cursors", "C-/ a"),
+    EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-/ /"),
+    EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-2"), // Ctrl+2 or Ctrl+Space
+    // EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-up"),
+    // EON_KBINDING_DEF("cmd_remove_extra_cursors", "C-down"),
+    EON_KBINDING_DEF("cmd_drop_cursor_column", "C-/ '"),
+    EON_KBINDING_DEF("cmd_apply_macro", "M-j"),
+    EON_KBINDING_DEF("cmd_apply_macro_by", "M-m **"),
+    EON_KBINDING_DEF("cmd_prev", "M-,"),
+    EON_KBINDING_DEF("cmd_next", "M-."),
+    EON_KBINDING_DEF("cmd_prev", "C-page-down"),
+    EON_KBINDING_DEF("cmd_next", "C-page-up"),
+    EON_KBINDING_DEF("cmd_prev", "CS-page-down"),
+    EON_KBINDING_DEF("cmd_next", "CS-page-up"),
+    EON_KBINDING_DEF("cmd_split_vertical", "M-v"),
+    EON_KBINDING_DEF("cmd_split_horizontal", "M-h"),
+    EON_KBINDING_DEF("cmd_grep", "M-q"),
+    EON_KBINDING_DEF("cmd_grep", "CS-f"),
+    EON_KBINDING_DEF("cmd_fsearch", "C-p"),
+    EON_KBINDING_DEF("cmd_browse", "C-b"),
+    EON_KBINDING_DEF("cmd_browse", "C-t"),
+    EON_KBINDING_DEF("cmd_undo", "C-z"),
+    EON_KBINDING_DEF("cmd_redo", "C-y"),
+    EON_KBINDING_DEF("cmd_redo", "CS-z"),
+    EON_KBINDING_DEF("cmd_save", "C-s"),
+    // EON_KBINDING_DEF("cmd_save_as", "M-s"),
+    EON_KBINDING_DEF("cmd_save_as", "C-o"),
+    EON_KBINDING_DEF_EX("cmd_set_opt", "M-o a", "tab_to_space"),
+    EON_KBINDING_DEF_EX("cmd_set_opt", "M-o t", "tab_width"),
+    EON_KBINDING_DEF_EX("cmd_set_opt", "M-o y", "syntax"),
+    EON_KBINDING_DEF_EX("cmd_set_opt", "M-o w", "soft_wrap"),
+    EON_KBINDING_DEF("cmd_open_new", "C-n"),
+    // EON_KBINDING_DEF("cmd_open_file", "C-o"),
+    EON_KBINDING_DEF("cmd_open_replace_new", "C-q n"),
+    EON_KBINDING_DEF("cmd_open_replace_file", "C-q o"),
+    EON_KBINDING_DEF_EX("cmd_fsearch", "C-q p", "replace"),
+    EON_KBINDING_DEF("cmd_indent", "tab"),
+    // EON_KBINDING_DEF("cmd_outdent", "M-,"),
+    EON_KBINDING_DEF("cmd_outdent", "S-tab"),
+    EON_KBINDING_DEF("cmd_shell", "M-e"),
+    // EON_KBINDING_DEF("cmd_close", "M-c"),
+    EON_KBINDING_DEF("cmd_toggle_mouse_mode", "M-backspace"),
+    EON_KBINDING_DEF("cmd_toggle_mouse_mode", "S-delete"),
 
-                     EON_KBINDING_DEF("cmd_close", "C-q"),
-                     EON_KBINDING_DEF("cmd_close", "C-d"),
-                     EON_KBINDING_DEF("cmd_close", "escape"),
-                     EON_KBINDING_DEF("cmd_quit", "CS-q"),
-                     EON_KBINDING_DEF(NULL, NULL)
+    EON_KBINDING_DEF("cmd_close", "C-q"),
+    EON_KBINDING_DEF("cmd_close", "C-d"),
+    EON_KBINDING_DEF("cmd_close", "escape"),
+    EON_KBINDING_DEF("cmd_quit", "CS-q"),
+    EON_KBINDING_DEF(NULL, NULL)
   });
   _editor_init_kmap(editor, &editor->kmap_prompt_input, "eon_prompt_input", NULL, 1, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_input_submit", "enter"),
-                     EON_KBINDING_DEF("_editor_prompt_input_complete", "tab"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
-                     EON_KBINDING_DEF("_editor_prompt_history_up", "up"),
-                     EON_KBINDING_DEF("_editor_prompt_history_down", "down"),
-                     EON_KBINDING_DEF(NULL, NULL)
+    EON_KBINDING_DEF("_editor_prompt_input_complete", "tab"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
+    EON_KBINDING_DEF("_editor_prompt_history_up", "up"),
+    EON_KBINDING_DEF("_editor_prompt_history_down", "down"),
+    EON_KBINDING_DEF(NULL, NULL)
   });
   _editor_init_kmap(editor, &editor->kmap_prompt_yn, "eon_prompt_yn", NULL, 0, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_yn_yes", "y"),
-                     EON_KBINDING_DEF("_editor_prompt_yn_no", "n"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
-                     EON_KBINDING_DEF(NULL, NULL)
+    EON_KBINDING_DEF("_editor_prompt_yn_no", "n"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
+    EON_KBINDING_DEF(NULL, NULL)
   });
   _editor_init_kmap(editor, &editor->kmap_prompt_yna, "eon_prompt_yna", NULL, 0, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_yn_yes", "enter"),
-                     EON_KBINDING_DEF("_editor_prompt_yn_yes", "y"),
-                     EON_KBINDING_DEF("_editor_prompt_yn_no", "n"),
-                     EON_KBINDING_DEF("_editor_prompt_yn_no", "down"),
-                     EON_KBINDING_DEF("_editor_prompt_yna_all", "a"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
-                     EON_KBINDING_DEF(NULL, NULL)
+    EON_KBINDING_DEF("_editor_prompt_yn_yes", "y"),
+    EON_KBINDING_DEF("_editor_prompt_yn_no", "n"),
+    EON_KBINDING_DEF("_editor_prompt_yn_no", "down"),
+    EON_KBINDING_DEF("_editor_prompt_yna_all", "a"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
+    EON_KBINDING_DEF(NULL, NULL)
   });
   _editor_init_kmap(editor, &editor->kmap_prompt_ok, "eon_prompt_ok", "_editor_prompt_cancel", 0, (kbinding_def_t[]) {
     EON_KBINDING_DEF(NULL, NULL)
   });
   _editor_init_kmap(editor, &editor->kmap_menu, "eon_menu", NULL, 1, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_menu_submit", "enter"),
-                     EON_KBINDING_DEF("_editor_menu_cancel", "C-c"),
-                     EON_KBINDING_DEF(NULL, NULL)
-  });
+    EON_KBINDING_DEF("_editor_menu_cancel", "C-c"),
+    EON_KBINDING_DEF(NULL, NULL)
+    });
   _editor_init_kmap(editor, &editor->kmap_prompt_menu, "eon_prompt_menu", NULL, 1, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_input_submit", "enter"),
-                     EON_KBINDING_DEF("_editor_prompt_menu_up", "up"),
-                     EON_KBINDING_DEF("_editor_prompt_menu_down", "down"),
-                     EON_KBINDING_DEF("_editor_prompt_menu_up", "left"),
-                     EON_KBINDING_DEF("_editor_prompt_menu_down", "right"),
-                     EON_KBINDING_DEF("_editor_prompt_menu_page_up", "page-up"),
-                     EON_KBINDING_DEF("_editor_prompt_menu_page_down", "page-down"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
-                     EON_KBINDING_DEF(NULL, NULL)
+    EON_KBINDING_DEF("_editor_prompt_menu_up", "up"),
+    EON_KBINDING_DEF("_editor_prompt_menu_down", "down"),
+    EON_KBINDING_DEF("_editor_prompt_menu_up", "left"),
+    EON_KBINDING_DEF("_editor_prompt_menu_down", "right"),
+    EON_KBINDING_DEF("_editor_prompt_menu_page_up", "page-up"),
+    EON_KBINDING_DEF("_editor_prompt_menu_page_down", "page-down"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
+    EON_KBINDING_DEF(NULL, NULL)
   });
   _editor_init_kmap(editor, &editor->kmap_prompt_isearch, "eon_prompt_isearch", NULL, 1, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_toggle_replace", "C-f"),
-                     EON_KBINDING_DEF("_editor_prompt_isearch_prev", "up"),
-                     EON_KBINDING_DEF("_editor_prompt_isearch_next", "down"),
-                     EON_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-/"),
-                     EON_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-2"),
-                     EON_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "M-enter"), // alt enter
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "enter"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
-                     EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
-                     EON_KBINDING_DEF(NULL, NULL)
+    EON_KBINDING_DEF("_editor_prompt_isearch_prev", "up"),
+    EON_KBINDING_DEF("_editor_prompt_isearch_next", "down"),
+    EON_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-/"),
+    EON_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "C-2"),
+    EON_KBINDING_DEF("_editor_prompt_isearch_drop_cursors", "M-enter"), // alt enter
+    EON_KBINDING_DEF("_editor_prompt_cancel", "enter"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
+    EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
+    EON_KBINDING_DEF(NULL, NULL)
   });
 }
 
@@ -1994,6 +1995,12 @@ static void _editor_init_kmap_add_binding(editor_t* editor, kmap_t* kmap, kbindi
 
   free(cur_key_patt);
 }
+
+int editor_add_binding_to_keymap(editor_t* editor, kmap_t* kmap, kbinding_def_t* binding_def) {
+  _editor_init_kmap_add_binding(editor, kmap, binding_def);
+  return EON_OK;
+}
+
 
 // Add a binding to a kmap trie
 static int _editor_init_kmap_add_binding_to_trie(kbinding_t** trie, char* cmd_name, char* cur_key_patt, char* full_key_patt, char* static_param) {
@@ -2402,13 +2409,11 @@ static int _editor_init_from_rc(editor_t* editor, FILE* rc, char* rc_path) {
 
 // Parse cli args
 static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
-  int rv;
+  int c, rv = EON_OK;
   kmap_t* cur_kmap;
   syntax_t* cur_syntax;
-  int c;
-  rv = EON_OK;
 
-  cur_kmap = NULL;
+  cur_kmap   = NULL;
   cur_syntax = NULL;
   optind = 0;
 
@@ -2479,7 +2484,6 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
         editor->exit_code = EXIT_FAILURE;
         rv = EON_ERR;
       }
-
       break;
 
     case 'k':
@@ -2488,14 +2492,11 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
         editor->exit_code = EXIT_FAILURE;
         rv = EON_ERR;
       }
-
       break;
 
     case 'l':
       editor->linenum_type = atoi(optarg);
-
       if (editor->linenum_type < 0 || editor->linenum_type > 2) editor->linenum_type = 0;
-
       break;
 
     case 'M':
@@ -2504,7 +2505,6 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
         editor->exit_code = EXIT_FAILURE;
         rv = EON_ERR;
       }
-
       break;
 
     case 'm':
@@ -2513,7 +2513,6 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
         editor->exit_code = EXIT_FAILURE;
         rv = EON_ERR;
       }
-
       break;
 
     case 'N':
@@ -2534,7 +2533,6 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
         editor->exit_code = EXIT_FAILURE;
         rv = EON_ERR;
       }
-
       break;
 
     case 's':
@@ -2543,7 +2541,6 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
         editor->exit_code = EXIT_FAILURE;
         rv = EON_ERR;
       }
-
       break;
 
     case 't':

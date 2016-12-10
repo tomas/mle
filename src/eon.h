@@ -374,6 +374,7 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
 int editor_prompt(editor_t* editor, char* prompt, editor_prompt_params_t* params, char** optret_answer);
 int editor_set_active(editor_t* editor, bview_t* bview);
 int editor_register_cmd(editor_t* editor, cmd_t* cmd);
+int editor_add_binding_to_keymap(editor_t* editor, kmap_t* kmap, kbinding_def_t* binding_def);
 
 // bview functions
 bview_t* bview_get_split_root(bview_t* self);

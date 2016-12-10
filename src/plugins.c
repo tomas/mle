@@ -6,6 +6,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include "eon.h"
+#include "vector.h"
 
 void load_plugin_api(lua_State *luaMain);
 
@@ -17,58 +18,22 @@ int _editor_register_cmd_fn(editor_t* editor, char* name, int (*func)(cmd_contex
 int _editor_init_kmap_by_str(editor_t* editor, kmap_t** ret_kmap, char* str);
 int _editor_init_kmap_add_binding_by_str(editor_t* editor, kmap_t* kmap, char* str);
 
-
 /*-----------------------------------------------------*/
 
-// our very own vector implementation. from:
-// http://eddmann.com/posts/implementing-a-dynamic-vector-array-in-c/
-
-typedef struct vector {
-  void **items;
-  int capacity;
-  int total;
-} vector;
-
-void vector_init(vector *v, int capacity) {
-  v->capacity = capacity;
-  v->total = 0;
-  v->items = malloc(sizeof(void *) * v->capacity);
-}
-
-static void vector_resize(vector *v, int capacity) {
-  void **items = realloc(v->items, sizeof(void *) * capacity);
-  if (items) {
-    v->items = items;
-    v->capacity = capacity;
-  }
-}
-
-void vector_add(vector *v, void *item) {
-  if (v->capacity == v->total)
-    vector_resize(v, v->capacity * 2);
-  v->items[v->total++] = item;
-}
-
-void *vector_get(vector *v, int index) {
-  if (index >= 0 && index < v->total)
-    return v->items[index];
-  return NULL;
-}
-
-int vector_size(vector *v) {
-  return v->total;
-}
-
-void vector_free(vector *v) {
-  free(v->items);
-}
-
-/*-----------------------------------------------------*/
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 lua_State *luaMain = NULL;
-vector pluginNames;
-vector pluginVersions;
-char * booting_plugin;
+vector plugin_names;
+vector plugin_versions;
+vector events;
+
+int max_events_for_listening = 128;
+int max_listeners_per_event = 64;
+int listeners[128][64];
+
+int plugin_count = 0;
+char * booting_plugin_name;
+
 const char * plugin_path = "~/.config/eon/plugins";
 
 int call_plugin(const char * pname, const char * func);
@@ -81,8 +46,28 @@ int unload_plugins(void) {
   lua_close(luaMain);
   luaMain = NULL;
 
-  vector_free(&pluginNames);
-  vector_free(&pluginVersions);
+  vector_free(&plugin_names);
+  vector_free(&plugin_versions);
+  vector_free(&events);
+
+/*
+  int i;
+  vector * temp;
+  for (i = 0; i < vector_size(&event_listeners); i++) {
+    temp = vector_get(&event_listeners, i);
+    if (temp->total > 0) free(temp->items);
+  }
+
+  vector_free(&event_listeners);
+*/
+
+  int i;
+  for (i = 0; i < max_events_for_listening; ++i) {
+    // free(listeners[i]);
+  }
+
+  // free(listeners);
+
   return 0;
 }
 
@@ -90,8 +75,14 @@ int init_plugins(void) {
   // printf("Initializing plugins...\n");
   unload_plugins();
 
-  vector_init(&pluginNames, 1);
-  vector_init(&pluginVersions, 1);
+  vector_init(&plugin_names, 1);
+  vector_init(&plugin_versions, 1);
+  vector_init(&events, 1);
+  // vector_init(&event_listeners, 1);
+
+  // int i;
+  // for (i = 0; i < max_events_for_listening; i++)
+  //  listeners[i] = {0};
 
   luaMain = luaL_newstate();
   if (!luaMain) {
@@ -134,21 +125,26 @@ void load_plugin(const char * dir, const char * name) {
   pver = lua_tostring(luaMain, -1);
   lua_pop(luaMain, 1);
 
+
+  // successfully loaded, so increase count
+  plugin_count++;
+
+  // printf("Adding %s to list of plugins, as number %d\n", name, plugin_count);
+
   /* Set the loaded plugin to a global using it's name. */
   lua_setglobal(luaMain, name);
-
-  vector_add(&pluginNames, (void *)name);
-  vector_add(&pluginVersions, (void *)pver);
+  vector_add(&plugin_names, (void *)name);
+  vector_add(&plugin_versions, (void *)pver);
 
   // run on_boot function, if present
   lua_getfield(luaMain, 0, "boot");
   if (!lua_isnil(luaMain, -1)) { // not nil, so present
-    booting_plugin = (char *)name;
+    booting_plugin_name = (char *)name;
     call_plugin(name, "boot");
-    booting_plugin = NULL;
+    booting_plugin_name = NULL;
   }
 
-  printf("Loaded plugin: %s\n", name);
+  // printf("Finished loading plugin %d: %s\n", plugin_count, name);
 }
 
 int load_plugins(editor_t * editor) {
@@ -174,17 +170,19 @@ int load_plugins(editor_t * editor) {
   }
 
   /* Create a global table with name = version of loaded plugins. */
-  lua_createtable(luaMain, 0, vector_size(&pluginNames));
+  lua_createtable(luaMain, 0, vector_size(&plugin_names));
 
   int i;
-  for (i = 0; i < vector_size(&pluginNames); i++) {
-    lua_pushstring(luaMain, vector_get(&pluginNames, i));
-    lua_pushstring(luaMain, vector_get(&pluginVersions, i));
+  for (i = 0; i < vector_size(&plugin_names); i++) {
+    lua_pushstring(luaMain, vector_get(&plugin_names, i));
+    lua_pushstring(luaMain, vector_get(&plugin_versions, i));
     lua_settable(luaMain, -3);
   }
 
   lua_setglobal(luaMain, "plugins");
-  return 0;
+
+  printf("%d plugins initialized. Slick.\n", plugin_count);
+  return plugin_count;
 }
 
 void show_plugins() {
@@ -249,7 +247,7 @@ int run_plugin_function(cmd_context_t * ctx) {
 int call_plugin(const char * pname, const char * func) {
   lua_State  *L;
   char text[7] = "foobar";
-  // printf(" ---->Triggering event %s on plugin %s\n", func, pname);
+  printf(" ---->Triggering event %s on plugin %s\n", func, pname);
 
   L = lua_newthread(luaMain);
   lua_getglobal(L, pname);
@@ -281,44 +279,134 @@ int call_plugin(const char * pname, const char * func) {
   return 0;
 }
 
+/*
+struct listener_list {
+  char name[10]; // name of event
+  int listeners[10];
+  UT_hash_handle hh; // makes this structure hashable
+};
+
+struct listener_list * event_listeners = NULL;
+*/
+
+// events    -> [ 'foo', 'bar' ]
+// listeners -> [ [1, 3, 5], [2, 4] ]
+// foo event has 1, 3, 5 as listeners
+// bar event has 2, 4 as listeners
+
+int get_event_id(const char * event) {
+  int i, res = -1;
+
+  const char * name;
+    for (i = 0; i < vector_size(&events); i++) {
+    name = vector_get(&events, i);
+    if (strcmp(event, name) == 0) {
+      res = i;
+      break;
+    }
+  }
+
+  return res;
+}
+
+int get_last_listener_for(int event_id) {
+  int i, res = -1;
+  for (i = 0; i < max_listeners_per_event; i++) {
+    if (listeners[event_id][i] == 0) {
+      res = i;
+      break;
+    }
+  }
+
+  return res;
+}
+
+
 int trigger_plugin_event(const char * event, cmd_context_t ctx) {
-  plugin_ctx = &ctx;
 
-  const char * pname;
+  int event_id = get_event_id(event);
+  printf("plugin event: %s -> %d\n", event, event_id);
+  if (event_id == -1) return 0; // no listeners
+
   int i, res;
+  const char * name;
 
-  // printf(" ---->Triggering event: %s\n", event);
-  for (i = 0; i < vector_size(&pluginNames); i++) {
-    pname = vector_get(&pluginNames, i);
-    res = call_plugin(pname, event);
-    // if (res == -1) unload_plugin(pname); // TODO: stop further calls to this guy.
+  plugin_ctx = &ctx;
+  int count = get_last_listener_for(event_id);
+  if (count == -1) return -1;
+
+  // printf(" ----> %d listeners for event: %s\n", count, event);
+  int plugin;
+  for (i = 0; i < count; i++) {
+    int plugin = listeners[event_id][i];
+    name = vector_get(&plugin_names, plugin-1); // index starts at zero
+
+    // printf(" - %d %s\n", plugin, name);
+    res = call_plugin(name, event);
+    // if (res == -1) unload_plugin(name); // TODO: stop further calls to this guy.
   }
 
   return 0;
 }
 
-
 int add_listener(const char * when, const char * event, const char * func) {
 
-  char * plugin = booting_plugin;
+  int res;
+  char * plugin = booting_plugin_name;
+
   if (!plugin) {
     fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
     return -1;
   }
 
   printf("[%s] adding listener %s %s --> %s\n", plugin, when, event, func);
-  // TODO
-  return 0;
+
+  int len = strlen(when) * strlen(event) + 1;
+  char * event_name = malloc(len);
+  snprintf(event_name, len, "%s.%s", (char *)when, (char *)event);
+
+  int event_id = get_event_id(event_name);
+  if (event_id == -1) {
+
+    // new event, so add to event list and initialize new listener list
+    int count = vector_add(&events, event_name);
+    event_id = count - 1;
+
+/*
+    // now initialize the listener list and append to to the main array
+    vector_init(&listeners, 1);
+    res = vector_add(&event_listeners, &listeners);
+
+    if (event_id != res - 1) {
+      fprintf(stderr, "Plugin/event ID mismatch. Please file a bug at github.com/tomas/eon!\n");
+      exit(1);
+    }
+
+  } else {
+
+    vector * temp = vector_get(&event_listeners, event_id);
+    listeners = *temp;
+
+*/
+
+  }
+
+  int index = get_last_listener_for(event_id);
+  if (index >= 0) listeners[event_id][index] = plugin_count;
+
+  // printf("[%s] added new listener: %d, event id is %d, listener count is %d\n", event_name, plugin_count, event_id, index+1);
+  return index;
 }
 
 int register_func_as_command(const char * func) {
-  char * cmd; // for editor
-  char * plugin = booting_plugin;
+
+  char * plugin = booting_plugin_name;
   if (!plugin) {
     fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
     return -1;
   }
 
+  char * cmd; // for editor
   int len = strlen(plugin) * strlen(func) + 1;
   cmd = malloc(len);
   snprintf(cmd, len, "%s.%s", (char *)plugin, (char *)func);
@@ -331,7 +419,7 @@ int register_func_as_command(const char * func) {
 
 int add_plugin_keybinding(const char * keys, const char * func) {
 
-  char * plugin = booting_plugin;
+  char * plugin = booting_plugin_name;
   if (!plugin) {
     fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
     return -1;

@@ -958,7 +958,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
 #ifdef WITH_PLUGINS
       if (cmd->name[0] != '_') {
-        snprintf(event_name, strlen(cmd->name) + 10, "before_%s", cmd->name);
+        snprintf(event_name, strlen(cmd->name) + 6, "before.%s", cmd->name + 4);
         trigger_plugin_event(event_name, cmd_ctx);
       }
 #endif
@@ -967,7 +967,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
 #ifdef WITH_PLUGINS
       if (cmd->name[0] != '_') {
-        snprintf(event_name, strlen(cmd->name) + 11, "after_%s", cmd->name);
+        snprintf(event_name, strlen(cmd->name) + 7, "after.%s", cmd->name + 4);
         trigger_plugin_event(event_name, cmd_ctx);
       }
 #endif

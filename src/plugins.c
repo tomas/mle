@@ -140,8 +140,6 @@ void load_plugin(const char * dir, const char * name) {
   vector_add(&pluginNames, (void *)name);
   vector_add(&pluginVersions, (void *)pver);
 
-  printf("Loaded plugin: %s\n", name);
-
   // run on_boot function, if present
   lua_getfield(luaMain, 0, "boot");
   if (!lua_isnil(luaMain, -1)) { // not nil, so present
@@ -150,6 +148,7 @@ void load_plugin(const char * dir, const char * name) {
     booting_plugin = NULL;
   }
 
+  printf("Loaded plugin: %s\n", name);
 }
 
 int load_plugins(editor_t * editor) {

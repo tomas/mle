@@ -18,13 +18,8 @@ local function remove_trailing_spaces()
   return trim_count
 end
 
-function plugin.before_cmd_save()
-  res = remove_trailing_lines()
-  return res
-end
-
 function plugin.boot()
-  -- register_command("trailing-spaces", "remove_trailing_spaces")
+  -- register_function("remove_trailing_spaces")
   before("save", "remove_trailing_spaces")
   -- after("git.commit_changes", "remove_trailing_spaces")
 end

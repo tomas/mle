@@ -30,6 +30,7 @@ int test_callback(lua_State * L){
 static int get_option(lua_State * L) {
   const char *key = luaL_checkstring(L, 1);
   plugin_opt * opt = get_plugin_option(key);
+  if (!opt) return 0; // NULL
   
   switch(opt->type) {
     case 3: // JSMN_STRING

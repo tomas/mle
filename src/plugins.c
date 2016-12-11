@@ -41,8 +41,6 @@ const char * plugin_path = "~/.config/eon/plugins";
 char * json_string;
 jsmntok_t json_root[MAX_TOKENS];
 
-int call_plugin(const char * pname, const char * func);
-
 int read_plugin_options(const char * plugin) {
 	jsmn_parser parser;
 	jsmn_init(&parser);
@@ -52,17 +50,21 @@ int read_plugin_options(const char * plugin) {
   
   char* expanded_path;
   util_expand_tilde((char *)path, strlen(path), &expanded_path);
+
+  char * str = util_read_file(expanded_path);
   
-  json_string = util_read_file(expanded_path);
-  if (!json_string) {
+  if (!str) {
     // printf("[%s] No options found at %s.\n", plugin, expanded_path);
     return -1;
   }
-
-  int res = jsmn_parse(&parser, json_string, strlen(json_string), json_root, MAX_TOKENS);
-  // parser = NULL;
   
-  // printf("[%s] Option parse result: %d.\n", plugin, res);
+  int res = jsmn_parse(&parser, str, strlen(str), json_root, MAX_TOKENS);
+  if (res >= 0) {
+    char * json_string;
+    json_string = str;
+  }
+  
+  free(str);
   return res;
 }
 
@@ -116,6 +118,40 @@ int init_plugins(void) {
   return 0;
 }
 
+
+int call_plugin(const char * pname, const char * func) {
+  lua_State  *L;
+  // printf(" ---->Triggering function %s on plugin %s\n", func, pname);
+
+  L = lua_newthread(luaMain);
+  lua_getglobal(L, pname);
+  if (lua_isnil(L, -1)) {
+    fprintf(stderr, "Fatal: Could not get plugin: %s\n", pname);
+    lua_pop(luaMain, 1);
+    return -1;
+  }
+
+  lua_getfield(L, -1, func); // get the function
+
+  // call it
+  if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0) {
+    // printf("Fatal: Could not run %s function on plugin: %s\n", func, pname);
+    lua_pop(luaMain, 1);
+    return -1;
+  }
+
+  if (lua_gettop(L) == 3) {
+    fprintf(stderr, "Fatal: plugin failed: %s\n", pname);
+    lua_pop(luaMain, 1);
+    return -1;
+  } else {
+    // printf("Result from %s: %s\n", func, lua_tostring(L, -1));
+  }
+
+  lua_pop(luaMain, 1);
+  return 0;
+}
+
 void load_plugin(const char * dir, const char * name) {
   const char * pname;
   const char * pver;
@@ -161,12 +197,12 @@ void load_plugin(const char * dir, const char * name) {
   
     read_plugin_options(name);
     booting_plugin_name = (char *)name;
+
     call_plugin(name, "boot");
   
     if (json_string) free(json_string);
     json_string = NULL;
     // json_root = NULL;
-  
     booting_plugin_name = NULL;
   }
 
@@ -278,39 +314,6 @@ int run_plugin_function(cmd_context_t * ctx) {
   return res;
 }
 
-int call_plugin(const char * pname, const char * func) {
-  lua_State  *L;
-  // printf(" ---->Triggering function %s on plugin %s\n", func, pname);
-
-  L = lua_newthread(luaMain);
-  lua_getglobal(L, pname);
-  if (lua_isnil(L, -1)) {
-    fprintf(stderr, "Fatal: Could not get plugin: %s\n", pname);
-    lua_pop(luaMain, 1);
-    return -1;
-  }
-
-  /* Run the plugin's run function providing it with the text. */
-  lua_getfield(L, -1, func);
-
-  // no arguments to function
-  if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0) {
-    // printf("Fatal: Could not run %s function on plugin: %s\n", func, pname);
-    lua_pop(luaMain, 1);
-    return -1;
-  }
-
-  if (lua_gettop(L) == 3) {
-    fprintf(stderr, "Fatal: plugin failed: %s\n", pname);
-    lua_pop(luaMain, 1);
-    return -1;
-  } else {
-    // printf("Result from %s: %s\n", func, lua_tostring(L, -1));
-  }
-
-  lua_pop(luaMain, 1);
-  return 0;
-}
 
 
 
@@ -356,6 +359,8 @@ plugin_opt * get_plugin_option(const char * key) {
     fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
     return NULL;
   }
+  
+  if (!json_string) return NULL;
   
   jsmntok_t * token = get_hash_token(json_string, json_root, key);
   if (!token) return NULL;

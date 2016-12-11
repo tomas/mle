@@ -6,6 +6,8 @@
 #include <errno.h>
 #include "eon.h"
 
+
+
 // Run a shell command, optionally feeding stdin, collecting stdout
 // Specify timeout_s=-1 for no timeout
 int util_shell_exec(editor_t* editor, char* cmd, long timeout_s, char* input, size_t input_len, char* opt_shell, char** optret_output, size_t* optret_output_len) {
@@ -217,6 +219,30 @@ int util_is_dir(char* path) {
   struct stat sb;
   if (stat(path, &sb) != 0 || !S_ISDIR(sb.st_mode)) return 0;
   return 1;
+}
+
+char * util_read_file(char *filename) {
+  char *buf=NULL;
+  long length;
+
+  FILE *fp = fopen(filename, "rb");
+  if (fp) {
+  	fseek(fp, 0, SEEK_END);
+  	length = ftell(fp);
+  	fseek(fp, 0, SEEK_SET);
+
+  	buf = malloc(length);
+  	if (buf) {
+      fread(buf, 1, length, fp);
+      fclose(fp);
+      return buf;
+  	}
+
+  	fclose(fp);
+  	return NULL;
+  }
+
+  return NULL;
 }
 
 // Attempt to replace leading ~/ with $HOME

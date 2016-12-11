@@ -6,7 +6,7 @@ CC=gcc
 STRIP=strip
 
 WARNINGS=-Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-but-set-variable
-eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/
+eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/ -I ./src/libs
 eon_ldlibs:=$(LDLIBS)
 eon_objects:=$(patsubst %.c,%.o,$(wildcard src/*.c))
 eon_static:=

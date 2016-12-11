@@ -529,6 +529,7 @@ int util_popen2(char* cmd, char* opt_shell, int* optret_fdread, int* optret_fdwr
 int util_get_bracket_pair(uint32_t ch, int* optret_is_closing);
 int util_is_file(char* path, char* opt_mode, FILE** optret_file);
 int util_is_dir(char* path);
+char * util_read_file(char* path);
 void util_expand_tilde(char* path, int path_len, char** ret_path);
 int util_pcre_match(char* re, char* subject);
 int util_pcre_replace(char* re, char* subj, char* repl, char** ret_result, int* ret_result_len);
@@ -544,6 +545,13 @@ void str_ensure_cap(str_t* str, size_t cap);
 void str_clear(str_t* str);
 void str_free(str_t* str);
 void str_append_replace_with_backrefs(str_t* str, char* subj, char* repl, int pcre_rc, int* pcre_ovector, int pcre_ovecsize);
+
+// plugin_opt struct, used on plugin boot
+// when doing get_option(value)
+typedef struct plugin_opt {
+  int type;
+  char * value;
+} plugin_opt;
 
 // Globals
 extern editor_t _editor;

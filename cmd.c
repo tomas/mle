@@ -31,7 +31,7 @@ static void _cmd_isearch_prompt_cb(bview_t* bview, baction_t* action, void* udat
 static int _cmd_menu_browse_cb(cmd_context_t* ctx);
 static int _cmd_menu_grep_cb(cmd_context_t* ctx);
 static int _cmd_indent(cmd_context_t* ctx, int outdent);
-static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent);
+static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent, int col);
 static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h);
 
 // Insert data
@@ -1090,24 +1090,27 @@ static int _cmd_indent(cmd_context_t* ctx, int outdent) {
     bline_t* end;
     bline_t* cur;
     int use_tabs;
+    int column = 0;
     use_tabs = ctx->bview->tab_to_space ? 0 : 1;
     MLE_MULTI_CURSOR_CODE(ctx->cursor,
         start = ctx->cursor->mark->bline;
+        int start_of_line = ctx->cursor->mark->col == 0;
         if (ctx->cursor->is_anchored) {
             end = ctx->cursor->anchor->bline;
             if (start->line_index > end->line_index) {
                 cur = end;
-                end = start->prev;
+                end = start_of_line ? start->prev : start;
                 start = cur;
-            } else { // selecting up
+            } else if (start_of_line) { // selecting up
                 end = end->prev;
             }
         } else {
             end = start;
+            column = ctx->cursor->mark->col; // set column to cursor pos
         }
         ctx->buffer->is_style_disabled++;
         for (cur = start; cur != end->next; cur = cur->next) {
-            _cmd_indent_line(cur, use_tabs, outdent);
+            _cmd_indent_line(cur, use_tabs, outdent, column);
         }
         ctx->buffer->is_style_disabled--;
         buffer_apply_styles(ctx->buffer, start, 0);
@@ -1315,7 +1318,7 @@ static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h) {
 }
 
 // Indent/outdent a line, optionally using tabs
-static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent) {
+static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent, int col) {
     char tab_char;
     int num_chars;
     int num_to_del;
@@ -1326,18 +1329,19 @@ static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent) {
     MLBUF_BLINE_ENSURE_CHARS(bline);
     if (outdent) {
         num_to_del = 0;
-        for (i = 0; i < num_chars; i++) {
+        int first = col == 0 || num_chars > col ? 0 : col - num_chars;
+         for (i = first; i < first+num_chars; i++) {
             if (bline->char_count > i && bline->chars[i].ch == tab_char) {
                 num_to_del += 1;
             } else {
                 break;
             }
         }
-        if (num_to_del > 0) bline_delete(bline, 0, num_to_del);
+        if (num_to_del > 0) bline_delete(bline, first, num_to_del);
     } else {
         // if (bline->char_count > 0) {
             for (i = 0; i < num_chars; i++) {
-                bline_insert(bline, 0, &tab_char, 1, &ig);
+                bline_insert(bline, col, &tab_char, 1, &ig);
             }
         // }
     }

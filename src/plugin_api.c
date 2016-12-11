@@ -8,6 +8,7 @@
 cmd_context_t * plugin_ctx; // shared global, from eon.h
 
 // from plugins.c
+plugin_opt * get_plugin_option(const char * key);
 int add_listener(const char * when, const char * event, const char * func);
 int register_func_as_command(const char * func);
 int add_plugin_keybinding(const char * keys, const char * func);
@@ -25,6 +26,35 @@ int test_callback(lua_State * L){
   }
   return 0; // no return value
 }
+
+static int get_option(lua_State * L) {
+  const char *key = luaL_checkstring(L, 1);
+  plugin_opt * opt = get_plugin_option(key);
+  
+  switch(opt->type) {
+    case 3: // JSMN_STRING
+      lua_pushstring(L, opt->value);
+      break;
+
+    case 4: // JSMN_PRIMITIVE
+      if (opt->value[0] == 'n') // null
+        return 0;
+      else if (opt->value[0] == 't' || opt->value[0] == 'f') // true or false
+        lua_pushboolean(L, !!opt->value);
+      else
+        lua_pushnumber(L, atoi(opt->value));
+      break;
+
+    default: // undefined 0, object 1, array 2
+      printf("Unknown type for plugin option %s: %d\n", key, opt->type);
+      return 0;
+      // break;
+  }
+ 
+  free(opt);
+  return 1;
+}
+  
 
 static int register_function(lua_State * L) {
   const char * func   = luaL_checkstring(L, 1);
@@ -282,6 +312,9 @@ static int set_line_bg_color(lua_State * L) {
 }
 
 void load_plugin_api(lua_State *luaMain) {
+  lua_pushcfunction(luaMain, get_option);
+  lua_setglobal(luaMain, "get_option");
+
   lua_pushcfunction(luaMain, current_line_number);
   lua_setglobal(luaMain, "current_line_number");
   lua_pushcfunction(luaMain, current_position);

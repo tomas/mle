@@ -8,4 +8,15 @@ function plugin.after_cmd_toggle_mouse_mode(text)
   return tostring(text):lower()
 end
 
+function plugin.boot()
+  foo = get_option("name")
+  -- print(foo, type(foo))
+
+  boo = get_option("online")
+  -- print(boo, type(boo))
+
+  num = get_option("number")
+  -- print(num, type(num))
+end
+
 return plugin

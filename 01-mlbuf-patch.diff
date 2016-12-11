@@ -1,0 +1,36 @@
+diff --git a/Makefile b/Makefile
+index a3fe4eb..1966109 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ SHELL=/bin/bash
+ mlbuf_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -g -fPIC
+-mlbuf_ldlibs:=$(LDLIBS) -lpcre
++mlbuf_ldlibs:=$(LDLIBS) -L /usr/local/Cellar/pcre/8.39/lib -lpcre
+ mlbuf_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
+ 
+ all: libmlbuf.so
+diff --git a/buffer.c b/buffer.c
+index 50056d2..3645164 100644
+--- a/buffer.c
++++ b/buffer.c
+@@ -1425,6 +1425,7 @@ static bline_t* _buffer_bline_new(buffer_t* self) {
+     bline_t* bline;
+     bline = calloc(1, sizeof(bline_t));
+     bline->buffer = self;
++    bline->bg = 0;
+     return bline;
+ }
+ 
+diff --git a/mlbuf.h b/mlbuf.h
+index 79d7826..ca29ac4 100644
+--- a/mlbuf.h
++++ b/mlbuf.h
+@@ -82,6 +82,7 @@ struct bline_s {
+     int is_chars_dirty;
+     int is_slabbed;
+     int is_data_slabbed;
++    int bg;
+     bline_t* next;
+     bline_t* prev;
+ };

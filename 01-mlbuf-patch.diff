@@ -1,20 +1,100 @@
 diff --git a/Makefile b/Makefile
-index a3fe4eb..1966109 100644
+index a3fe4eb..c74a7f7 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -1,6 +1,6 @@
  SHELL=/bin/bash
  mlbuf_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -g -fPIC
 -mlbuf_ldlibs:=$(LDLIBS) -lpcre
-+mlbuf_ldlibs:=$(LDLIBS) -L /usr/local/Cellar/pcre/8.39/lib -lpcre
++mlbuf_ldlibs:=$(LDLIBS) `pkg-config --libs libpcre`
  mlbuf_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
  
  all: libmlbuf.so
 diff --git a/buffer.c b/buffer.c
-index 50056d2..3645164 100644
+index 50056d2..2a99304 100644
 --- a/buffer.c
 +++ b/buffer.c
-@@ -1425,6 +1425,7 @@ static bline_t* _buffer_bline_new(buffer_t* self) {
+@@ -267,7 +267,7 @@ int buffer_destroy_mark(buffer_t* self, mark_t* mark) {
+             && (node->srule->range_a == mark
+             ||  node->srule->range_b == mark)
+         ) {
+-            buffer_remove_srule(self, node->srule);
++            buffer_remove_srule(self, node->srule, 0, 0);
+         }
+     }
+     free(mark);
+@@ -749,10 +749,21 @@ int buffer_get_offset(buffer_t* self, bline_t* bline, bint_t col, bint_t* ret_of
+ }
+ 
+ // Add a style rule to the buffer
+-int buffer_add_srule(buffer_t* self, srule_t* srule) {
++int buffer_add_srule(buffer_t* self, srule_t* srule, bint_t start_line_index, bint_t num_lines) {
++
+     srule_node_t* node;
+     node = calloc(1, sizeof(srule_node_t));
+     node->srule = srule;
++
++    bline_t * start_line;
++    if (start_line_index > 0)
++        buffer_get_bline(self, start_line_index, &start_line);
++    else
++        start_line = self->first_line;
++
++    if (num_lines <= 0)
++        num_lines = self->line_count - start_line->line_index;
++
+     if (srule->type == MLBUF_SRULE_TYPE_SINGLE) {
+         DL_APPEND(self->single_srules, node);
+     } else {
+@@ -762,15 +773,26 @@ int buffer_add_srule(buffer_t* self, srule_t* srule) {
+         srule->range_a->range_srule = srule;
+         srule->range_b->range_srule = srule;
+     }
+-    return buffer_apply_styles(self, self->first_line, self->line_count - 1);
++
++    return buffer_apply_styles(self, start_line, num_lines);
+ }
+ 
+ // Remove a style rule from the buffer
+-int buffer_remove_srule(buffer_t* self, srule_t* srule) {
++int buffer_remove_srule(buffer_t* self, srule_t* srule, bint_t start_line_index, bint_t num_lines) {
+     int found;
+     srule_node_t** head;
+     srule_node_t* node;
+     srule_node_t* node_tmp;
++
++    bline_t * start_line;
++    if (start_line_index > 0)
++        buffer_get_bline(self, start_line_index, &start_line);
++    else
++        start_line = self->first_line;
++
++    if (num_lines <= 0)
++        num_lines = self->line_count - start_line->line_index;
++
+     if (srule->type == MLBUF_SRULE_TYPE_SINGLE) {
+         head = &self->single_srules;
+     } else {
+@@ -789,7 +811,7 @@ int buffer_remove_srule(buffer_t* self, srule_t* srule) {
+         break;
+     }
+     if (!found) return MLBUF_ERR;
+-    return buffer_apply_styles(self, self->first_line, self->line_count - 1);
++    return buffer_apply_styles(self, start_line, num_lines);
+ }
+ 
+ // Set callback to cb. Pass in NULL to unset callback.
+@@ -981,6 +1003,9 @@ int buffer_apply_styles(buffer_t* self, bline_t* start_line, bint_t line_delta)
+         return MLBUF_OK;
+     }
+ 
++    // TODO: optimize when line delta is too high
++    // if (line_delta > 10000) printf(" ----- line delta: %ld\n", line_delta);
++
+     // min_nlines, minimum number of lines to style
+     //     line_delta  < 0: 2 (start_line + 1)
+     //     line_delta == 0: 1 (start_line)
+@@ -1425,6 +1450,7 @@ static bline_t* _buffer_bline_new(buffer_t* self) {
      bline_t* bline;
      bline = calloc(1, sizeof(bline_t));
      bline->buffer = self;
@@ -23,7 +103,7 @@ index 50056d2..3645164 100644
  }
  
 diff --git a/mlbuf.h b/mlbuf.h
-index 79d7826..ca29ac4 100644
+index 79d7826..1fd70df 100644
 --- a/mlbuf.h
 +++ b/mlbuf.h
 @@ -82,6 +82,7 @@ struct bline_s {
@@ -34,3 +114,14 @@ index 79d7826..ca29ac4 100644
      bline_t* next;
      bline_t* prev;
  };
+@@ -182,8 +183,8 @@ int buffer_get_bline_col(buffer_t* self, bint_t offset, bline_t** ret_bline, bin
+ int buffer_get_offset(buffer_t* self, bline_t* bline, bint_t col, bint_t* ret_offset);
+ int buffer_undo(buffer_t* self);
+ int buffer_redo(buffer_t* self);
+-int buffer_add_srule(buffer_t* self, srule_t* srule);
+-int buffer_remove_srule(buffer_t* self, srule_t* srule);
++int buffer_add_srule(buffer_t* self, srule_t* srule, bint_t start_line_index, bint_t num_lines);
++int buffer_remove_srule(buffer_t* self, srule_t* srule, bint_t start_line_index, bint_t num_lines);
+ int buffer_set_callback(buffer_t* self, buffer_callback_t cb, void* udata);
+ int buffer_set_tab_width(buffer_t* self, int tab_width);
+ int buffer_set_styles_enabled(buffer_t* self, int is_enabled);

@@ -275,6 +275,8 @@ int cmd_move_down(cmd_context_t* ctx) {
 
 // Move cursor one page up
 int cmd_move_page_up(cmd_context_t* ctx) {
+  if (ctx->cursor->is_anchored) cmd_toggle_anchor(ctx);
+
   EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, -1 * ctx->bview->rect_buffer.h);
   bview_zero_viewport_y(ctx->bview);
   return EON_OK;
@@ -282,6 +284,8 @@ int cmd_move_page_up(cmd_context_t* ctx) {
 
 // Move cursor one page down
 int cmd_move_page_down(cmd_context_t* ctx) {
+  if (ctx->cursor->is_anchored) cmd_toggle_anchor(ctx);
+
   EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_vert, ctx->bview->rect_buffer.h);
   bview_zero_viewport_y(ctx->bview);
   return EON_OK;
@@ -680,7 +684,7 @@ int cmd_isearch(cmd_context_t* ctx) {
   }, NULL);
 
   if (ctx->bview->isearch_rule) {
-    buffer_remove_srule(ctx->bview->buffer, ctx->bview->isearch_rule);
+    buffer_remove_srule(ctx->bview->buffer, ctx->bview->isearch_rule, 1, 100);
     srule_destroy(ctx->bview->isearch_rule);
     ctx->bview->isearch_rule = NULL;
   }
@@ -1722,7 +1726,7 @@ static void _cmd_isearch_prompt_cb(bview_t* bview_prompt, baction_t* action, voi
   bview = bview_prompt->editor->active_edit;
 
   if (bview->isearch_rule) {
-    buffer_remove_srule(bview->buffer, bview->isearch_rule);
+    buffer_remove_srule(bview->buffer, bview->isearch_rule, 1, 100);
     srule_destroy(bview->isearch_rule);
     bview->isearch_rule = NULL;
   }
@@ -1736,7 +1740,7 @@ static void _cmd_isearch_prompt_cb(bview_t* bview_prompt, baction_t* action, voi
 
   if (!bview->isearch_rule) return;
 
-  buffer_add_srule(bview->buffer, bview->isearch_rule);
+  buffer_add_srule(bview->buffer, bview->isearch_rule, 0, 100);
   mark_move_by(bview->active_cursor->mark, -1);
 
   if (mark_move_next_cre(bview->active_cursor->mark, bview->isearch_rule->cre) != MLBUF_OK) {
@@ -1827,7 +1831,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
 
   // Close menu
   editor_close_bview(ctx->editor, ctx->bview, NULL);
-  chdir(cwd);
+  res = chdir(cwd);
 
   // Set new_bview to active
   if (new_bview) editor_set_active(ctx->editor, new_bview);

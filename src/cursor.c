@@ -49,14 +49,14 @@ int cursor_toggle_anchor(cursor_t* cursor, int use_srules) {
 
     if (use_srules) {
       cursor->sel_rule = srule_new_range(cursor->mark, cursor->anchor, 0, TB_REVERSE);
-      buffer_add_srule(cursor->bview->buffer, cursor->sel_rule);
+      buffer_add_srule(cursor->bview->buffer, cursor->sel_rule, EON_MAX(cursor->mark->bline->line_index - 50, 0), 100);
     }
 
     cursor->is_anchored = 1;
 
   } else {
     if (use_srules && cursor->sel_rule) {
-      buffer_remove_srule(cursor->bview->buffer, cursor->sel_rule);
+      buffer_remove_srule(cursor->bview->buffer, cursor->sel_rule, EON_MAX(cursor->mark->bline->line_index - 50, 0), 100);
       srule_destroy(cursor->sel_rule);
       cursor->sel_rule = NULL;
     }
@@ -390,13 +390,13 @@ int cursor_replace(cursor_t* cursor, int interactive, char* opt_regex, char* opt
 
         } else if (interactive) {
           highlight = srule_new_range(search_mark, search_mark_end, 0, TB_REVERSE);
-          buffer_add_srule(cursor->bview->buffer, highlight);
+          buffer_add_srule(cursor->bview->buffer, highlight, 0, 100);
           bview_rectify_viewport(cursor->bview);
           bview_draw(cursor->bview);
           editor_prompt(cursor->bview->editor, "replace: OK to replace? (y=yes, n=no, a=all, C-c=stop)",
           &(editor_prompt_params_t) { .kmap = cursor->bview->editor->kmap_prompt_yna }, &yn
                        );
-          buffer_remove_srule(cursor->bview->buffer, highlight);
+          buffer_remove_srule(cursor->bview->buffer, highlight, 0, 100);
           srule_destroy(highlight);
           bview_draw(cursor->bview);
         }

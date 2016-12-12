@@ -344,7 +344,7 @@ int bview_remove_cursor(bview_t* self, cursor_t* cursor) {
       DL_DELETE(self->cursors, el);
 
       if (el->sel_rule) {
-        buffer_remove_srule(el->bview->buffer, el->sel_rule);
+        buffer_remove_srule(el->bview->buffer, el->sel_rule, 0, 0);
         srule_destroy(el->sel_rule);
         el->sel_rule = NULL;
       }
@@ -647,7 +647,7 @@ static void _bview_deinit(bview_t* self) {
     srule_node_t* srule_node;
     buffer_set_styles_enabled(self->buffer, 0);
     DL_FOREACH(self->syntax->srules, srule_node) {
-      buffer_remove_srule(self->buffer, srule_node->srule);
+      buffer_remove_srule(self->buffer, srule_node->srule, 0, 100);
     }
     buffer_set_styles_enabled(self->buffer, 1);
   }
@@ -716,7 +716,7 @@ int bview_set_syntax(bview_t* self, char* opt_syntax) {
   // Remove current syntax
   if (self->syntax) {
     DL_FOREACH(self->syntax->srules, srule_node) {
-      buffer_remove_srule(self->buffer, srule_node->srule);
+      buffer_remove_srule(self->buffer, srule_node->srule, 0, 100);
       self->syntax = NULL;
     }
   }
@@ -724,7 +724,7 @@ int bview_set_syntax(bview_t* self, char* opt_syntax) {
   // Set syntax if found
   if (use_syntax) {
     DL_FOREACH(use_syntax->srules, srule_node) {
-      buffer_add_srule(self->buffer, srule_node->srule);
+      buffer_add_srule(self->buffer, srule_node->srule, 0, 100);
     }
     self->syntax = use_syntax;
     self->tab_to_space = use_syntax->tab_to_space >= 0

@@ -2224,7 +2224,6 @@ static void _editor_init_syntax(editor_t* editor, syntax_t** optret_syntax, char
   }
 
   HASH_ADD_KEYPTR(hh, editor->syntax_map, syntax->name, strlen(syntax->name), syntax);
-
   if (optret_syntax) *optret_syntax = syntax;
 }
 

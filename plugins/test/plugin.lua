@@ -11,7 +11,7 @@ end
 function plugin.boot()
   --body = get_url("http://bootlog.org/foo")
   -- print(body)
-  
+
   foo = get_option("name")
   -- print(foo, type(foo))
 

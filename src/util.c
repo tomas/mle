@@ -7,25 +7,24 @@
 #include "eon.h"
 
 #include <curl/curl.h>
- 
-struct MemoryStruct {
-  char *memory;
+
+struct Data {
+  char *bytes;
   size_t size;
 };
- 
+
 static size_t write_to_memory(void *contents, size_t size, size_t nmemb, void *userp) {
   size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
- 
-  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-  if (mem->memory == NULL) { // out of memory!
-    printf("not enough memory (realloc returned NULL)\n");
+  struct Data *mem = (struct Data *)userp;
+
+  mem->bytes = realloc(mem->bytes, mem->size + realsize + 1);
+  if (mem->bytes == NULL) { // out of memory!
     return 0;
   }
- 
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
+
+  memcpy(&(mem->bytes[mem->size]), contents, realsize);
   mem->size += realsize;
-  mem->memory[mem->size] = 0;
+  mem->bytes[mem->size] = 0;
   return realsize;
 }
 
@@ -33,8 +32,8 @@ const char * util_get_url(const char * url) {
 
   CURL *curl;
   CURLcode res;
-  struct MemoryStruct body;
- 
+  struct Data body;
+
   curl_global_init(CURL_GLOBAL_ALL);
   curl = curl_easy_init();
   if (!curl) {
@@ -42,8 +41,8 @@ const char * util_get_url(const char * url) {
     return NULL;
   }
 
-  body.memory = malloc(1); // start with 1, will be grown as needed
-  body.size = 0; // no data as this point
+  body.bytes = malloc(1); // start with 1, will be grown as needed
+  body.size  = 0; // no data as this point
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
@@ -53,15 +52,15 @@ const char * util_get_url(const char * url) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&body);
 
   res = curl_easy_perform(curl); // send request
- 
+
   if (res != CURLE_OK) {
     fprintf(stderr, "Couldn't get %s: %s\n", url, curl_easy_strerror(res));
     return NULL;
   }
- 
+
   curl_easy_cleanup(curl);
   curl_global_cleanup();
-  return body.memory;
+  return body.bytes;
 }
 
 size_t util_download_file(const char * url, const char * target) {
@@ -292,8 +291,9 @@ int util_is_dir(char* path) {
 }
 
 char * util_read_file(char *filename) {
-  char *buf=NULL;
+  char *buf = NULL;
   long length;
+  int bytes;
 
   FILE *fp = fopen(filename, "rb");
   if (fp) {
@@ -303,7 +303,7 @@ char * util_read_file(char *filename) {
 
   	buf = malloc(length);
   	if (buf) {
-      fread(buf, 1, length, fp);
+      bytes = fread(buf, 1, length, fp);
       fclose(fp);
       return buf;
   	}
@@ -351,7 +351,7 @@ int util_find_starting_with(char * partial, vector list, vector &matches, int mi
         add_vector(matches, item);
       }
     }
-    
+
   return vector_size(matches);
 }
 */

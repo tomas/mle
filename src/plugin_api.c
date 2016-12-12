@@ -31,7 +31,7 @@ static int get_option(lua_State * L) {
   const char *key = luaL_checkstring(L, 1);
   plugin_opt * opt = get_plugin_option(key);
   if (!opt) return 0; // NULL
-  
+
   switch(opt->type) {
     case 3: // JSMN_STRING
       lua_pushstring(L, opt->value);
@@ -51,7 +51,7 @@ static int get_option(lua_State * L) {
       return 0;
       // break;
   }
- 
+
   free(opt);
   return 1;
 }
@@ -389,5 +389,5 @@ void load_plugin_api(lua_State *luaMain) {
   lua_pushcfunction(luaMain, download_file);
   lua_setglobal(luaMain, "download_file");
 
-  
+
 }

@@ -55,10 +55,29 @@ static int get_option(lua_State * L) {
   free(opt);
   return 1;
 }
-  
+
+static int get_url(lua_State * L) {
+  const char * url = luaL_checkstring(L, 1);
+  const char * data = util_get_url(url);
+  if (!data) return 0;
+
+  lua_pushstring(L, data);
+  return 1;
+}
+
+static int download_file(lua_State * L) {
+  const char * url = luaL_checkstring(L, 1);
+  const char * target = luaL_checkstring(L, 2);
+
+  size_t bytes = util_download_file(url, target);
+  if (bytes == -1) return 0;
+
+  lua_pushnumber(L, bytes);
+  return 1;
+}
 
 static int register_function(lua_State * L) {
-  const char * func   = luaL_checkstring(L, 1);
+  const char * func = luaL_checkstring(L, 1);
   return register_func_as_command(func); // in plugins.c
 }
 
@@ -364,4 +383,11 @@ void load_plugin_api(lua_State *luaMain) {
   lua_setglobal(luaMain, "before");
   lua_pushcfunction(luaMain, after);
   lua_setglobal(luaMain, "after");
+
+  lua_pushcfunction(luaMain, get_url);
+  lua_setglobal(luaMain, "get_url");
+  lua_pushcfunction(luaMain, download_file);
+  lua_setglobal(luaMain, "download_file");
+
+  
 }

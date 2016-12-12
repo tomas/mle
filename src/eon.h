@@ -524,6 +524,8 @@ int async_proc_destroy(async_proc_t* aproc, int preempt);
 int async_proc_drain_all(async_proc_t* aprocs, int* ttyfd);
 
 // util functions
+const char * util_get_url(const char * url);
+size_t util_download_file(const char * url, const char * target);
 int util_shell_exec(editor_t* editor, char* cmd, long timeout_s, char* input, size_t input_len, char* opt_shell, char** optret_output, size_t* optret_output_len);
 int util_popen2(char* cmd, char* opt_shell, int* optret_fdread, int* optret_fdwrite, pid_t* optret_pid);
 int util_get_bracket_pair(uint32_t ch, int* optret_is_closing);

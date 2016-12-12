@@ -6,7 +6,77 @@
 #include <errno.h>
 #include "eon.h"
 
+#include <curl/curl.h>
+ 
+struct MemoryStruct {
+  char *memory;
+  size_t size;
+};
+ 
+static size_t write_to_memory(void *contents, size_t size, size_t nmemb, void *userp) {
+  size_t realsize = size * nmemb;
+  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+ 
+  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
+  if (mem->memory == NULL) { // out of memory!
+    printf("not enough memory (realloc returned NULL)\n");
+    return 0;
+  }
+ 
+  memcpy(&(mem->memory[mem->size]), contents, realsize);
+  mem->size += realsize;
+  mem->memory[mem->size] = 0;
+  return realsize;
+}
 
+const char * util_get_url(const char * url) {
+
+  CURL *curl;
+  CURLcode res;
+  struct MemoryStruct body;
+ 
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl = curl_easy_init();
+  if (!curl) {
+    curl_global_cleanup();
+    return NULL;
+  }
+
+  body.memory = malloc(1); // start with 1, will be grown as needed
+  body.size = 0; // no data as this point
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+  curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, "Eon/1.0");
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_memory);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&body);
+
+  res = curl_easy_perform(curl); // send request
+ 
+  if (res != CURLE_OK) {
+    fprintf(stderr, "Couldn't get %s: %s\n", url, curl_easy_strerror(res));
+    return NULL;
+  }
+ 
+  curl_easy_cleanup(curl);
+  curl_global_cleanup();
+  return body.memory;
+}
+
+size_t util_download_file(const char * url, const char * target) {
+  const char * data = util_get_url(url);
+  if (!data) return -1;
+
+  FILE *output;
+  output = fopen(target, "wb");
+  if (!output) return -1;
+
+  size_t written = fwrite(data, sizeof(char), strlen(data), output);
+  fclose(output);
+
+  return written;
+}
 
 // Run a shell command, optionally feeding stdin, collecting stdout
 // Specify timeout_s=-1 for no timeout

@@ -38,12 +38,12 @@ const char * plugin_path = "~/.config/eon/plugins";
 
 // for option parsing
 #define MAX_TOKENS 32
-char * json_string;
+static char * json_string;
 jsmntok_t json_root[MAX_TOKENS];
 
 int read_plugin_options(const char * plugin) {
-	jsmn_parser parser;
-	jsmn_init(&parser);
+  jsmn_parser parser;
+  jsmn_init(&parser);
 
   char path[128];
   sprintf(path, "%s/%s/plugin.conf", plugin_path, plugin);
@@ -52,19 +52,16 @@ int read_plugin_options(const char * plugin) {
   util_expand_tilde((char *)path, strlen(path), &expanded_path);
 
   char * str = util_read_file(expanded_path);
-  
   if (!str) {
-    // printf("[%s] No options found at %s.\n", plugin, expanded_path);
     return -1;
   }
   
   int res = jsmn_parse(&parser, str, strlen(str), json_root, MAX_TOKENS);
-  if (res >= 0) {
-    char * json_string;
+
+  if (res >= 0) { // success, so store a reference to string
     json_string = str;
   }
-  
-  free(str);
+
   return res;
 }
 
@@ -158,15 +155,14 @@ void load_plugin(const char * dir, const char * name) {
 
   char path[128];
   sprintf(path, "%s/%s/plugin.lua", dir, name);
-  // printf("Loading plugin in path '%s': %s\n", path, name);
 
-  /* Load the plugin. */
+  // printf("Loading plugin in path '%s': %s\n", path, name);
   if (luaL_dofile(luaMain, path)) {
     fprintf(stderr, "Could not load plugin: %s\n", lua_tostring(luaMain, -1));
     return;
   }
 
-  /* Get and check the plugin has a name*/
+  // Get and check the plugin's name
   lua_getfield(luaMain, -1, "name");
   if (lua_isnil(luaMain, -1)) {
     fprintf(stderr, "Could not load file %s: name missing\n", path);
@@ -200,13 +196,16 @@ void load_plugin(const char * dir, const char * name) {
 
     call_plugin(name, "boot");
   
-    if (json_string) free(json_string);
-    json_string = NULL;
+    if (json_string) {
+      free(json_string);
+      json_string = NULL;
+    }
+
     // json_root = NULL;
     booting_plugin_name = NULL;
   }
 
-  // printf("Finished loading plugin %d: %s\n", plugin_count, name);
+  printf("Finished loading plugin %d: %s\n", plugin_count, name);
 }
 
 int load_plugins(editor_t * editor) {
@@ -245,11 +244,12 @@ int load_plugins(editor_t * editor) {
 
   lua_setglobal(luaMain, "plugins");
 
-  printf("%d plugins initialized. Slick.\n", plugin_count);
+  printf("%d plugins initialized.\n", plugin_count);
   editor_ref = NULL;
   return plugin_count;
 }
 
+/*
 void show_plugins() {
   lua_State    *L;
   const char * pname;
@@ -281,6 +281,7 @@ void show_plugins() {
     lua_pop(luaMain, 1);
   }
 }
+*/
 
 ///////////////////////////////////////////////////////
 
@@ -313,9 +314,6 @@ int run_plugin_function(cmd_context_t * ctx) {
   plugin_ctx = NULL;
   return res;
 }
-
-
-
 
 int get_event_id(const char * event) {
   int i, res = -1;
@@ -359,17 +357,16 @@ plugin_opt * get_plugin_option(const char * key) {
     fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
     return NULL;
   }
-  
+
   if (!json_string) return NULL;
-  
+
   jsmntok_t * token = get_hash_token(json_string, json_root, key);
-  if (!token) return NULL;
-  
+  if (!token) return NULL; // not found
+
   plugin_opt * opt;
   opt = (plugin_opt *)malloc(sizeof(plugin_opt));
   opt->type = token->type;
-  strcpy(opt->value, get_string_from_token(json_string, token));
-
+  opt->value = strdup(get_string_from_token(json_string, token));
   return opt;
 }
 
@@ -450,6 +447,8 @@ int add_plugin_keybinding(const char * keys, const char * func) {
     fprintf(stderr, "Something's not right. Plugin called boot function out of scope!\n");
     return -1;
   }
+  
+  // TODO: check if plugin func exists
 
   char * cmd_name;
   int len = strlen(plugin) * strlen(func) + 1;

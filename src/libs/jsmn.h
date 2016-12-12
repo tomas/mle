@@ -408,11 +408,8 @@ jsmntok_t* get_hash_token(char * json, jsmntok_t * tokens, const char* wanted) {
 	jsmntok_t* current = tokens + offset;
 
 	for (int i = 0; i < size; i++) {
-		char* key = get_string_from_token(json, current);
-		if (!key) break;
-
 		// if key matches, return it
-		if (strcmp(wanted, key) == 0) {
+		if (strncmp(wanted, json + current->start, current->end - current->start) == 0) {
 			return current + 1;
 		}
 

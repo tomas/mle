@@ -26,21 +26,52 @@ plugin.on_item_select = function(tab_id, line)
 end
 ]]--
 
+local current_error = -1
+local errors = []
+local lines  = []
+
+plugin.error_message = function(direction)
+  current_error = current_error + direction
+  reason = errors[current_error]
+  prompt = string.format("[%d/%d errors]", number, errors.size(), reason)
+  return prompt
+end
+  
+
+plugin.on_prompt_input = function(key)
+  if key == 'down' then
+    prompt = error_message(+1)
+  elseif key == 'up' then
+    prompt = error_message(-1)
+  else
+    return "cancel_prompt"
+  end
+
+  return string.format("set_prompt:%s;goto_line:%d", prompt, lines[current_error])
+end
+
 plugin.check_current_file = function()
   filename = current_file_path()
-  -- filename = '/home/tomas/code/packages/js/needle/lib/needle.js'
   if not filename then return 0 end
 
   local command = "eslint"
   local config  = "eslintrc"
   local options = string.format('-c "%s%s"', script_path(), config)
 
-  cmd   = string.format('%s %s "%s"', command, options, filename)
-  -- print("running", cmd)
-  out   = exec(cmd)
-  title = string.format("ESLint: %s", filename)
-  -- print(out)
-  open_new_tab(title, out)
+  cmd = string.format('%s %s "%s"', command, options, filename)
+  out = exec(cmd)
+
+  -- title = string.format("ESLint: %s", filename)
+  -- open_new_tab(title, out)
+  
+  count = parse_result(out)
+  if count == 0
+    show_message("No errors!")
+  else
+    goto_line(number)
+    prompt = error_message(1)
+    show_prompt(prompt, plugin.on_prompt_input)
+  end
 end
 
 plugin.boot = function()

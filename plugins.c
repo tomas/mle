@@ -64,19 +64,29 @@ const char * plugins[2] = {
 };
 
 static int eon_copy(lua_State *L) {
-  cmd_copy(current_ctx);
+  int res = cmd_copy(current_ctx);
+  lua_pushnumber(L, res);
+  return 1; // one ret
 }
 static int eon_cut(lua_State *L) {
-  cmd_cut(current_ctx);
+  int res = cmd_cut(current_ctx);
+  lua_pushnumber(L, res);
+  return 1; // one ret
 }
 static int eon_indent(lua_State *L) {
-  cmd_indent(current_ctx);
+  int res = cmd_indent(current_ctx);
+  lua_pushnumber(L, res);
+  return 1; // one ret
 }
 static int eon_undo(lua_State *L) {
-  cmd_undo(current_ctx);
+  int res = cmd_undo(current_ctx);
+  lua_pushnumber(L, res);
+  return 1; // one ret
 }
 static int eon_redo(lua_State *L) {
-  cmd_redo(current_ctx);
+  int res = cmd_redo(current_ctx);
+  lua_pushnumber(L, res);
+  return 1; // one ret
 }
 
 int unload_plugins(void) {

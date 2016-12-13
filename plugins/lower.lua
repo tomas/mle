@@ -9,7 +9,8 @@ function M.run(text)
 end
 
 function M.after_cmd_toggle_mouse_mode(text)
-  eon_indent()
+  res = eon_indent()
+  -- print("Result: %s\n", res)
   return tostring(text):lower()
 end
 

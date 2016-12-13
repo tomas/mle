@@ -628,10 +628,7 @@ static int _editor_prompt_input_complete(cmd_context_t* ctx) {
   }
 
   // Assemble compgen command
-  cmd_arg = util_escape_shell_arg(
-              loop_ctx->tab_complete_term,
-              strlen(loop_ctx->tab_complete_term)
-            );
+  cmd_arg = util_escape_shell_arg(loop_ctx->tab_complete_term, strlen(loop_ctx->tab_complete_term));
   int res = asprintf(&cmd, "compgen -f %s 2>/dev/null | sort", cmd_arg);
 
   // Run compgen command
@@ -940,6 +937,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
     }
 
     if ((cmd = _editor_get_command(editor, &cmd_ctx, NULL)) != NULL) {
+      // Found cmd in kmap trie, now execute
       // printf("cmd: %s\n", cmd->name);
 
       // ensure these are set before performing any checks.
@@ -948,9 +946,8 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
       cmd_ctx.bview  = cmd_ctx.cursor ? cmd_ctx.cursor->bview : NULL;
       cmd_ctx.buffer = cmd_ctx.bview->buffer;
 
-      // Found cmd in kmap trie, now execute
       if (cmd_ctx.is_user_input && cmd->func == cmd_insert_data) {
-        if (cmd_ctx.cursor->is_anchored) {
+        if (EON_BVIEW_IS_EDIT(cmd_ctx.bview) && cmd_ctx.cursor->is_anchored) {
           cmd_delete_before(&cmd_ctx);
         }
 
@@ -989,6 +986,8 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
   // Free pastebuf if present
   if (cmd_ctx.pastebuf) free(cmd_ctx.pastebuf);
+  
+  free(event_name);
 
   // Decrement loop_depth
   editor->loop_depth -= 1;

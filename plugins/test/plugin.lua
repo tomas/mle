@@ -8,9 +8,21 @@ function plugin.after_cmd_toggle_mouse_mode(text)
   return tostring(text):lower()
 end
 
+function plugin.on_prompt_callback(action)
+  print("prompt callback on lua!", action)
+end
+
+function plugin.start_review()
+  goto_line(10)
+  start_nav("test", "String one .... ")
+end
+
 function plugin.boot()
   --body = get_url("http://bootlog.org/foo")
   -- print(body)
+  
+  register_function("start_review")
+  add_keybinding("M-j", "start_review")
 
   foo = get_option("name")
   -- print(foo, type(foo))

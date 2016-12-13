@@ -12,6 +12,8 @@ plugin_opt * get_plugin_option(const char * key);
 int add_listener(const char * when, const char * event, const char * func);
 int register_func_as_command(const char * func);
 int add_plugin_keybinding(const char * keys, const char * func);
+int start_callback_prompt(cmd_context_t * ctx, const char * plugin, char * text);
+
 
 /* plugin functions
 -----------------------------------------------------------*/
@@ -102,6 +104,31 @@ static int after(lua_State * L) {
   return 0;
 }
 
+
+static int start_nav(lua_State * L) {
+  const char *plugin = luaL_checkstring(L, 1);
+  const char *text   = luaL_checkstring(L, 2);
+  
+//  if (!lua_isfunction(L, 2)) {
+//    return -1;
+//  }
+//  const char *cb_name = luaL_checkstring(L, 2);
+//  plugin_ctx->static_param = strdup((char *)cb_name);
+
+  return start_callback_prompt(plugin_ctx, plugin, (char *)text);
+}
+
+static int set_nav_text(lua_State * L) {
+  const char *text = luaL_checkstring(L, 2);
+  editor_set_prompt_str(plugin_ctx->editor, (char *)text);
+  return 0;
+}
+
+static int close_nav(lua_State * L) {
+  editor_close_prompt(plugin_ctx->editor, plugin_ctx->editor->active_edit);
+  return 0;
+}
+
 static int prompt_user(lua_State * L) {
   const char *prompt = luaL_checkstring(L, 1);
   const char *placeholder = luaL_checkstring(L, 2);
@@ -124,7 +151,8 @@ static int open_new_tab(lua_State * L) {
 
   bview_t * view;
   int res = editor_open_bview(plugin_ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, (char *)title, strlen(title), 1, 0, &plugin_ctx->editor->rect_edit, NULL, &view);
-  view->is_menu = 1;
+
+  // view->is_menu = 1;
   // view->callback = callback;
 
   if (res == EON_OK) {
@@ -165,6 +193,15 @@ static int current_position(lua_State * L) {
   lua_rawseti(L, -2, 1);
 
   return 1;
+}
+
+static int goto_line(lua_State * L) {
+  bint_t line = lua_tointeger(L, 1);
+  if (line < 1) line = 1;
+
+  mark_move_to(plugin_ctx->cursor->mark, line-1, 0);
+  bview_center_viewport_y(plugin_ctx->bview);
+  return 0;
 }
 
 // bool = has_selection()
@@ -373,6 +410,15 @@ void load_plugin_api(lua_State *luaMain) {
   lua_setglobal(luaMain, "open_new_tab");
   lua_pushcfunction(luaMain, draw);
   lua_setglobal(luaMain, "draw");
+
+  lua_pushcfunction(luaMain, start_nav);
+  lua_setglobal(luaMain, "start_nav");
+  lua_pushcfunction(luaMain, close_nav);
+  lua_setglobal(luaMain, "close_nav");
+  lua_pushcfunction(luaMain, set_nav_text);
+  lua_setglobal(luaMain, "set_nav_text");
+  lua_pushcfunction(luaMain, goto_line);
+  lua_setglobal(luaMain, "goto_line");
 
   lua_pushcfunction(luaMain, add_keybinding);
   lua_setglobal(luaMain, "add_keybinding");

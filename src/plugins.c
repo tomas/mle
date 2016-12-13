@@ -116,9 +116,9 @@ int init_plugins(void) {
 }
 
 
-int call_plugin(const char * pname, const char * func) {
+int call_plugin(const char * pname, const char * func, char * data) {
   lua_State  *L;
-  // printf(" ---->Triggering function %s on plugin %s\n", func, pname);
+  // printf(" ----> Calling function %s on plugin %s\n", func, pname);
 
   L = lua_newthread(luaMain);
   lua_getglobal(L, pname);
@@ -129,9 +129,10 @@ int call_plugin(const char * pname, const char * func) {
   }
 
   lua_getfield(L, -1, func); // get the function
+  if (data) lua_pushstring(L, data);
 
   // call it
-  if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0) {
+  if (lua_pcall(L, data ? 1 : 0, LUA_MULTRET, 0) != 0) {
     // printf("Fatal: Could not run %s function on plugin: %s\n", func, pname);
     lua_pop(luaMain, 1);
     return -1;
@@ -194,7 +195,7 @@ void load_plugin(const char * dir, const char * name) {
     read_plugin_options(name);
     booting_plugin_name = (char *)name;
 
-    call_plugin(name, "boot");
+    call_plugin(name, "boot", NULL);
   
     if (json_string) {
       free(json_string);
@@ -310,7 +311,7 @@ int run_plugin_function(cmd_context_t * ctx) {
   // and finally call it
   // printf("calling %s function from %s plugin\n", func, plugin);
   plugin_ctx = ctx;
-  res = call_plugin(plugin, func);
+  res = call_plugin(plugin, func, NULL);
   plugin_ctx = NULL;
   return res;
 }
@@ -341,7 +342,7 @@ int trigger_plugin_event(const char * event, cmd_context_t ctx) {
   el = vector_get(&listeners, event_id);
 
   while (el) {
-    res = call_plugin(el->plugin, el->func);
+    res = call_plugin(el->plugin, el->func, NULL);
     // if (res == -1) unload_plugin(name); TODO: stop further calls to this guy.
     el = el->next;
   };
@@ -467,4 +468,21 @@ int add_plugin_keybinding(const char * keys, const char * func) {
   lua_pushnumber(L, res);
   return 1;
 */
+}
+
+char * plugin_prompt = NULL;
+
+int _nav_menu_callback(cmd_context_t * ctx, char * action) {
+  if (!action) {
+    editor_close_prompt(ctx->editor, ctx->editor->active_edit);
+    return 0;
+  }
+
+  return call_plugin(plugin_prompt, "on_prompt_callback", action);
+}
+
+int start_callback_prompt(cmd_context_t * ctx, const char * plugin, char * prompt) {
+  if (plugin_prompt) free(plugin_prompt);
+  plugin_prompt = (char *)plugin;
+  return editor_prompt_menu(ctx->editor, _nav_menu_callback, (char *)prompt, strlen(prompt));
 }

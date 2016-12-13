@@ -28,8 +28,8 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as);
 static int _cmd_search_next(bview_t* bview, cursor_t* cursor, mark_t* search_mark, char* regex, int regex_len);
 static void _cmd_aproc_bview_passthru_cb(async_proc_t* self, char* buf, size_t buf_len);
 static void _cmd_isearch_prompt_cb(bview_t* bview, baction_t* action, void* udata);
-static int _cmd_menu_browse_cb(cmd_context_t* ctx);
-static int _cmd_menu_grep_cb(cmd_context_t* ctx);
+static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action);
+static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action);
 static int _cmd_indent(cmd_context_t* ctx, int outdent);
 static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent, int col);
 static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h);
@@ -594,12 +594,13 @@ int cmd_search(cmd_context_t* ctx) {
 
   search_mark = buffer_add_mark(ctx->bview->buffer, NULL, 0);
   EON_MULTI_CURSOR_CODE(ctx->cursor,
-                        _cmd_search_next(ctx->bview, cursor, search_mark, regex, regex_len);
-                       );
+    _cmd_search_next(ctx->bview, cursor, search_mark, regex, regex_len);
+  );
 
   mark_destroy(search_mark);
   return EON_OK;
 }
+
 
 // Search for next instance of last search regex
 int cmd_search_next(cmd_context_t* ctx) {
@@ -680,7 +681,7 @@ int cmd_find_word(cmd_context_t* ctx) {
 int cmd_isearch(cmd_context_t* ctx) {
   editor_prompt(ctx->editor, "isearch: Regex?", &(editor_prompt_params_t) {
     .kmap = ctx->editor->kmap_prompt_isearch,
-     .prompt_cb = _cmd_isearch_prompt_cb
+    .prompt_cb = _cmd_isearch_prompt_cb
   }, NULL);
 
   if (ctx->bview->isearch_rule) {
@@ -826,8 +827,9 @@ int cmd_grep(cmd_context_t* ctx) {
   }
 
   path_arg = util_escape_shell_arg(path, strlen(path));
-  free(path);
   int res = asprintf(&cmd, grep_fmt, path_arg);
+
+  free(path);
   free(path_arg);
 
   if (!cmd) {
@@ -839,7 +841,7 @@ int cmd_grep(cmd_context_t* ctx) {
 
   if (!aproc) return EON_ERR;
 
-  editor_menu(ctx->editor, _cmd_menu_grep_cb, NULL, 0, aproc, NULL);
+  editor_page_menu(ctx->editor, _cmd_menu_grep_cb, NULL, 0, aproc, NULL);
   return EON_OK;
 }
 
@@ -854,7 +856,7 @@ int cmd_browse(cmd_context_t* ctx) {
 
   if (!aproc) return EON_ERR;
 
-  editor_menu(ctx->editor, _cmd_menu_browse_cb, "..\n", 3, aproc, &menu);
+  editor_page_menu(ctx->editor, _cmd_menu_browse_cb, "..\n", 3, aproc, &menu);
   mark_move_beginning(menu->active_cursor->mark);
   return EON_OK;
 }
@@ -1580,8 +1582,7 @@ static int _cmd_pre_close(editor_t* editor, bview_t* bview) {
 
   yn = NULL;
   editor_prompt(editor, "close: Save modified? (y=yes, n=no, C-c=cancel)",
-  &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn
-               );
+  &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn);
 
   if (!yn) {
     return EON_ERR;
@@ -1751,7 +1752,9 @@ static void _cmd_isearch_prompt_cb(bview_t* bview_prompt, baction_t* action, voi
 }
 
 // Callback from cmd_grep
-static int _cmd_menu_grep_cb(cmd_context_t* ctx) {
+static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action) {
+  if (!action) return EON_OK; // cancelled
+
   bint_t linenum;
   char* line;
   char* colon;
@@ -1777,7 +1780,9 @@ static int _cmd_menu_grep_cb(cmd_context_t* ctx) {
 }
 
 // Callback from cmd_browse
-static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
+static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
+  if (!action) return EON_OK; // cancelled
+  
   char* line;
   char* path;
   char* cwd;

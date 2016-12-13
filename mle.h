@@ -556,7 +556,7 @@ extern editor_t _editor;
 #define MLE_PROMPT_NO "no"
 #define MLE_PROMPT_ALL "all"
 
-#define MLE_DEFAULT_TAB_WIDTH 4
+#define MLE_DEFAULT_TAB_WIDTH 2
 #define MLE_DEFAULT_TAB_TO_SPACE 1
 #define MLE_DEFAULT_TRIM_PASTE 1
 #define MLE_DEFAULT_MACRO_TOGGLE_KEY "M-r"

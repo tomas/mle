@@ -39,6 +39,9 @@ eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_objects)
 
 eon_static: eon_static:=-static
 eon_static: eon_ldlibs:=$(eon_ldlibs) -lpthread
+ifdef WITH_PLUGINS # include ssl/crypto and libz
+eon_static: eon_ldlibs:=$(eon_ldlibs) -lssl -lcrypto -ldl -lz
+endif
 eon_static: eon
 
 $(eon_objects): %.o: %.c

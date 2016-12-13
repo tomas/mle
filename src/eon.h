@@ -32,6 +32,8 @@ typedef struct tb_event tb_event_t; // A termbox event
 typedef struct prompt_history_s prompt_history_t; // A map of prompt histories keyed by prompt_str
 typedef struct prompt_hnode_s prompt_hnode_t; // A node in a linked list of prompt history
 typedef int (*cmd_func_t)(cmd_context_t* ctx); // A command function
+typedef int (*cb_func_t)(cmd_context_t* ctx, char * action); // A command function
+
 
 // kinput_t
 struct kinput_s {
@@ -185,7 +187,7 @@ struct bview_s {
     int tab_to_space;
     syntax_t* syntax;
     async_proc_t* async_proc;
-    cmd_func_t menu_callback;
+    cb_func_t menu_callback;
     int is_menu;
     char init_cwd[PATH_MAX + 1];
     bview_listener_t* listeners;
@@ -314,7 +316,7 @@ struct loop_context_s {
     int need_more_input;
     int should_exit;
     char* prompt_answer;
-    cmd_func_t prompt_callack;
+    // cmd_func_t prompt_callack;
     prompt_hnode_t* prompt_hnode;
     int tab_complete_index;
     char tab_complete_term[EON_LOOP_CTX_MAX_COMPLETE_TERM_SIZE];
@@ -369,9 +371,12 @@ int editor_run(editor_t* editor);
 int editor_bview_edit_count(editor_t* editor);
 int editor_close_bview(editor_t* editor, bview_t* bview, int* optret_num_closed);
 int editor_count_bviews_by_buffer(editor_t* editor, buffer_t* buffer);
-int editor_menu(editor_t* editor, cmd_func_t callback, char* opt_buf_data, int opt_buf_data_len, async_proc_t* opt_aproc, bview_t** optret_menu);
+int editor_page_menu(editor_t* editor, cb_func_t callback, char* opt_buf_data, int opt_buf_data_len, async_proc_t* opt_aproc, bview_t** optret_menu);
+int editor_prompt_menu(editor_t* editor, cb_func_t callback, char* opt_buf_data, int opt_buf_data_len);
 int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_path, int opt_path_len, int make_active, bint_t linenum, bview_rect_t* opt_rect, buffer_t* opt_buffer, bview_t** optret_bview);
 int editor_prompt(editor_t* editor, char* prompt, editor_prompt_params_t* params, char** optret_answer);
+int editor_close_prompt(editor_t* editor, bview_t * invoker);
+int editor_set_prompt_str(editor_t* editor, char * str);
 int editor_set_active(editor_t* editor, bview_t* bview);
 int editor_register_cmd(editor_t* editor, cmd_t* cmd);
 int editor_add_binding_to_keymap(editor_t* editor, kmap_t* kmap, kbinding_def_t* binding_def);

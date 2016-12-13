@@ -238,6 +238,23 @@ int editor_deinit(editor_t* editor) {
   return EON_OK;
 }
 
+int editor_close_prompt(editor_t * editor, bview_t * invoker) {
+  bview_t * bview_tmp;
+  editor->prompt->menu_callback = NULL;
+  // free(editor->prompt->prompt_str);
+  bview_tmp = editor->prompt;
+  editor->prompt = NULL;
+  editor_close_bview(editor, bview_tmp, NULL);
+  editor_set_active(editor, invoker);
+  return EON_OK;
+}
+
+int editor_set_prompt_str(editor_t * editor, char * str) {
+  // editor->rect_prompt.x = strlen(str) + 1;
+  editor->prompt->prompt_str = str;
+  return EON_OK;
+}
+
 // Prompt user for input
 int editor_prompt(editor_t* editor, char* prompt, editor_prompt_params_t* params, char** optret_answer) {
   bview_t* bview_tmp;
@@ -257,14 +274,11 @@ int editor_prompt(editor_t* editor, char* prompt, editor_prompt_params_t* params
   loop_ctx.prompt_answer = NULL;
 
   // Init prompt
-  int prompt_len = strlen(prompt);
-  editor->rect_prompt.x = prompt_len + 1;
-
+  editor->rect_prompt.x = strlen(prompt) + 1;
   editor_open_bview(editor, NULL, EON_BVIEW_TYPE_PROMPT, NULL, 0, 1, 0, &editor->rect_prompt, NULL, &editor->prompt);
+  editor_set_prompt_str(editor, prompt);
 
   if (params && params->prompt_cb) bview_add_listener(editor->prompt, params->prompt_cb, params->prompt_cb_udata);
-
-  editor->prompt->prompt_str = prompt;
   bview_push_kmap(editor->prompt, params && params->kmap ? params->kmap : editor->kmap_prompt_input);
 
   // Insert data if present
@@ -286,16 +300,13 @@ int editor_prompt(editor_t* editor, char* prompt, editor_prompt_params_t* params
   }
 
   // Restore previous focus
-  bview_tmp = editor->prompt;
-  editor->prompt = NULL;
-  editor_close_bview(editor, bview_tmp, NULL);
-  editor_set_active(editor, loop_ctx.invoker);
+  editor_close_prompt(editor, loop_ctx.invoker);
 
   return EON_OK;
 }
 
-// Open dialog menu
-int editor_menu(editor_t* editor, cmd_func_t callback, char* opt_buf_data, int opt_buf_data_len, async_proc_t* opt_aproc, bview_t** optret_menu) {
+// Show menu in editor (file browser, grep results, etc)
+int editor_page_menu(editor_t* editor, cb_func_t callback, char* opt_buf_data, int opt_buf_data_len, async_proc_t* opt_aproc, bview_t** optret_menu) {
   bview_t* menu;
   editor_open_bview(editor, NULL, EON_BVIEW_TYPE_EDIT, NULL, 0, 1, 0, &editor->rect_edit, NULL, &menu);
   menu->is_menu = 1;
@@ -311,6 +322,26 @@ int editor_menu(editor_t* editor, cmd_func_t callback, char* opt_buf_data, int o
   }
 
   if (optret_menu) *optret_menu = menu;
+
+  return EON_OK;
+}
+
+
+int editor_prompt_menu(editor_t* editor, cb_func_t callback, char* prompt, int prompt_len) {
+
+  editor_open_bview(editor, NULL, EON_BVIEW_TYPE_PROMPT, NULL, 0, 1, 0, &editor->rect_prompt, NULL, &editor->prompt);
+  editor_set_prompt_str(editor, prompt);
+
+  bview_push_kmap(editor->prompt, editor->kmap_prompt_menu);
+
+  editor->prompt->menu_callback = callback;
+  // if (params && params->prompt_cb) bview_add_listener(editor->prompt, params->prompt_cb, params->prompt_cb_udata);
+
+  // Insert data if present
+//  if (opt_buf_data && opt_buf_data_len > 0) {
+//    buffer_insert(editor->prompt->buffer, 0, opt_buf_data, opt_buf_data_len, NULL);
+//    mark_move_eol(editor->prompt->active_cursor->mark);
+//  }
 
   return EON_OK;
 }
@@ -596,6 +627,10 @@ static int _editor_prompt_input_submit(cmd_context_t* ctx) {
 
 // Invoke when user hits tab in a prompt_input
 static int _editor_prompt_input_complete(cmd_context_t* ctx) {
+
+/*
+  // TODO: rewrite this
+
   loop_context_t* loop_ctx;
   loop_ctx = ctx->loop_ctx;
 
@@ -674,6 +709,8 @@ static int _editor_prompt_input_complete(cmd_context_t* ctx) {
   }
 
   free(terms);
+*/
+
   return EON_OK;
 }
 
@@ -769,7 +806,7 @@ static int _editor_prompt_cancel(cmd_context_t* ctx) {
 
 // Invoked when user hits enter in a menu
 static int _editor_menu_submit(cmd_context_t* ctx) {
-  if (ctx->bview->menu_callback) return ctx->bview->menu_callback(ctx);
+  if (ctx->bview->menu_callback) return ctx->bview->menu_callback(ctx, "submit");
 
   return EON_OK;
 }
@@ -777,35 +814,55 @@ static int _editor_menu_submit(cmd_context_t* ctx) {
 // Invoked when user hits C-c in a menu
 static int _editor_menu_cancel(cmd_context_t* ctx) {
   if (ctx->bview->async_proc) async_proc_destroy(ctx->bview->async_proc, 1);
+  // if (ctx->bview->menu_callback) return ctx->bview->menu_callback(ctx, NULL);
+
+  return EON_OK;
+}
+
+static int _editor_prompt_menu_cancel(cmd_context_t* ctx) {
+  if (ctx->editor->prompt->menu_callback)
+    return ctx->editor->prompt->menu_callback(ctx, NULL);
 
   return EON_OK;
 }
 
 // Invoked when user hits up in a prompt_menu
 static int _editor_prompt_menu_up(cmd_context_t* ctx) {
-  mark_move_vert(ctx->editor->active_edit->active_cursor->mark, -1);
-  bview_rectify_viewport(ctx->editor->active_edit);
+  if (ctx->editor->prompt->menu_callback)
+    return ctx->editor->prompt->menu_callback(ctx, "up");
+
+  // mark_move_vert(ctx->editor->active_edit->active_cursor->mark, -1);
+  // bview_rectify_viewport(ctx->editor->active_edit);
   return EON_OK;
 }
 
 // Invoked when user hits down in a prompt_menu
 static int _editor_prompt_menu_down(cmd_context_t* ctx) {
-  mark_move_vert(ctx->editor->active_edit->active_cursor->mark, 1);
-  bview_rectify_viewport(ctx->editor->active_edit);
+  if (ctx->editor->prompt->menu_callback)
+    return ctx->editor->prompt->menu_callback(ctx, "down");
+
+  // mark_move_vert(ctx->editor->active_edit->active_cursor->mark, 1);
+  // bview_rectify_viewport(ctx->editor->active_edit);
   return EON_OK;
 }
 
 // Invoked when user hits page-up in a prompt_menu
 static int _editor_prompt_menu_page_up(cmd_context_t* ctx) {
-  mark_move_vert(ctx->editor->active_edit->active_cursor->mark, -1 * ctx->editor->active_edit->rect_buffer.h);
-  bview_zero_viewport_y(ctx->editor->active_edit);
+  if (ctx->editor->prompt->menu_callback)
+    return ctx->editor->prompt->menu_callback(ctx, "pageup");
+
+  // mark_move_vert(ctx->editor->active_edit->active_cursor->mark, -1 * ctx->editor->active_edit->rect_buffer.h);
+  // bview_zero_viewport_y(ctx->editor->active_edit);
   return EON_OK;
 }
 
 // Invoked when user hits page-down in a prompt_menu
 static int _editor_prompt_menu_page_down(cmd_context_t* ctx) {
-  mark_move_vert(ctx->editor->active_edit->active_cursor->mark, ctx->editor->active_edit->rect_buffer.h);
-  bview_zero_viewport_y(ctx->editor->active_edit);
+  if (ctx->editor->prompt->menu_callback)
+    return ctx->editor->prompt->menu_callback(ctx, "pagedown");
+
+  // mark_move_vert(ctx->editor->active_edit->active_cursor->mark, ctx->editor->active_edit->rect_buffer.h);
+  // bview_zero_viewport_y(ctx->editor->active_edit);
   return EON_OK;
 }
 
@@ -832,7 +889,6 @@ static int _editor_prompt_isearch_prev(cmd_context_t* ctx) {
 // Invoked when user hits Ctrl-F while on the search prompt
 static int _editor_prompt_toggle_replace(cmd_context_t* ctx) {
   // ctx->loop_ctx->prompt_answer = NULL;
-
   _editor_prompt_cancel(ctx);
 
   ctx->editor->macro_record = calloc(1, sizeof(kmacro_t));
@@ -986,8 +1042,6 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
   // Free pastebuf if present
   if (cmd_ctx.pastebuf) free(cmd_ctx.pastebuf);
-  
-  free(event_name);
 
   // Decrement loop_depth
   editor->loop_depth -= 1;
@@ -1727,6 +1781,7 @@ static void _editor_register_cmds(editor_t* editor) {
   _editor_register_cmd_fn(editor, "_editor_prompt_isearch_drop_cursors", _editor_prompt_isearch_drop_cursors);
   _editor_register_cmd_fn(editor, "_editor_prompt_isearch_next", _editor_prompt_isearch_next);
   _editor_register_cmd_fn(editor, "_editor_prompt_isearch_prev", _editor_prompt_isearch_prev);
+  _editor_register_cmd_fn(editor, "_editor_prompt_menu_cancel", _editor_prompt_menu_cancel);
   _editor_register_cmd_fn(editor, "_editor_prompt_menu_down", _editor_prompt_menu_down);
   _editor_register_cmd_fn(editor, "_editor_prompt_menu_page_down", _editor_prompt_menu_page_down);
   _editor_register_cmd_fn(editor, "_editor_prompt_menu_page_up", _editor_prompt_menu_page_up);
@@ -1889,6 +1944,9 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_quit", "CS-q"),
     EON_KBINDING_DEF(NULL, NULL)
   });
+  
+  // prompt input, used when requesting input from user (search string, save as)
+  // no default command, but falls-through to normal keymap if no matches.
   _editor_init_kmap(editor, &editor->kmap_prompt_input, "eon_prompt_input", NULL, 1, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_input_submit", "enter"),
     EON_KBINDING_DEF("_editor_prompt_input_complete", "tab"),
@@ -1900,6 +1958,9 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("_editor_prompt_history_down", "down"),
     EON_KBINDING_DEF(NULL, NULL)
   });
+
+  // yes/no keymap. used in prompts like "discard charges on file?" no fallthrough, meaning
+  // input is silenced.
   _editor_init_kmap(editor, &editor->kmap_prompt_yn, "eon_prompt_yn", NULL, 0, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_yn_yes", "y"),
     EON_KBINDING_DEF("_editor_prompt_yn_no", "n"),
@@ -1909,6 +1970,8 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
     EON_KBINDING_DEF(NULL, NULL)
   });
+
+  // yes/no/all keymap. used in the find and replace prompt, after matches have been found.
   _editor_init_kmap(editor, &editor->kmap_prompt_yna, "eon_prompt_yna", NULL, 0, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_yn_yes", "enter"),
     EON_KBINDING_DEF("_editor_prompt_yn_yes", "y"),
@@ -1921,15 +1984,24 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
     EON_KBINDING_DEF(NULL, NULL)
   });
-  _editor_init_kmap(editor, &editor->kmap_prompt_ok, "eon_prompt_ok", "_editor_prompt_cancel", 0, (kbinding_def_t[]) {
-    EON_KBINDING_DEF(NULL, NULL)
-  });
+
+  
+//  _editor_init_kmap(editor, &editor->kmap_prompt_ok, "eon_prompt_ok", "_editor_prompt_cancel", 0, (kbinding_def_t[]) {
+//    EON_KBINDING_DEF(NULL, NULL)
+//  });
+
+  // menu keymap. used when showing menus in the editor, like the directory tree
+  // or the search results page (grep). fallsthrough to normal keymap, meaning regular input is allowed.
   _editor_init_kmap(editor, &editor->kmap_menu, "eon_menu", NULL, 1, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_menu_submit", "enter"),
     EON_KBINDING_DEF("_editor_menu_cancel", "C-c"),
     EON_KBINDING_DEF(NULL, NULL)
     });
-  _editor_init_kmap(editor, &editor->kmap_prompt_menu, "eon_prompt_menu", NULL, 1, (kbinding_def_t[]) {
+  
+
+
+  // prompt menu input. used in prompts that allow going up and down. not used.
+  _editor_init_kmap(editor, &editor->kmap_prompt_menu, "eon_prompt_menu", NULL, 0, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_input_submit", "enter"),
     EON_KBINDING_DEF("_editor_prompt_menu_up", "up"),
     EON_KBINDING_DEF("_editor_prompt_menu_down", "down"),
@@ -1937,12 +2009,14 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("_editor_prompt_menu_down", "right"),
     EON_KBINDING_DEF("_editor_prompt_menu_page_up", "page-up"),
     EON_KBINDING_DEF("_editor_prompt_menu_page_down", "page-down"),
-    EON_KBINDING_DEF("_editor_prompt_cancel", "escape"),
-    EON_KBINDING_DEF("_editor_prompt_cancel", "C-c"),
-    EON_KBINDING_DEF("_editor_prompt_cancel", "C-x"),
-    EON_KBINDING_DEF("_editor_prompt_cancel", "M-c"),
+    EON_KBINDING_DEF("_editor_prompt_menu_cancel", "escape"),
+    EON_KBINDING_DEF("_editor_prompt_menu_cancel", "C-c"),
+    EON_KBINDING_DEF("_editor_prompt_menu_cancel", "C-x"),
+    EON_KBINDING_DEF("_editor_prompt_menu_cancel", "M-c"),
     EON_KBINDING_DEF(NULL, NULL)
   });
+
+  // incremental search keymap. allows jumping to prev/next result, dropping cursors on them, etc
   _editor_init_kmap(editor, &editor->kmap_prompt_isearch, "eon_prompt_isearch", NULL, 1, (kbinding_def_t[]) {
     EON_KBINDING_DEF("_editor_prompt_toggle_replace", "C-f"),
     EON_KBINDING_DEF("_editor_prompt_isearch_prev", "up"),

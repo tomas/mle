@@ -7,6 +7,7 @@
 #include "mle.h"
 #include "mlbuf.h"
 #include "colors.h"
+#include "plugins.h"
 
 static int _editor_set_macro_toggle_key(editor_t* editor, char* key);
 static int _editor_bview_exists(editor_t* editor, bview_t* bview);

@@ -190,6 +190,7 @@ int load_plugins(editor_t * editor) {
   }
 
   lua_setglobal(luaMain, "plugins");
+  return 0;
 }
 
 void show_plugins() {
@@ -249,7 +250,7 @@ int call_plugin(const char * pname, const char * func, cmd_context_t ctx) {
   if (lua_gettop(L) == 3) {
     printf("Fatal: plugin failed: %s\n", pname);
     lua_pop(luaMain, 1);
-    return NULL;
+    return -1;
   } else {
     // printf("Result from %s: %s\n", func, lua_tostring(L, -1));
   }

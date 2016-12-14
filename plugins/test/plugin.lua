@@ -14,7 +14,7 @@ end
 
 function plugin.start_review()
   goto_line(10)
-  start_nav("test", "String one .... ")
+  start_nav("test", "String one .... ", plugin.on_prompt_callback)
 end
 
 function plugin.boot()

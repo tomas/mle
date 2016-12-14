@@ -64,6 +64,7 @@ static int get_url(lua_State * L) {
   if (!data) return 0;
 
   lua_pushstring(L, data);
+  free((char *)data);
   return 1;
 }
 
@@ -104,11 +105,59 @@ static int after(lua_State * L) {
   return 0;
 }
 
+static void * cbfunc;
+static int initialized = 0;
+
+static const void *func_ref_new(lua_State *L) {
+  if (!initialized) {
+  	lua_newtable(L);
+	  lua_setfield(L, LUA_REGISTRYINDEX, "functions");
+	  initialized = 1;
+  }
+  
+	const void *addr = lua_topointer(L, -1);
+	if (!lua_isfunction(L, -1) || !addr)
+		return NULL;
+
+	lua_getfield(L, LUA_REGISTRYINDEX, "functions");
+	lua_pushlightuserdata(L, (void*)addr);
+	lua_pushvalue(L, -3);
+	lua_settable(L, -3);
+	lua_pop(L, 1);
+	return addr;
+}
+
+/* retrieve function from registry and place it at the top of the stack */
+static int func_ref_get(lua_State *L, const void *addr) {
+	lua_getfield(L, LUA_REGISTRYINDEX, "functions");
+	lua_pushlightuserdata(L, (void*)addr);
+	lua_gettable(L, -2);
+	lua_remove(L, -2);
+
+	if (!lua_isfunction(L, -1)) {
+		lua_pop(L, 1);
+		return 0;
+	}
+	return 1;
+}
 
 static int start_nav(lua_State * L) {
   const char *plugin = luaL_checkstring(L, 1);
   const char *text   = luaL_checkstring(L, 2);
   
+  if (cbfunc) {
+    int res = func_ref_get(L, cbfunc);
+    free(cbfunc);
+    cbfunc = NULL;
+  }
+  
+  if (!lua_isfunction(L, 3) || !(cbfunc = (void *)func_ref_new(L))) {
+    printf("missing callback function\n");
+    return -1;
+  }
+  
+  printf("Added to queue!\n");
+
 //  if (!lua_isfunction(L, 2)) {
 //    return -1;
 //  }
@@ -125,6 +174,10 @@ static int set_nav_text(lua_State * L) {
 }
 
 static int close_nav(lua_State * L) {
+  int pos = func_ref_get(L, cbfunc);
+  free(cbfunc);
+  cbfunc = NULL;
+  
   editor_close_prompt(plugin_ctx->editor, plugin_ctx->editor->active_edit);
   return 0;
 }
@@ -191,7 +244,6 @@ static int current_position(lua_State * L) {
   lua_rawseti(L, -2, 0);
   lua_pushinteger(L, mark->col);
   lua_rawseti(L, -2, 1);
-
   return 1;
 }
 
@@ -369,6 +421,7 @@ static int set_line_bg_color(lua_State * L) {
 }
 
 void load_plugin_api(lua_State *luaMain) {
+
   lua_pushcfunction(luaMain, get_option);
   lua_setglobal(luaMain, "get_option");
 

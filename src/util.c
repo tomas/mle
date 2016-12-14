@@ -6,8 +6,6 @@
 #include <errno.h>
 #include "eon.h"
 
-#include <curl/curl.h>
-
 struct Data {
   char *bytes;
   size_t size;
@@ -27,6 +25,9 @@ static size_t write_to_memory(void *contents, size_t size, size_t nmemb, void *u
   mem->bytes[mem->size] = 0;
   return realsize;
 }
+
+#ifdef WITH_LIBCURL
+#include <curl/curl.h>
 
 const char * util_get_url(const char * url) {
 
@@ -62,6 +63,37 @@ const char * util_get_url(const char * url) {
   curl_global_cleanup();
   return body.bytes;
 }
+
+#else
+
+const char * util_get_url(const char * url) {
+  int status;
+  int len = strlen(url) + 29;
+  char cmd[len];
+  snprintf(cmd, len, "wget -S -O - '%s' 2> /dev/null", url);
+
+  FILE *fp;
+  fp = popen(cmd, "r");
+  if (fp == NULL)
+    return NULL;
+
+  struct Data body;
+  body.bytes = malloc(1); // start with 1, will be grown as needed
+  body.size  = 0; // no data as this point
+
+  size_t chunk = 1024;
+  char buf[chunk];
+  while (fgets(buf, sizeof(buf), fp) != NULL) {
+    write_to_memory(buf, strlen(buf), 1, &body);
+  }
+
+  status = pclose(fp);
+  // if (status == -1) // something went wrong
+
+  return body.size == 0 ? NULL : body.bytes;
+}
+
+#endif // WITH_LIBCURL
 
 size_t util_download_file(const char * url, const char * target) {
   const char * data = util_get_url(url);

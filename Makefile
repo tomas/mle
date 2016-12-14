@@ -1,6 +1,7 @@
 WITH_PLUGINS=1
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
+LC_ALL=C
 CC=gcc
 STRIP=strip
 

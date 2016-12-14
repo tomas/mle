@@ -1,4 +1,5 @@
 WITH_PLUGINS=1
+# WITH_LIBCURL=1
 SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 LC_ALL=C
@@ -19,8 +20,8 @@ else
 endif
 
 ifdef WITH_PLUGINS
-	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit libcurl`
-	eon_ldlibs+=`pkg-config --libs-only-l --libs-only-L luajit libcurl` -lm -ldl
+	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
+	eon_ldlibs+=`pkg-config --libs-only-l --libs-only-L luajit` -lm -ldl
 ifeq ($(UNAME),Darwin) # needed for luajit to work
 	eon_ldlibs+=-pagezero_size 10000 -image_base 100000000
 endif
@@ -31,6 +32,11 @@ else
 	eon_objects:=$(subst src/plugin_api.o ,,$(eon_objects))
 endif
 
+ifdef WITH_LIBCURL
+	eon_cflags+=-DWITH_LIBCURL
+	eon_ldlibs+=`pkg-config --libs-only-l --libs-only-L libcurl`
+endif
+
 all: eon
 
 eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_objects)
@@ -39,7 +45,7 @@ eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_objects)
 
 eon_static: eon_static:=-static
 eon_static: eon_ldlibs:=$(eon_ldlibs) -lpthread
-ifdef WITH_PLUGINS # include ssl/crypto and libz
+ifdef WITH_LIBCURL # include ssl/crypto and libz
 eon_static: eon_ldlibs:=$(eon_ldlibs) -lssl -lcrypto -ldl -lz
 endif
 eon_static: eon

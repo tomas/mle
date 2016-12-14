@@ -123,7 +123,7 @@ int cmd_delete_before(cmd_context_t* ctx) {
     EON_MULTI_CURSOR_CODE(ctx->cursor,
                           mark_delete_between_mark(cursor->mark, cursor->anchor);
                          );
-
+    cursor_toggle_anchor(ctx->cursor, 0);
   } else {
     bint_t offset;
     mark_get_offset(ctx->cursor->mark, &offset);
@@ -142,7 +142,7 @@ int cmd_delete_after(cmd_context_t* ctx) {
     EON_MULTI_CURSOR_CODE(ctx->cursor,
                           mark_delete_between_mark(cursor->mark, cursor->anchor);
                          );
-
+    cursor_toggle_anchor(ctx->cursor, 0);
   } else {
     EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_delete_after, 1);
   }
@@ -844,7 +844,7 @@ int cmd_browse(cmd_context_t* ctx) {
   bview_t* menu;
   async_proc_t* aproc;
   char* cmd;
-  int res = asprintf(&cmd, "tree --charset C -n -f -L 2 %s 2>/dev/null", ctx->static_param ? ctx->static_param : "");
+  int res = asprintf(&cmd, "tree --charset C -n -f -L 1 %s 2>/dev/null", ctx->static_param ? ctx->static_param : "");
   aproc = async_proc_new(ctx->editor, ctx->bview, &(ctx->bview->async_proc), cmd, 0, _cmd_aproc_bview_passthru_cb);
   free(cmd);
 
@@ -1792,9 +1792,9 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
     path += 2;
 
   } else if (strcmp(line, "..") == 0) {
-    path = "..";
+    path = ".."; //
 
-  } else if (util_is_dir(line)) {
+  } else if (util_is_dir(line) && !strstr(line, "../")) {
     path = line;
 
   } else {

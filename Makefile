@@ -1,6 +1,6 @@
 WITH_PLUGINS=1
 # WITH_LIBCURL=1
-SHELL=/bin/sh
+# SHELL=/bin/sh
 DESTDIR?=/usr/local/bin/
 LC_ALL=C
 CC=gcc
@@ -12,7 +12,7 @@ eon_ldlibs:=$(LDLIBS)
 eon_objects:=$(patsubst %.c,%.o,$(wildcard src/*.c))
 eon_static:=
 
-UNAME := $(shell uname -s)
+UNAME := $(uname -s)
 ifeq ($(UNAME),Darwin)
 	eon_ldlibs+=`pkg-config --libs libpcre`
 else

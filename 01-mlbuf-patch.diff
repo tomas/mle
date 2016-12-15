@@ -1,9 +1,10 @@
 diff --git a/Makefile b/Makefile
-index a3fe4eb..c74a7f7 100644
+index a3fe4eb..548cd3f 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -1,6 +1,6 @@
- SHELL=/bin/bash
+-SHELL=/bin/bash
++# SHELL=/bin/bash
  mlbuf_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -g -fPIC
 -mlbuf_ldlibs:=$(LDLIBS) -lpcre
 +mlbuf_ldlibs:=$(LDLIBS) `pkg-config --libs libpcre`

@@ -287,11 +287,11 @@ int cursor_cut_copy(cursor_t* cursor, int is_cut, int use_srules, int append) {
 
 // Uncut (paste) text
 int cursor_uncut(cursor_t* cursor) {
-  if (cursor->cut_buffer) {
-    mark_insert_before(cursor->mark, cursor->cut_buffer, strlen(cursor->cut_buffer));
 
-  } else if (shared_cutbuf && strlen(shared_cutbuf) > 1) {
+  if (shared_cutbuf && strlen(shared_cutbuf) > 1) {
     mark_insert_before(cursor->mark, shared_cutbuf, strlen(shared_cutbuf));
+  } else if (cursor->cut_buffer) {
+    mark_insert_before(cursor->mark, cursor->cut_buffer, strlen(cursor->cut_buffer));
   }
 
   return EON_OK;

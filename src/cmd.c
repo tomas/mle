@@ -1644,7 +1644,7 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
       EON_SET_ERR(editor, "save: %s", errno ? strerror(errno) : "failed");
 
     } else {
-      EON_SET_INFO(editor, "save: Wrote %ld bytes", nbytes);
+      EON_SET_INFO(editor, "save: Wrote %ld bytes", (long int)nbytes);
     }
 
   } while (rc == MLBUF_ERR && (!bview->buffer->path || save_as));

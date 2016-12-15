@@ -994,6 +994,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
   // Handle split
   if (self->split_child) {
+  
     // Calc split dimensions
     if (self->split_is_vertical) {
       split_w = w - (int)((float)w * self->split_factor);
@@ -1030,8 +1031,9 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
   char * desc;
 
   CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
-    if (EON_BVIEW_IS_EDIT(bview_tmp)) {
-
+    // TODO: find out if this can be optimized
+    if (EON_BVIEW_IS_EDIT(bview_tmp) && ((self->split_parent && bview_tmp == self) || (!self->split_parent && !bview_tmp->split_parent && self->split_parent != bview_tmp))) {
+  
       bview_count += 1;
 
       if (bview_tmp == self->editor->active_edit) {
@@ -1044,7 +1046,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
       }
 
       if (EON_BVIEW_IS_MENU(bview_tmp)) {
-        desc = bview_tmp->path ? bview_tmp->path : "Results";
+        desc = strlen(bview_tmp->path) > 0 ? bview_tmp->path : "Results";
 
       } else {
         desc = bview_tmp->path ? basename(bview_tmp->path) : "Untitled";

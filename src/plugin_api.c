@@ -3,6 +3,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include "eon.h"
+#include "termbox.h"
 
 cmd_context_t * plugin_ctx; // shared global, from eon.h
 
@@ -31,10 +32,43 @@ static int prompt_user(lua_State * L) {
   return 1;
 }
 
+static int open_new_tab(lua_State * L) {
+  const char *buffer = luaL_checkstring(L, 1);
+  int close_current = lua_tointeger(L, 2);
+
+  // TODO
+  // bview_open(plugin_ctx->editor, NULL);
+  // if (close_current) bview_close();
+  return 0;
+}
+
+static int draw(lua_State * L) {
+  int x = lua_tointeger(L, 1);
+  int y = lua_tointeger(L, 2);
+  int bg = lua_tointeger(L, 3);
+  int fg = lua_tointeger(L, 4);
+  const char *str = luaL_checkstring(L, 5);
+
+  tb_print(x, y, bg, fg, (char *)str);
+  return 0;
+}
+
 // int = current_line_number()
 static int current_line_number(lua_State * L) {
   int line_number = plugin_ctx->cursor->mark->bline->line_index;
   lua_pushnumber(L, line_number);
+  return 1;
+}
+
+static int current_position(lua_State * L) {
+  mark_t * mark = plugin_ctx->cursor->mark;
+
+  lua_createtable(L, 2, 0);
+  lua_pushinteger(L, mark->bline->line_index);
+  lua_rawseti(L, -2, 0);
+  lua_pushinteger(L, mark->col);
+  lua_rawseti(L, -2, 1);
+
   return 1;
 }
 
@@ -181,12 +215,15 @@ static int append_buffer_at_line(lua_State *L) {
 };
 
 void load_plugin_api(lua_State *luaMain) {
+  lua_pushcfunction(luaMain, current_line_number);
+  lua_setglobal(luaMain, "current_line_number");
+  lua_pushcfunction(luaMain, current_position);
+  lua_setglobal(luaMain, "current_position");
+
   lua_pushcfunction(luaMain, has_selection);
   lua_setglobal(luaMain, "has_selection");
   lua_pushcfunction(luaMain, get_selection);
   lua_setglobal(luaMain, "get_selection");
-  lua_pushcfunction(luaMain, current_line_number);
-  lua_setglobal(luaMain, "current_line_number");
 
   lua_pushcfunction(luaMain, get_line_count);
   lua_setglobal(luaMain, "get_line_count");
@@ -206,5 +243,9 @@ void load_plugin_api(lua_State *luaMain) {
 
   lua_pushcfunction(luaMain, prompt_user);
   lua_setglobal(luaMain, "prompt_user");
+  lua_pushcfunction(luaMain, open_new_tab);
+  lua_setglobal(luaMain, "open_new_tab");
+  lua_pushcfunction(luaMain, draw);
+  lua_setglobal(luaMain, "draw");
 
 }

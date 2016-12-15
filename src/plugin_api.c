@@ -12,22 +12,10 @@ plugin_opt * get_plugin_option(const char * key);
 int add_listener(const char * when, const char * event, const char * func);
 int register_func_as_command(const char * func);
 int add_plugin_keybinding(const char * keys, const char * func);
-int start_callback_prompt(cmd_context_t * ctx, const char * plugin, char * text);
-
+int start_callback_prompt(cmd_context_t * ctx, char * text, int);
 
 /* plugin functions
 -----------------------------------------------------------*/
-
-int test_callback(lua_State * L){
-  // if called with one argument and that argument is a function
-  if (lua_gettop(L) == 1 && lua_isfunction(L, -1)) {
-    // push arg to function
-    lua_pushnumber(L, 3);
-    // call function with one argument and no return values
-    lua_pcall(L, 1, 0, 0);
-  }
-  return 0; // no return value
-}
 
 static int get_option(lua_State * L) {
   const char *key = luaL_checkstring(L, 1);
@@ -105,66 +93,15 @@ static int after(lua_State * L) {
   return 0;
 }
 
-static void * cbfunc;
-static int initialized = 0;
-
-static const void *func_ref_new(lua_State *L) {
-  if (!initialized) {
-  	lua_newtable(L);
-	  lua_setfield(L, LUA_REGISTRYINDEX, "functions");
-	  initialized = 1;
-  }
-  
-	const void *addr = lua_topointer(L, -1);
-	if (!lua_isfunction(L, -1) || !addr)
-		return NULL;
-
-	lua_getfield(L, LUA_REGISTRYINDEX, "functions");
-	lua_pushlightuserdata(L, (void*)addr);
-	lua_pushvalue(L, -3);
-	lua_settable(L, -3);
-	lua_pop(L, 1);
-	return addr;
-}
-
-/* retrieve function from registry and place it at the top of the stack */
-static int func_ref_get(lua_State *L, const void *addr) {
-	lua_getfield(L, LUA_REGISTRYINDEX, "functions");
-	lua_pushlightuserdata(L, (void*)addr);
-	lua_gettable(L, -2);
-	lua_remove(L, -2);
-
-	if (!lua_isfunction(L, -1)) {
-		lua_pop(L, 1);
-		return 0;
-	}
-	return 1;
-}
-
 static int start_nav(lua_State * L) {
-  const char *plugin = luaL_checkstring(L, 1);
-  const char *text   = luaL_checkstring(L, 2);
-  
-  if (cbfunc) {
-    int res = func_ref_get(L, cbfunc);
-    free(cbfunc);
-    cbfunc = NULL;
-  }
-  
-  if (!lua_isfunction(L, 3) || !(cbfunc = (void *)func_ref_new(L))) {
-    printf("missing callback function\n");
+  const char *text = luaL_checkstring(L, 1);
+
+  static int callback;
+  if (!lua_isfunction(L, 2) || !(callback = luaL_ref(L, LUA_REGISTRYINDEX))) {
     return -1;
   }
   
-  printf("Added to queue!\n");
-
-//  if (!lua_isfunction(L, 2)) {
-//    return -1;
-//  }
-//  const char *cb_name = luaL_checkstring(L, 2);
-//  plugin_ctx->static_param = strdup((char *)cb_name);
-
-  return start_callback_prompt(plugin_ctx, plugin, (char *)text);
+  return start_callback_prompt(plugin_ctx, (char *)text, callback);
 }
 
 static int set_nav_text(lua_State * L) {
@@ -174,9 +111,9 @@ static int set_nav_text(lua_State * L) {
 }
 
 static int close_nav(lua_State * L) {
-  int pos = func_ref_get(L, cbfunc);
-  free(cbfunc);
-  cbfunc = NULL;
+  // int pos = func_ref_get(L, cbfunc);
+  // free(cbfunc);
+  // cbfunc = NULL;
   
   editor_close_prompt(plugin_ctx->editor, plugin_ctx->editor->active_edit);
   return 0;
@@ -487,6 +424,4 @@ void load_plugin_api(lua_State *luaMain) {
   lua_setglobal(luaMain, "get_url");
   lua_pushcfunction(luaMain, download_file);
   lua_setglobal(luaMain, "download_file");
-
-
 }

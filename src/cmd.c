@@ -1782,7 +1782,7 @@ static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action) {
 // Callback from cmd_browse
 static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
   if (!action) return EON_OK; // cancelled
-  
+
   char* line;
   char* path;
   char* cwd;
@@ -1808,13 +1808,9 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
     return EON_ERR;
   }
 
-#ifdef __APPLE__
   int max_path_len = 128;
   cwd = malloc(sizeof(char) * max_path_len);
   getcwd(cwd, max_path_len);
-#else
-  cwd = get_current_dir_name();
-#endif
 
   if (strcmp(cwd, ctx->bview->init_cwd) != 0) {
     res = asprintf(&corrected_path, "%s/%s", ctx->bview->init_cwd, path);

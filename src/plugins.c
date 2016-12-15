@@ -470,19 +470,63 @@ int add_plugin_keybinding(const char * keys, const char * func) {
 */
 }
 
-char * plugin_prompt = NULL;
+/*
+void * prompt_cb_func;
+
+// retrieve function from registry and place it at the top of the stack
+static int get_func(lua_State *L, const void *addr) {
+	lua_getfield(L, LUA_REGISTRYINDEX, "functions");
+	lua_pushlightuserdata(L, (void*)addr);
+	lua_gettable(L, -2);
+	lua_remove(L, -2);
+
+	if (!lua_isfunction(L, -1)) {
+		lua_pop(L, 1);
+		return 0;
+	}
+	return 1;
+}
+*/
+
+int prompt_cb_func;
+
+static int fire_prompt_cb(char * action) {
+  int top = lua_gettop(luaMain);
+  lua_rawgeti(luaMain, LUA_REGISTRYINDEX, prompt_cb_func);
+  lua_pushstring(luaMain, action);
+  // lua_pushinteger(luaMain, 3);
+  lua_pcall(luaMain, 1, 1, 0);
+  lua_settop(luaMain, top);
+  return 0;
+}
+
+static void unload_callback_prompt(cmd_context_t * ctx) {
+  // close prompt
+  editor_close_prompt(ctx->editor, ctx->editor->active_edit);
+
+  // remove callback ref
+  luaL_unref(luaMain, LUA_REGISTRYINDEX, prompt_cb_func);
+  prompt_cb_func = 0;
+}
 
 int _nav_menu_callback(cmd_context_t * ctx, char * action) {
   if (!action) {
-    editor_close_prompt(ctx->editor, ctx->editor->active_edit);
+    unload_callback_prompt(ctx);
     return 0;
+  } else if (!prompt_cb_func) {
+    printf("Callback function was removed!");
+    return -1;
   }
 
-  return call_plugin(plugin_prompt, "on_prompt_callback", action);
+  return fire_prompt_cb(action);
 }
 
-int start_callback_prompt(cmd_context_t * ctx, const char * plugin, char * prompt) {
-  if (plugin_prompt) free(plugin_prompt);
-  plugin_prompt = (char *)plugin;
+int start_callback_prompt(cmd_context_t * ctx, char * prompt, int cbref) {
+  if (prompt_cb_func) {
+    printf("Another plugin is already using the prompt, sorry.\n");
+    return -1;
+  }
+  
+  prompt_cb_func = cbref;
   return editor_prompt_menu(ctx->editor, _nav_menu_callback, (char *)prompt, strlen(prompt));
 }

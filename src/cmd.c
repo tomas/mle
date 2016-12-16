@@ -1799,7 +1799,6 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
     return EON_ERR;
   }
 
-  // Fix cwd if it changed
 #ifdef __APPLE__
   int max_path_len = 128;
   cwd = malloc(sizeof(char) * max_path_len);
@@ -1828,6 +1827,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx) {
 
   // Close menu
   editor_close_bview(ctx->editor, ctx->bview, NULL);
+  chdir(cwd);
 
   // Set new_bview to active
   if (new_bview) editor_set_active(ctx->editor, new_bview);

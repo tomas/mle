@@ -10,7 +10,7 @@ Install main deps first:
 
     $ apt install tree cmake libpcre-dev # or brew install / apk add
 
-The `tree` command is for browsing directories. It's optional but you definitely want it. 
+The `tree` command is for browsing directories. It's optional but you definitely want it.
 
 If you want to try the experimental plugin system, you'll need to install LuaJIT and pkg-config:
 

@@ -45,7 +45,7 @@ end
 function plugin.boot()
   register_function("toggle")
   add_keybinding("C-/", "toggle")
-  before("save", "toggle")
+  -- before("save", "toggle")
 end
 
 return plugin

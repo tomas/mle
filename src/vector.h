@@ -50,7 +50,8 @@ void vector_delete(vector *v, int index) {
 
   v->items[index] = NULL;
 
-  for (int i = 0; i < v->total - 1; i++) {
+  int i;
+  for (i = 0; i < v->total - 1; i++) {
       v->items[i] = v->items[i + 1];
       v->items[i + 1] = NULL;
   }

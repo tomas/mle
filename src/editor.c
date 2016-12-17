@@ -930,7 +930,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
     if (cmd_ctx.is_user_input) {
       //  tb_printf(editor->rect_status, editor->rect_status.w - 20, 0, TB_DEFAULT, TB_DEFAULT,
       //    "k:%d/ch:%d/m:%d", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
-      printf("k:%d/ch:%d/m:%d", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
+      printf("k:%d/ch:%d/m:%d\n", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
     }
 #endif
 
@@ -1994,6 +1994,12 @@ static void _editor_init_kmap_add_binding(editor_t* editor, kmap_t* kmap, kbindi
 
   free(cur_key_patt);
 }
+
+int editor_add_binding_to_keymap(editor_t* editor, kmap_t* kmap, kbinding_def_t* binding_def) {
+  _editor_init_kmap_add_binding(editor, kmap, binding_def);
+  return EON_OK;
+}
+
 
 // Add a binding to a kmap trie
 static int _editor_init_kmap_add_binding_to_trie(kbinding_t** trie, char* cmd_name, char* cur_key_patt, char* full_key_patt, char* static_param) {

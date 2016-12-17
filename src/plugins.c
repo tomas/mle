@@ -10,13 +10,6 @@
 
 void load_plugin_api(lua_State *luaMain);
 
-int _editor_register_cmd_fn(editor_t* editor, char* name, int (*func)(cmd_context_t* ctx)) {
-  return 0;
-}
-
-int _editor_init_kmap_by_str(editor_t* editor, kmap_t** ret_kmap, char* str);
-int _editor_init_kmap_add_binding_by_str(editor_t* editor, kmap_t* kmap, char* str);
-
 /*-----------------------------------------------------*/
 
 // #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
@@ -34,6 +27,8 @@ typedef struct listener {
 } listener;
 
 int plugin_count = 0;
+
+editor_t * editor_ref; // needed for function calls from lua when booting
 char * booting_plugin_name;
 
 const char * plugin_path = "~/.config/eon/plugins";
@@ -144,6 +139,7 @@ int load_plugins(editor_t * editor) {
   if (luaMain == NULL && init_plugins() == -1)
     return -1;
 
+  editor_ref = editor;
   char* expanded_path;
   util_expand_tilde((char *)plugin_path, strlen(plugin_path), &expanded_path);
 
@@ -159,6 +155,7 @@ int load_plugins(editor_t * editor) {
     closedir(dir);
   } else {
     fprintf(stderr, "Unable to open plugin directory: %s\n", plugin_path);
+    editor_ref = NULL;
     return -1;
   }
 
@@ -175,6 +172,7 @@ int load_plugins(editor_t * editor) {
   lua_setglobal(luaMain, "plugins");
 
   printf("%d plugins initialized. Slick.\n", plugin_count);
+  editor_ref = NULL;
   return plugin_count;
 }
 
@@ -213,28 +211,33 @@ void show_plugins() {
 ///////////////////////////////////////////////////////
 
 int run_plugin_function(cmd_context_t * ctx) {
-  // cmd name should be "plugin_name:function_name"
+  // cmd name should be "plugin_name.function_name"
   char * cmd = ctx->cmd->name;
   char * delim;
-  int pos, len;
+  int res, pos, len;
 
-  // so get the position of the :
-  delim = strchr(cmd, ':');
+  // so get the position of the dot
+  delim = strchr(cmd, '.');
   pos = (int)(delim - cmd);
 
   // get the name of the plugin
-  len = pos;
+  len = pos-4;
   char plugin[len];
-  strncpy(plugin, cmd, len);
+  strncpy(plugin, cmd+4, len);
+  plugin[len] = '\0';
 
   // and the name of the function
   len = strlen(cmd) - pos;
   char func[len];
-  strncpy(func, cmd + pos, len);
+  strncpy(func, cmd + pos + 1, len);
+  func[len] = '\0';
 
-  // and then call it
+  // and finally call it
+  // printf("calling %s function from %s plugin\n", func, plugin);
   plugin_ctx = ctx;
-  return call_plugin(plugin, func);
+  res = call_plugin(plugin, func);
+  plugin_ctx = NULL;
+  return res;
 }
 
 int call_plugin(const char * pname, const char * func) {
@@ -302,6 +305,7 @@ int trigger_plugin_event(const char * event, cmd_context_t ctx) {
     el = el->next;
   };
 
+  plugin_ctx = NULL;
   return res;
 }
 
@@ -362,15 +366,17 @@ int register_func_as_command(const char * func) {
     return -1;
   }
 
-  char * cmd; // for editor
+  char * cmd_name;
   int len = strlen(plugin) * strlen(func) + 1;
-  cmd = malloc(len);
-  snprintf(cmd, len, "%s.%s", (char *)plugin, (char *)func);
+  cmd_name = malloc(len);
+  snprintf(cmd_name, len, "cmd_%s.%s", (char *)plugin, (char *)func);
 
-  printf("[%s] registering cmd --> %s\n", plugin, cmd);
+  printf("[%s] registering cmd --> %s\n", plugin, cmd_name);
 
-  return 0;
-  // return _editor_register_cmd_fn(plugin_ctx->editor, cmd, run_plugin_function);
+  cmd_t cmd = {0};
+  cmd.name = cmd_name;
+  cmd.func = run_plugin_function;
+  return editor_register_cmd(editor_ref, &cmd);
 }
 
 int add_plugin_keybinding(const char * keys, const char * func) {
@@ -381,9 +387,13 @@ int add_plugin_keybinding(const char * keys, const char * func) {
     return -1;
   }
 
-  printf("[%s] mapping %s to --> %s\n", plugin, keys, func);
+  char * cmd_name;
+  int len = strlen(plugin) * strlen(func) + 1;
+  cmd_name = malloc(len);
+  snprintf(cmd_name, len, "cmd_%s.%s", (char *)plugin, (char *)func);
 
-  return 0;
+  printf("[%s] mapping %s to --> %s (%s)\n", plugin, keys, func, cmd_name);
+  return editor_add_binding_to_keymap(editor_ref, editor_ref->kmap_normal, &((kbinding_def_t) {cmd_name, (char *)keys, NULL}));
 
 /*
   kmap_t* kmap;

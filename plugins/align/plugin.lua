@@ -44,21 +44,26 @@ local function align_tokens(first_line, last_line)
 
   for i = first_line, last_line, 1 do
     line = get_line(i)
+    if string.len(line) > 0 then
+    
     a, b = string.find(line, last_space_after_string)
 
     if a and b < first_col then
       offset = first_col - b
       insert_buffer_at_line(i, string.rep(" ", offset), b - 1)
+    else
+      offset = 0
+    end
 
-      x, second_col = string.find(line, "[^%s]+%s+[^%s]+%s") -- first space after second block
-      if second_col then -- let's find the position of the second block of text
+    x, second_col = string.find(line, "[^%s]+%s+[^%s]+%s") -- first space after second block
+    if second_col then -- let's find the position of the second block of text
 
-        c, d = string.find(line, "[^%s]+%s+[^%s]+%s+") -- last space in second block of space
-        if c and d > second_col + offset then
-          diff = d - second_col
-          delete_chars_at_line(i, second_col+offset, diff)
-        end
+      c, d = string.find(line, "[^%s]+%s+[^%s]+%s+") -- last space in second block of space
+      if c and d > second_col then
+        diff = d - second_col
+        delete_chars_at_line(i, second_col+offset, diff)
       end
+    end
     end
   end
 

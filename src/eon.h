@@ -496,6 +496,8 @@ int cmd_save_as(cmd_context_t* ctx);
 int cmd_save(cmd_context_t* ctx);
 int cmd_search(cmd_context_t* ctx);
 int cmd_search_next(cmd_context_t* ctx);
+int cmd_select_beginning(cmd_context_t* ctx);
+int cmd_select_end(cmd_context_t* ctx);
 int cmd_select_bol(cmd_context_t* ctx);
 int cmd_select_eol(cmd_context_t* ctx);
 int cmd_select_up(cmd_context_t* ctx);

@@ -1755,6 +1755,8 @@ static void _editor_register_cmds(editor_t* editor) {
   _editor_register_cmd_fn(editor, "cmd_toggle_anchor", cmd_toggle_anchor);
   _editor_register_cmd_fn(editor, "cmd_select_bol", cmd_select_bol);
   _editor_register_cmd_fn(editor, "cmd_select_eol", cmd_select_eol);
+  _editor_register_cmd_fn(editor, "cmd_select_beginning", cmd_select_beginning);
+  _editor_register_cmd_fn(editor, "cmd_select_end", cmd_select_end);
   _editor_register_cmd_fn(editor, "cmd_select_up", cmd_select_up);
   _editor_register_cmd_fn(editor, "cmd_select_down", cmd_select_down);
   _editor_register_cmd_fn(editor, "cmd_select_left", cmd_select_left);
@@ -1803,9 +1805,11 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_move_bol", "C-a"),
     EON_KBINDING_DEF("cmd_move_bol", "home"),
     EON_KBINDING_DEF("cmd_select_bol", "S-home"),
+    EON_KBINDING_DEF("cmd_select_beginning", "CS-home"),
     EON_KBINDING_DEF("cmd_move_eol", "C-e"),
     EON_KBINDING_DEF("cmd_move_eol", "end"),
     EON_KBINDING_DEF("cmd_select_eol", "S-end"),
+    EON_KBINDING_DEF("cmd_select_end", "CS-end"),
     EON_KBINDING_DEF("cmd_move_beginning", "M-\\"),
     EON_KBINDING_DEF("cmd_move_beginning", "C-home"),
     EON_KBINDING_DEF("cmd_move_end", "M-/"),

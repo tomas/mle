@@ -420,6 +420,26 @@ int cmd_select_eol(cmd_context_t* ctx) {
   return EON_OK;
 }
 
+int cmd_select_beginning(cmd_context_t* ctx) {
+  EON_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_beginning);
+  );
+
+  bview_rectify_viewport(ctx->bview);
+  return EON_OK;
+}
+
+int cmd_select_end(cmd_context_t* ctx) {
+  EON_MULTI_CURSOR_CODE(ctx->cursor,
+    if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);
+    EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_end);
+  );
+
+  bview_rectify_viewport(ctx->bview);
+  return EON_OK;
+}
+
 int cmd_select_up(cmd_context_t* ctx) {
   EON_MULTI_CURSOR_CODE(ctx->cursor,
     if (!cursor->is_anchored) cursor_toggle_anchor(cursor, 1);

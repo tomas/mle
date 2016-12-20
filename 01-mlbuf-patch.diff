@@ -12,10 +12,24 @@ index a3fe4eb..548cd3f 100644
  
  all: libmlbuf.so
 diff --git a/buffer.c b/buffer.c
-index 50056d2..2a99304 100644
+index 50056d2..80cd910 100644
 --- a/buffer.c
 +++ b/buffer.c
-@@ -267,7 +267,7 @@ int buffer_destroy_mark(buffer_t* self, mark_t* mark) {
+@@ -94,8 +94,11 @@ int buffer_open(buffer_t* self, char* path) {
+         self->is_in_open = 1;
+         if (st.st_size >= MLBUF_LARGE_FILE_SIZE) {
+             if (_buffer_open_mmap(self, fd, st.st_size) != MLBUF_OK) {
+-                rc = MLBUF_ERR;
+-                break;
++                // if mmap fails (perhaps because /tmp doesn't exist) fallback to read
++                if (_buffer_open_read(self, fd, st.st_size) != MLBUF_OK) {
++                    rc = MLBUF_ERR;
++                    break;
++                }
+             }
+         } else {
+             if (_buffer_open_read(self, fd, st.st_size) != MLBUF_OK) {
+@@ -267,7 +270,7 @@ int buffer_destroy_mark(buffer_t* self, mark_t* mark) {
              && (node->srule->range_a == mark
              ||  node->srule->range_b == mark)
          ) {
@@ -24,7 +38,7 @@ index 50056d2..2a99304 100644
          }
      }
      free(mark);
-@@ -749,10 +749,21 @@ int buffer_get_offset(buffer_t* self, bline_t* bline, bint_t col, bint_t* ret_of
+@@ -749,10 +752,21 @@ int buffer_get_offset(buffer_t* self, bline_t* bline, bint_t col, bint_t* ret_of
  }
  
  // Add a style rule to the buffer
@@ -47,7 +61,7 @@ index 50056d2..2a99304 100644
      if (srule->type == MLBUF_SRULE_TYPE_SINGLE) {
          DL_APPEND(self->single_srules, node);
      } else {
-@@ -762,15 +773,26 @@ int buffer_add_srule(buffer_t* self, srule_t* srule) {
+@@ -762,15 +776,26 @@ int buffer_add_srule(buffer_t* self, srule_t* srule) {
          srule->range_a->range_srule = srule;
          srule->range_b->range_srule = srule;
      }
@@ -76,7 +90,7 @@ index 50056d2..2a99304 100644
      if (srule->type == MLBUF_SRULE_TYPE_SINGLE) {
          head = &self->single_srules;
      } else {
-@@ -789,7 +811,7 @@ int buffer_remove_srule(buffer_t* self, srule_t* srule) {
+@@ -789,7 +814,7 @@ int buffer_remove_srule(buffer_t* self, srule_t* srule) {
          break;
      }
      if (!found) return MLBUF_ERR;
@@ -85,7 +99,7 @@ index 50056d2..2a99304 100644
  }
  
  // Set callback to cb. Pass in NULL to unset callback.
-@@ -981,6 +1003,9 @@ int buffer_apply_styles(buffer_t* self, bline_t* start_line, bint_t line_delta)
+@@ -981,6 +1006,9 @@ int buffer_apply_styles(buffer_t* self, bline_t* start_line, bint_t line_delta)
          return MLBUF_OK;
      }
  
@@ -95,7 +109,7 @@ index 50056d2..2a99304 100644
      // min_nlines, minimum number of lines to style
      //     line_delta  < 0: 2 (start_line + 1)
      //     line_delta == 0: 1 (start_line)
-@@ -1425,6 +1450,7 @@ static bline_t* _buffer_bline_new(buffer_t* self) {
+@@ -1425,6 +1453,7 @@ static bline_t* _buffer_bline_new(buffer_t* self) {
      bline_t* bline;
      bline = calloc(1, sizeof(bline_t));
      bline->buffer = self;

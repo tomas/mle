@@ -782,7 +782,7 @@ int cmd_prev(cmd_context_t* ctx) {
 int cmd_split_vertical(cmd_context_t* ctx) {
   bview_t* child;
 
-  if (bview_split(ctx->bview, 1, 0.5, &child) == EON_OK) {
+  if (bview_split(ctx->bview, 1, 0, NULL, &child) == EON_OK) {
     editor_set_active(ctx->editor, child);
   }
 
@@ -793,7 +793,7 @@ int cmd_split_vertical(cmd_context_t* ctx) {
 int cmd_split_horizontal(cmd_context_t* ctx) {
   bview_t* child;
 
-  if (bview_split(ctx->bview, 0, 0.5, &child) == EON_OK) {
+  if (bview_split(ctx->bview, 0, 0, NULL, &child) == EON_OK) {
     editor_set_active(ctx->editor, child);
   }
 

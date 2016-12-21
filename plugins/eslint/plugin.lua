@@ -7,7 +7,7 @@ local function script_path()
 end
 
 local function exec(cmd)
-  local handle = io.popen(cmd)
+  local handle = io.popen(string.format("%s 2>&1", cmd))
   local result = handle:read("*a")
   trimmed, idx = result:gsub("%s+$", "")
   handle:close()
@@ -93,11 +93,15 @@ plugin.check_current_file = function()
   -- print("Checking file", filename)
   local command = "eslint"
   local config  = "eslintrc"
-  local options = string.format('-c "%s%s"', script_path(), config)
+  local options = string.format('-c "%s%s" 2>&1', script_path(), config)
 
   cmd = string.format('%s %s "%s"', command, options, filename)
   out = exec(cmd)
-  -- print(out)
+
+  if string.find(out, "not found") then
+    open_horizontal_pane(3, "Hello hello hello")
+    return 0
+  end
 
   -- title = string.format("ESLint: %s", filename)
   -- open_new_tab(title, out)

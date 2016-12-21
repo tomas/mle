@@ -100,7 +100,7 @@ static int start_nav(lua_State * L) {
   if (!lua_isfunction(L, 2) || !(callback = luaL_ref(L, LUA_REGISTRYINDEX))) {
     return -1;
   }
-  
+
   return start_callback_prompt(plugin_ctx, (char *)text, callback);
 }
 
@@ -114,7 +114,7 @@ static int close_nav(lua_State * L) {
   // int pos = func_ref_get(L, cbfunc);
   // free(cbfunc);
   // cbfunc = NULL;
-  
+
   editor_close_prompt(plugin_ctx->editor, plugin_ctx->editor->active_edit);
   return 0;
 }
@@ -131,6 +131,20 @@ static int prompt_user(lua_State * L) {
 
   lua_pushstring(L, reply);
   return 1;
+}
+
+static int open_horizontal_pane(lua_State * L) {
+  int height = lua_tointeger(L, 1);
+  const char *buf = luaL_checkstring(L, 2);
+
+  buffer_t* buffer = buffer_new();
+  buffer->path = NULL;
+  buffer_insert(buffer, 0, (char *)buf, strlen(buf), NULL);
+
+  bview_t* pane;
+  bview_split(plugin_ctx->bview, 0, height, buffer, &pane);
+
+  return 0;
 }
 
 // open_new_tab(title, content, close_current)
@@ -396,6 +410,9 @@ void load_plugin_api(lua_State *luaMain) {
 
   lua_pushcfunction(luaMain, prompt_user);
   lua_setglobal(luaMain, "prompt_user");
+  lua_pushcfunction(luaMain, open_horizontal_pane);
+  lua_setglobal(luaMain, "open_horizontal_pane");
+
   lua_pushcfunction(luaMain, open_new_tab);
   lua_setglobal(luaMain, "open_new_tab");
   lua_pushcfunction(luaMain, draw);

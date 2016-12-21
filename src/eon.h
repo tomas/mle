@@ -405,7 +405,7 @@ int bview_remove_cursor(bview_t* self, cursor_t* cursor);
 int bview_remove_cursors_except(bview_t* self, cursor_t* one);
 int bview_resize(bview_t* self, int x, int y, int w, int h);
 int bview_set_syntax(bview_t* self, char* opt_syntax);
-int bview_split(bview_t* self, int is_vertical, float factor, bview_t** optret_bview);
+int bview_split(bview_t* self, int is_vertical, int span, buffer_t* buffer, bview_t** optret_bview);
 int bview_unsplit(bview_t* parent, bview_t* child);
 int bview_wake_sleeping_cursors(bview_t* self);
 int bview_zero_viewport_y(bview_t* self);

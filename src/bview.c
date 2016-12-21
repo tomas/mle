@@ -93,9 +93,9 @@ int bview_resize(bview_t* self, int x, int y, int w, int h) {
 
   if (self->split_child) {
     if (self->split_is_vertical) {
-      aw = EON_MAX(1, (int)((float)aw * self->split_factor));
+      aw = EON_MAX(1, self->split_factor ? (int)((float)aw * self->split_factor) : self->split_child->w);
     } else {
-      ah = EON_MAX(1, (int)((float)ah * self->split_factor));
+      ah = EON_MAX(1, self->split_factor ? (int)((float)ah * self->split_factor) : self->split_child->h);
     }
   }
 
@@ -236,8 +236,10 @@ int bview_pop_kmap(bview_t* bview, kmap_t** optret_kmap) {
 }
 
 // Split a bview
-int bview_split(bview_t* self, int is_vertical, float factor, bview_t** optret_bview) {
+int bview_split(bview_t* self, int is_vertical, int span, buffer_t * buffer, bview_t** optret_bview) {
   bview_t* child;
+  buffer_t* childbuf;
+  childbuf = buffer ? buffer : self->buffer;
 
   if (self->split_child) {
     EON_RETURN_ERR(self->editor, "bview %p is already split", self);
@@ -247,11 +249,20 @@ int bview_split(bview_t* self, int is_vertical, float factor, bview_t** optret_b
   }
 
   // Make child
-  editor_open_bview(self->editor, self, self->type, NULL, 0, 1, 0, NULL, self->buffer, &child);
+  editor_open_bview(self->editor, self, self->type, NULL, 0, 1, 0, NULL, childbuf, &child);
   child->split_parent = self;
   self->split_child = child;
-  self->split_factor = factor;
   self->split_is_vertical = is_vertical;
+
+  if (span) {
+    self->split_factor = 0; //NULL;
+    if (is_vertical)
+      child->w = span;
+    else
+      child->h = span;
+  } else {
+    self->split_factor = 0.5; // TODO: 1/number of siblings
+  }
 
   // Move cursor to same position
   mark_move_to(child->active_cursor->mark, self->active_cursor->mark->bline->line_index, self->active_cursor->mark->col);
@@ -994,15 +1005,14 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
   // Handle split
   if (self->split_child) {
-  
+
     // Calc split dimensions
     if (self->split_is_vertical) {
-      split_w = w - (int)((float)w * self->split_factor);
+      split_w = self->split_factor ? w - (int)((float)w * self->split_factor) : self->split_child->w;
       split_h = h;
-
     } else {
       split_w = w;
-      split_h = h - (int)((float)h * self->split_factor);
+      split_h = self->split_factor ? h - (int)((float)h * self->split_factor) : self->split_child->h;
     }
 
     // Draw child
@@ -1033,7 +1043,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
   CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
     // TODO: find out if this can be optimized
     if (EON_BVIEW_IS_EDIT(bview_tmp) && ((self->split_parent && bview_tmp == self) || (!self->split_parent && !bview_tmp->split_parent && self->split_parent != bview_tmp))) {
-  
+
       bview_count += 1;
 
       if (bview_tmp == self->editor->active_edit) {
@@ -1049,7 +1059,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
         desc = strlen(bview_tmp->path) > 0 ? bview_tmp->path : "Results";
 
       } else {
-        desc = bview_tmp->path ? basename(bview_tmp->path) : "Untitled";
+        desc = strlen(bview_tmp->path) > 0 ? basename(bview_tmp->path) : "Untitled";
       }
 
       if (offset + self->editor->bview_tab_width <= w) {

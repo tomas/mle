@@ -407,7 +407,8 @@ jsmntok_t* get_hash_token(char * json, jsmntok_t * tokens, const char* wanted) {
 	int size = tokens[0].size + 1 - offset;
 	jsmntok_t* current = tokens + offset;
 
-	for (int i = 0; i < size; i++) {
+  int i;
+	for (i = 0; i < size; i++) {
 		// if key matches, return it
 		if (strncmp(wanted, json + current->start, current->end - current->start) == 0) {
 			return current + 1;
@@ -428,7 +429,8 @@ jsmntok_t* get_array_token(char * json, jsmntok_t * tokens, int index) {
 	jsmntok_t* current = tokens + 1;
 
 	// skip all tokens before the specified index
-	for (int i = 0; i < index; i++) {
+  int i;
+	for (i = 0; i < index; i++) {
 		// move forward: current + nested tokens
 		current += 1 + get_nested_token_count(current);
 	}

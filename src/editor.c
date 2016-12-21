@@ -373,7 +373,6 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
 
   if (!parent) {
     DL_APPEND2(editor->top_bviews, bview, top_prev, top_next);
-
   } else {
     parent->split_child = bview;
   }

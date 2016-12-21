@@ -68,7 +68,7 @@ end
 plugin.error_message = function(direction)
   current_error = current_error + direction
   reason = errors[current_error]
-  prompt = string.format("[%d/%d errors]", number, errors.size(), reason)
+  prompt = string.format("[%d/%d errors]", current_error, errors.size(), reason)
   return prompt
 end
 

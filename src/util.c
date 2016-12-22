@@ -365,6 +365,56 @@ void util_expand_tilde(char* path, int path_len, char** ret_path) {
   *ret_path = strndup(path, path_len);
 }
 
+// from http://lua-users.org/files/wiki_insecure/binary_modules/fuzzy5/lfuzzy.c
+ int NGramMatch(char* TextPara, char* SearchStr, int SearchStrLen, int NGramLen, int* MaxMatch) {
+   char    NGram[8];
+   int     NGramCount;
+   int     i, Count;
+ 
+   NGram[NGramLen] = '\0';
+   NGramCount = SearchStrLen - NGramLen + 1;
+ 
+ /* Suchstring in n-Gramme zerlegen und diese im Text suchen */
+   for(i = 0, Count = 0, *MaxMatch = 0; i < NGramCount; i++)
+     {
+       memcpy(NGram, &SearchStr[i], NGramLen);
+ 
+       /* bei Wortzwischenraum weiterruecken */
+       if (NGram[NGramLen - 2] == ' ' && NGram[0] != ' ')
+           i += NGramLen - 3;
+       else
+         {
+           *MaxMatch  += NGramLen;
+           if(strstr(TextPara, NGram)) Count++;
+         }
+     }
+   return Count * NGramLen;  /* gewichten nach n-Gramm-Laenge */
+ }
+
+ float fuzzy_search(char* TextPara, char*SearchStr) {
+   // internals
+   int    SearchStrLen;
+   int    NGram1Len, NGram2Len;
+   int     MatchCount1, MatchCount2;
+   int     MaxMatch1, MaxMatch2;
+   float   Similarity;
+                                                                
+   // lenght of that string
+   SearchStrLen = strlen(SearchStr);
+                                                                
+   NGram1Len = 3;
+   // calculate alternative NGramLen
+   NGram2Len = (SearchStrLen < 7) ? 2 : 5;
+                                                                
+  // call internal function NGramMatch twice
+   MatchCount1 = NGramMatch(TextPara, SearchStr, SearchStrLen, NGram1Len, &MaxMatch1);
+   MatchCount2 = NGramMatch(TextPara, SearchStr, SearchStrLen, NGram2Len, &MaxMatch2);
+
+   /* calc hit rate */
+   Similarity = 100.0 * (float)(MatchCount1 + MatchCount2) / (float)(MaxMatch1 + MaxMatch2);
+   return Similarity;
+ }
+
 // autocomplete-like function
 /*
 int util_find_starting_with(char * partial, vector list, vector &matches, int min) {

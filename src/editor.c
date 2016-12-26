@@ -1351,7 +1351,7 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
       continue;
     }
 
-    ctx->input = (kinput_t) { 0, ev.ch, ev.key, ev.meta };
+    ctx->input = (kinput_t) { ev.ch, ev.key, ev.meta };
     // printf("ch %d, key %d, meta %d\n", ev.ch, ev.key, ev.meta);
     break;
   }
@@ -1392,7 +1392,7 @@ static void _editor_ingest_paste(editor_t* editor, cmd_context_t* ctx) {
       break;
     }
 
-    input = (kinput_t) { 0, ev.ch, ev.key, ev.meta };
+    input = (kinput_t) { ev.ch, ev.key, ev.meta };
     // TODO check for macro key
     cmd = _editor_get_command(editor, ctx, &input);
 
@@ -1646,7 +1646,6 @@ static int _editor_key_to_input(char* key, kinput_t* ret_input) {
     return EON_ERR;
   }
 
-  ret_input->mod  = mod;
   ret_input->ch   = ch;
   ret_input->meta = meta;
   return EON_OK;

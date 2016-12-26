@@ -37,7 +37,6 @@ typedef int (*cb_func_t)(cmd_context_t* ctx, char * action); // A command functi
 
 // kinput_t
 struct kinput_s {
-    uint8_t mod;
     uint32_t ch;
     uint16_t key;
     uint8_t meta;
@@ -623,8 +622,8 @@ extern cmd_context_t * plugin_ctx;
 )
 
 // Sentinel values for numeric and wildcard kinputs
-#define EON_KINPUT_NUMERIC (kinput_t){ 0x40, 0xffffffff, 0xffff }
-#define EON_KINPUT_WILDCARD (kinput_t){ 0x80, 0xffffffff, 0xffff }
+#define EON_KINPUT_NUMERIC (kinput_t){ 0xffffffff, 0xffff, 0x40 }
+#define EON_KINPUT_WILDCARD (kinput_t){ 0xffffffff, 0xffff, 0x80 }
 
 #define EON_LINENUM_TYPE_ABS 0
 #define EON_LINENUM_TYPE_REL 1

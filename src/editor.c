@@ -1948,7 +1948,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_quit", "CS-q"),
     EON_KBINDING_DEF(NULL, NULL)
   });
-  
+
   // prompt input, used when requesting input from user (search string, save as)
   // no default command, but falls-through to normal keymap if no matches.
   _editor_init_kmap(editor, &editor->kmap_prompt_input, "eon_prompt_input", NULL, 1, (kbinding_def_t[]) {
@@ -1989,7 +1989,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF(NULL, NULL)
   });
 
-  
+
 //  _editor_init_kmap(editor, &editor->kmap_prompt_ok, "eon_prompt_ok", "_editor_prompt_cancel", 0, (kbinding_def_t[]) {
 //    EON_KBINDING_DEF(NULL, NULL)
 //  });
@@ -2001,7 +2001,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("_editor_menu_cancel", "C-c"),
     EON_KBINDING_DEF(NULL, NULL)
     });
-  
+
 
 
   // prompt menu input. used in prompts that allow going up and down. not used.
@@ -2116,7 +2116,8 @@ static int _editor_init_kmap_add_binding_to_trie(kbinding_t** trie, char* cmd_na
   HASH_FIND(hh, *trie, &input, sizeof(kinput_t), node);
 
   if (!node) {
-    node = calloc(1, sizeof(kbinding_t));
+    node = (kbinding_t*)malloc(sizeof(kbinding_t));
+    memset(node, 0, sizeof(kbinding_t));
     node->input = input;
     HASH_ADD(hh, *trie, input, sizeof(kinput_t), node);
   }

@@ -704,7 +704,7 @@ int bview_set_syntax(bview_t* self, char* opt_syntax) {
     HASH_FIND_STR(self->editor->syntax_map, self->editor->syntax_override, use_syntax);
   } else if (self->buffer->path) { // Set by path
     HASH_ITER(hh, self->editor->syntax_map, syntax, syntax_tmp) {
-      if (util_pcre_match(syntax->path_pattern, self->buffer->path)) {
+      if (util_pcre_match(syntax->path_pattern, self->buffer->path, strlen(self->buffer->path), NULL, NULL)) {
         use_syntax = syntax;
         break;
       }

@@ -389,17 +389,27 @@ int util_find_starting_with(char * partial, vector list, vector &matches, int mi
 */
 
 // Return 1 if re matches subject
-int util_pcre_match(char* re, char* subject) {
+int util_pcre_match(char* re, char* subject, int subject_len, char** optret_capture, int* optret_capture_len) {
   int rc;
   pcre* cre;
   const char *error;
   int erroffset;
-  cre = pcre_compile((const char*)re, PCRE_NO_AUTO_CAPTURE | PCRE_CASELESS, &error, &erroffset, NULL);
+
+  int ovector[3];
+  cre = pcre_compile((const char*)re, (optret_capture ? 0 : PCRE_NO_AUTO_CAPTURE) | PCRE_CASELESS, &error, &erroffset, NULL);
   if (!cre) return 0;
 
-  rc = pcre_exec(cre, NULL, subject, strlen(subject), 0, 0, NULL, 0);
+  rc = pcre_exec(cre, NULL, subject, subject_len, 0, 0, ovector, 3);
   pcre_free(cre);
-
+  if (optret_capture) {
+    if (rc >= 0) {
+      *optret_capture = subject + ovector[0];
+      *optret_capture_len = ovector[1] - ovector[0];
+    } else {
+      *optret_capture = NULL;
+      *optret_capture_len = 0;
+    }
+  }
   return rc >= 0 ? 1 : 0;
 }
 
@@ -415,6 +425,7 @@ int util_pcre_replace(char* re, char* subj, char* repl, char** ret_result, int* 
   int subj_offset_z;
   int subj_len;
   int subj_look_offset;
+  int last_look_offset;
   int ovector[30];
   int num_repls;
   int got_match = 0;
@@ -434,6 +445,7 @@ int util_pcre_replace(char* re, char* subj, char* repl, char** ret_result, int* 
   subj_offset = 0;
   subj_offset_z = 0;
   subj_look_offset = 0;
+  last_look_offset = 0;
 
   while (subj_offset < subj_len) {
     // Find match
@@ -451,7 +463,8 @@ int util_pcre_replace(char* re, char* subj, char* repl, char** ret_result, int* 
     // Append part before match
     str_append_stop(&result, subj + subj_offset, subj + subj_offset_z);
     subj_offset = ovector[1];
-    subj_look_offset = subj_offset + 1;
+    subj_look_offset = subj_offset + (subj_offset > last_look_offset ? 0 : 1); // Prevent infinite loop
+    last_look_offset = subj_look_offset;
 
     // Break if no match
     if (!got_match) break;

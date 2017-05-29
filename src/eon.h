@@ -96,6 +96,7 @@ struct editor_s {
     int tab_width;
     int tab_to_space;
     int trim_paste;
+    int smart_indent;
     int read_rc_file;
     int highlight_bracket_pairs;
     int color_col;
@@ -320,6 +321,7 @@ struct loop_context_s {
     int tab_complete_index;
     char tab_complete_term[EON_LOOP_CTX_MAX_COMPLETE_TERM_SIZE];
     cmd_t* last_cmd;
+    str_t last_insert;
 };
 
 // async_proc_t
@@ -435,6 +437,7 @@ int cmd_browse(cmd_context_t* ctx);
 int cmd_close(cmd_context_t* ctx);
 int cmd_copy_by(cmd_context_t* ctx);
 int cmd_copy(cmd_context_t* ctx);
+int cmd_ctag(cmd_context_t* ctx);
 int cmd_cut_by(cmd_context_t* ctx);
 int cmd_cut(cmd_context_t* ctx);
 int cmd_cut_or_close(cmd_context_t* ctx);
@@ -539,7 +542,7 @@ int util_is_file(char* path, char* opt_mode, FILE** optret_file);
 int util_is_dir(char* path);
 char * util_read_file(char* path);
 void util_expand_tilde(char* path, int path_len, char** ret_path);
-int util_pcre_match(char* re, char* subject);
+int util_pcre_match(char* re, char* subject, int subject_len, char** optret_capture, int* optret_capture_len);
 int util_pcre_replace(char* re, char* subj, char* repl, char** ret_result, int* ret_result_len);
 int util_timeval_is_gt(struct timeval* a, struct timeval* b);
 char* util_escape_shell_arg(char* str, int l);
@@ -578,6 +581,7 @@ extern cmd_context_t * plugin_ctx;
 #define EON_DEFAULT_TAB_WIDTH 2
 #define EON_DEFAULT_TAB_TO_SPACE 1
 #define EON_DEFAULT_TRIM_PASTE 1
+#define EON_DEFAULT_SMART_INDENT 0
 #define EON_DEFAULT_MACRO_TOGGLE_KEY "M-r"
 #define EON_DEFAULT_HILI_BRACKET_PAIRS 1
 #define EON_DEFAULT_READ_RC_FILE 1
@@ -642,6 +646,8 @@ extern cmd_context_t * plugin_ctx;
 /*
 TODO
 --- HIGH
+[ ] pass in (bline_t* opt_hint) to buffer_get_* and start from there instead of first_line
+[ ] refactor buffer_set_mmapped to avoid huge mallocs
 [ ] review default key bindings
 [ ] review lel command letters
 [ ] guard against mixed api use, refcounting
@@ -650,7 +656,6 @@ TODO
     [ ] get rid of bol_rule
     [ ] test at tests/test_buffer_srule_overlap.c
     [ ] bugfix: insert lines, drop anchor at eof, delete up, type on 1st line, leftover styling?
-[ ] segfault hunt: splits
 [ ] crash when M-e cat'ing huge files? (why does malloc crash program with large values?)
 [ ] move macros out of eon.h if only used in one source file
 --- LOW

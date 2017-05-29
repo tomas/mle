@@ -92,6 +92,7 @@ int editor_init(editor_t* editor, int argc, char** argv) {
     editor->tab_width = EON_DEFAULT_TAB_WIDTH;
     editor->tab_to_space = EON_DEFAULT_TAB_TO_SPACE;
     editor->trim_paste = EON_DEFAULT_TRIM_PASTE;
+    editor->smart_indent = EON_DEFAULT_SMART_INDENT;
     editor->highlight_bracket_pairs = EON_DEFAULT_HILI_BRACKET_PAIRS;
     editor->read_rc_file = EON_DEFAULT_READ_RC_FILE;
     editor->soft_wrap = EON_DEFAULT_SOFT_WRAP;
@@ -367,21 +368,40 @@ int _editor_open_dir(editor_t* editor, bview_t * bview, char* opt_path, int opt_
 // Open a bview
 int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_path, int opt_path_len, int make_active, bint_t linenum, bview_rect_t* opt_rect, buffer_t* opt_buffer, bview_t** optret_bview) {
   bview_t* bview;
-  bview = bview_new(editor, opt_path, opt_path_len, opt_buffer);
-  bview->type = type;
-  CDL_APPEND2(editor->all_bviews, bview, all_prev, all_next);
 
-  if (!parent) {
-    DL_APPEND2(editor->top_bviews, bview, top_prev, top_next);
-  } else {
-    parent->split_child = bview;
+  int found;
+  found = 0;
+  // Check if already open and not dirty
+  if (opt_path) {
+    CDL_FOREACH2(editor->all_bviews, bview, all_next) {
+      if (bview->buffer
+        && !bview->buffer->is_unsaved
+        && bview->buffer->path
+        && strncmp(opt_path, bview->buffer->path, opt_path_len) == 0
+      ) {
+        found = 1;
+        break;
+      }
+    }
+  }
+
+  // Make new bview if not already open
+  if (!found) {
+    bview = bview_new(editor, opt_path, opt_path_len, opt_buffer);
+    bview->type = type;
+    CDL_APPEND2(editor->all_bviews, bview, all_prev, all_next);
+    if (!parent) {
+      DL_APPEND2(editor->top_bviews, bview, top_prev, top_next);
+    } else {
+      parent->split_child = bview;
+    }
   }
 
   if (make_active) {
     editor_set_active(editor, bview);
   }
 
-  if (opt_rect) {
+  if (!found && opt_rect) {
     bview_resize(bview, opt_rect->x, opt_rect->y, opt_rect->w, opt_rect->h);
   }
 
@@ -394,7 +414,7 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
     *optret_bview = bview;
   }
 
-  if (opt_path && util_is_dir(opt_path)) {
+  if (!found && opt_path && util_is_dir(opt_path)) {
     _editor_open_dir(editor, bview, opt_path, opt_path_len);
   }
 
@@ -1041,6 +1061,9 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 
   // Free pastebuf if present
   if (cmd_ctx.pastebuf) free(cmd_ctx.pastebuf);
+
+  // Free last_insert
+  str_free(&loop_ctx->last_insert);
 
   // Decrement loop_depth
   editor->loop_depth -= 1;
@@ -1690,6 +1713,7 @@ static void _editor_register_cmds(editor_t* editor) {
   _editor_register_cmd_fn(editor, "cmd_close", cmd_close);
   _editor_register_cmd_fn(editor, "cmd_copy", cmd_copy);
   _editor_register_cmd_fn(editor, "cmd_copy_by", cmd_copy_by);
+  _editor_register_cmd_fn(editor, "cmd_ctag", cmd_ctag);
   _editor_register_cmd_fn(editor, "cmd_cut", cmd_cut);
   _editor_register_cmd_fn(editor, "cmd_cut_by", cmd_cut_by);
   _editor_register_cmd_fn(editor, "cmd_cut_or_close", cmd_cut_or_close);
@@ -1935,6 +1959,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_indent", "tab"),
     // EON_KBINDING_DEF("cmd_outdent", "M-,"),
     EON_KBINDING_DEF("cmd_outdent", "S-tab"),
+    EON_KBINDING_DEF("cmd_ctag", "F6");
     EON_KBINDING_DEF("cmd_shell", "M-e"),
     // EON_KBINDING_DEF("cmd_close", "M-c"),
     EON_KBINDING_DEF("cmd_toggle_mouse_mode", "M-backspace"),
@@ -2274,8 +2299,6 @@ static void _editor_init_syntaxes(editor_t* editor) {
     { "^\\s*#( .*|)$", NULL, COMMENT_FG, COMMENT_BG },
     { "^#!/.*$", NULL, COMMENT_FG, COMMENT_BG },
     { "/\\" "*", "\\*" "/", COMMENT_FG, COMMENT_BG },
-    { "<\\?(php)?|\\?" ">", NULL, CODE_TAG_FG, CODE_TAG_BG },
-    { "\\?" ">", "<\\?(php)?", CODE_BLOCK_FG, CODE_BLOCK_BG },
     { "\"\"\"", "\"\"\"", TRIPLE_QUOTE_COMMENT_FG, TRIPLE_QUOTE_COMMENT_BG },
     { "\\t+", NULL, TAB_WHITESPACE_FG, TAB_WHITESPACE_BG },
     { "\\s+$", NULL, WHITESPACE_FG, WHITESPACE_BG },
@@ -2491,7 +2514,7 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
   cur_syntax = NULL;
   optind = 0;
 
-  while (rv == EON_OK && (c = getopt(argc, argv, "ha:b:c:gn:H:K:k:l:M:m:Nn:p:S:s:t:vw:y:z:")) != -1) {
+  while (rv == EON_OK && (c = getopt(argc, argv, "ha:b:c:gn:H:i:K:k:l:M:m:Nn:p:S:s:t:vw:y:z:")) != -1) {
     switch (c) {
     case 'h':
       printf("eon version %s\n\n", EON_VERSION);
@@ -2502,6 +2525,7 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
       printf("    -c <column>  Color column\n");
       printf("    -g           Disable mouse\n");
       printf("    -H <1|0>     Enable/disable headless mode (default: 1 if no tty, else 0)\n");
+      printf("    -i <1|0>     Enable/disable smart_indent (default: %d)\n", EON_DEFAULT_SMART_INDENT);
       printf("    -K <kdef>    Set current kmap definition (use with -k)\n");
       printf("    -k <kbind>   Add key binding to current kmap definition (use with -K)\n");
       printf("    -l <ltype>   Set linenum type (default: 0)\n");
@@ -2550,6 +2574,10 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
 
     case 'H':
       editor->headless_mode = atoi(optarg) ? 1 : 0;
+      break;
+
+    case 'i':
+      editor->smart_indent = atoi(optarg) ? 1 : 0;
       break;
 
     case 'K':

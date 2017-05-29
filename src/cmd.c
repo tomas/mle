@@ -30,9 +30,12 @@ static void _cmd_aproc_bview_passthru_cb(async_proc_t* self, char* buf, size_t b
 static void _cmd_isearch_prompt_cb(bview_t* bview, baction_t* action, void* udata);
 static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action);
 static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action);
+static int _cmd_menu_ctag_cb(cmd_context_t* ctx);
 static int _cmd_indent(cmd_context_t* ctx, int outdent);
 static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent, int col);
 static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h);
+static void _cmd_insert_smart_newline(cmd_context_t* ctx);
+static void _cmd_insert_smart_closing_bracket(cmd_context_t* ctx);
 
 // Insert data
 int cmd_insert_data(cmd_context_t* ctx) {
@@ -48,6 +51,7 @@ int cmd_insert_data(cmd_context_t* ctx) {
 
   if (ctx->editor->insertbuf_size < insert_size) {
     ctx->editor->insertbuf = realloc(ctx->editor->insertbuf, insert_size);
+    memset(ctx->editor->insertbuf, 0, insert_size);
     ctx->editor->insertbuf_size = insert_size;
   }
 
@@ -92,18 +96,27 @@ int cmd_insert_data(cmd_context_t* ctx) {
   ctx->editor->insertbuf[insertbuf_len] = '\0';
 
   // Insert
-  if (insertbuf_len > 1 && ctx->editor->trim_paste && strchr(ctx->editor->insertbuf, '\n') != NULL) {
+  if (insertbuf_len > 1
+    && ctx->editor->trim_paste
+    && memchr(ctx->editor->insertbuf, '\n', ctx->editor->insertbuf_size) != NULL
+  ) {
     // Insert with trim
     char* trimmed = NULL;
     int trimmed_len = 0;
     util_pcre_replace("(?m) +$", ctx->editor->insertbuf, "", &trimmed, &trimmed_len);
     EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_insert_before, trimmed, trimmed_len);
     free(trimmed);
-
+  } else if (ctx->editor->smart_indent && !ctx->cursor->next && insertbuf_len == 1 && ctx->editor->insertbuf[0] == '\n') {
+    _cmd_insert_smart_newline(ctx);
+  } else if (ctx->editor->smart_indent && !ctx->cursor->next && insertbuf_len == 1 && ctx->editor->insertbuf[0] == '}') {
+    _cmd_insert_smart_closing_bracket(ctx);
   } else {
     // Insert without trim
     EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_insert_before, ctx->editor->insertbuf, insertbuf_len);
   }
+
+  // Remember last insert data
+  str_set_len(&ctx->loop_ctx->last_insert, ctx->editor->insertbuf, insertbuf_len);
 
   return EON_OK;
 }
@@ -195,7 +208,7 @@ int cmd_move_bol(cmd_context_t* ctx) {
     mark_move_bol(mark);
     mark_get_char_after(mark, &ch);
 
-    if (isspace((int)ch)) {
+    if (isspace((char)ch)) {
       mark_move_next_re(mark, "\\S", 2);
     }
 
@@ -865,6 +878,39 @@ int cmd_grep(cmd_context_t* ctx) {
   return EON_OK;
 }
 
+// Invoke ctag search
+int cmd_ctag(cmd_context_t* ctx) {
+  async_proc_t* aproc;
+  char* word;
+  char* word_arg;
+  char* cmd;
+  bint_t word_len;
+
+  if (cursor_select_by(ctx->cursor, "word") != EON_OK) {
+    return EON_ERR;
+  }
+
+  mark_get_between_mark(ctx->cursor->mark, ctx->cursor->anchor, &word, &word_len);
+  cursor_toggle_anchor(ctx->cursor, 0);
+  word_arg = util_escape_shell_arg(word, word_len);
+  free(word);
+  asprintf(&cmd, "readtags -e - %s", word_arg);
+  free(word_arg);
+
+  if (!cmd) {
+    EON_RETURN_ERR(ctx->editor, "%s", "Failed to format readtags cmd");
+  }
+
+  aproc = async_proc_new(ctx->editor, ctx->bview, &(ctx->bview->async_proc), cmd, 0, _cmd_aproc_bview_passthru_cb);
+  free(cmd);
+
+  if (!aproc) return EON_ERR;
+
+  editor_menu(ctx->editor, _cmd_menu_ctag_cb, NULL, 0, aproc, NULL);
+  return EON_OK;
+}
+
+
 // Browse directory via tree
 int cmd_browse(cmd_context_t* ctx) {
   bview_t* menu;
@@ -1483,9 +1529,9 @@ int cmd_show_help(cmd_context_t* ctx) {
 
   // Build kmap bindings
   HASH_ITER(hh, ctx->editor->kmap_map, kmap, kmap_tmp) {
-    str_append(&h, "    ");
+    str_append(&h, "    mode ");
     str_append(&h, kmap->name);
-    str_append(&h, " mode\n");
+    str_append(&h, "\n");
     snprintf(buf, sizeof(buf), "        %-40s %-16s\n", "(allow_fallthru)", kmap->allow_fallthru ? "yes" : "no");
     str_append(&h, buf);
 
@@ -1799,6 +1845,63 @@ static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action) {
   return EON_OK;
 }
 
+// Callback from cmd_ctag
+static int _cmd_menu_ctag_cb(cmd_context_t* ctx) {
+  char* line;
+  char* tok;
+  char* fname;
+  char* re;
+  char* qre;
+  char* qre2;
+  int re_len;
+  int qre_len;
+  int i;
+
+  bview_t* bview;
+  line = strndup(ctx->bview->active_cursor->mark->bline->data, ctx->bview->active_cursor->mark->bline->data_len);
+  i = 0;
+  fname = NULL;
+  re = NULL;
+  tok = strtok(line, "\t");
+
+  while (tok) {
+    if (i == 1) {
+      fname = tok;
+    } else if (i == 2) {
+      re = tok;
+      break;
+    }
+    tok = strtok(NULL, "\t");
+    i += 1;
+  }
+
+  re_len = re ? strlen(re) : 0;
+
+  if (!fname || re_len < 4) {
+    free(line);
+    return EON_OK;
+  }
+
+  re += 2; // Skip leading `/^`
+  re_len -= 2;
+  re[re_len-4] = '\0'; // Trunc trailing `$/;"`
+  re_len -= 4;
+
+  util_pcre_replace("([\\.\\\\\\+\\*\\?\\^\\$\\[\\]\\(\\)\\{\\}\\=\\!\\>\\<\\|\\:\\-])", re, "\\\\$1", &qre, &qre_len);
+  editor_close_bview(ctx->editor, ctx->bview, NULL);
+  editor_open_bview(ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, fname, strlen(fname), 1, 0, &ctx->editor->rect_edit, NULL, &bview);
+  asprintf(&qre2, "^%s", qre);
+
+  mark_move_next_re(bview->active_cursor->mark, qre2, qre_len+1);
+  bview_center_viewport_y(bview);
+
+  free(line);
+  free(qre);
+  free(qre2);
+
+  return EON_OK;
+}
+
 // Callback from cmd_browse
 static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
   if (!action) return EON_OK; // cancelled
@@ -1828,7 +1931,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
     return EON_ERR;
   }
 
-  int max_path_len = 128;
+  int max_path_len = PATH_MAX;
   cwd = malloc(sizeof(char) * max_path_len);
   getcwd(cwd, max_path_len);
 
@@ -1861,4 +1964,98 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
   free(corrected_path);
 
   return EON_OK;
+}
+
+// Insert newline when smart_indent is enabled (preserves or increases indent)
+static void _cmd_insert_smart_newline(cmd_context_t* ctx) {
+  bline_t* prev_bline;
+  char* prev_line = NULL;
+  bint_t prev_line_len;
+  char* indent;
+  int indent_len;
+  char* tmp;
+
+  mark_insert_before(ctx->cursor->mark, "\n", 1);
+  prev_bline = ctx->cursor->mark->bline->prev;
+  prev_line = strndup(prev_bline->data, prev_bline->data_len);
+  prev_line_len = strlen(prev_line);
+
+  if (util_pcre_match("^\\s*", prev_line, prev_line_len, &indent, &indent_len) && indent_len > 0) {
+    // Insert same whitespace from prev_line on this line
+    mark_insert_before(ctx->cursor->mark, indent, indent_len);
+  }
+
+  if (prev_line_len > 0 && prev_line[prev_line_len-1] == '{') {
+    // Insert extra indent if last line ends with '{'
+    if (ctx->editor->tab_to_space
+      && indent_len % ctx->editor->tab_width == 0
+      && util_pcre_match("^ *$", indent, indent_len, NULL, NULL)
+    ) {
+      asprintf(&tmp, "%*c", (int)ctx->editor->tab_width, ' ');
+      mark_insert_before(ctx->cursor->mark, tmp, strlen(tmp));
+      free(tmp);
+    } else if (!ctx->editor->tab_to_space
+      && util_pcre_match("^\\t*$", indent, indent_len, NULL, NULL)
+    ) {
+      mark_insert_before(ctx->cursor->mark, "\t", 1);
+    }
+  } else if (ctx->loop_ctx->last_cmd
+    && ctx->loop_ctx->last_cmd->func == cmd_insert_data
+    && ctx->loop_ctx->last_insert.len == 1
+    && ctx->loop_ctx->last_insert.data[0] == '\n'
+    && util_pcre_match("^\\s+$", prev_line, prev_line_len, NULL, NULL)
+  ) {
+    // Clear prev line if it's all whitespace and last cmd was also
+    // inserting a newline
+    MLBUF_BLINE_ENSURE_CHARS(ctx->cursor->mark->bline->prev);
+    bline_delete(ctx->cursor->mark->bline->prev, 0, ctx->cursor->mark->bline->prev->char_count);
+  }
+
+  free(prev_line);
+}
+
+// Insert closing curly bracket when smart_indent is enabled (decreases indent)
+static void _cmd_insert_smart_closing_bracket(cmd_context_t* ctx) {
+  char* this_line = NULL;
+  char* this_ws;
+  char* prev_line = NULL;
+  char* prev_ws;
+  int this_line_len;
+  int this_ws_len;
+  int prev_line_len;
+  int prev_ws_len;
+  int prev_open;
+
+  do {
+    if (!ctx->cursor->mark->bline->prev) break;
+    this_line = strndup(ctx->cursor->mark->bline->data, ctx->cursor->mark->bline->data_len);
+    prev_line = strndup(ctx->cursor->mark->bline->prev->data, ctx->cursor->mark->bline->prev->data_len);
+    this_line_len = strlen(this_line);
+    prev_line_len = strlen(prev_line);
+    prev_open = prev_line_len > 0 && prev_line[prev_line_len-1] == '{' ? 1 : 0;
+    if (!util_pcre_match("^\\s*", this_line, this_line_len, &this_ws, &this_ws_len)
+      || !util_pcre_match("^\\s*", prev_line, prev_line_len, &prev_ws, &prev_ws_len)
+      || (!prev_open && this_ws_len < prev_ws_len)
+      || (prev_open && this_ws_len <= prev_ws_len)
+    ) {
+      // More whitespace on prev line
+      break;
+    } else if (ctx->editor->tab_to_space
+      && ctx->cursor->mark->bline->data_len % ctx->editor->tab_width == 0
+      && util_pcre_match("^ +$", this_line, this_line_len, NULL, NULL)
+    ) {
+      // Outdent with tab_width worth of spaces
+      bline_delete(ctx->cursor->mark->bline, 0, ctx->editor->tab_width);
+    } else if (!ctx->editor->tab_to_space
+      && util_pcre_match("^\\t+$", this_line, this_line_len, NULL, NULL)
+    ) {
+      // Outdent one tab
+      bline_delete(ctx->cursor->mark->bline, 0, 1);
+    }
+  } while(0);
+
+  mark_insert_before(ctx->cursor->mark, "}", 1);
+
+  if (this_line) free(this_line);
+  if (prev_line) free(prev_line);
 }

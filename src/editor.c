@@ -1959,7 +1959,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_indent", "tab"),
     // EON_KBINDING_DEF("cmd_outdent", "M-,"),
     EON_KBINDING_DEF("cmd_outdent", "S-tab"),
-    EON_KBINDING_DEF("cmd_ctag", "F6");
+    EON_KBINDING_DEF("cmd_ctag", "F6"),
     EON_KBINDING_DEF("cmd_shell", "M-e"),
     // EON_KBINDING_DEF("cmd_close", "M-c"),
     EON_KBINDING_DEF("cmd_toggle_mouse_mode", "M-backspace"),

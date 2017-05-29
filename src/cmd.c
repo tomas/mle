@@ -906,7 +906,7 @@ int cmd_ctag(cmd_context_t* ctx) {
 
   if (!aproc) return EON_ERR;
 
-  editor_menu(ctx->editor, _cmd_menu_ctag_cb, NULL, 0, aproc, NULL);
+  editor_page_menu(ctx->editor, _cmd_menu_ctag_cb, NULL, 0, aproc, NULL);
   return EON_OK;
 }
 

@@ -2,7 +2,7 @@
 
 A clever little console text editor. Written in C, forked out of [mle](https://github.com/adsr/mle).
 
-[![asciicast](https://asciinema.org/a/bcd88x89esx6ckmopicrjr0vp.png)](https://asciinema.org/a/bcd88x89esx6ckmopicrjr0vp)
+[![asciicast](https://asciinema.org/a/bcd88x89esx6ckmopicrjr0vp.png?123)](https://asciinema.org/a/bcd88x89esx6ckmopicrjr0vp)
 
 ## Building
 

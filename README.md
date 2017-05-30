@@ -16,11 +16,9 @@ If you want to try the experimental plugin system, you'll need to install LuaJIT
 
     $ apt install libluajit-5.1-dev pkg-config # brew install luajit pkg-config, etc
 
-Clone the repo and initialize submodules:
+Clone the repo with its submodules:
 
-    $ git clone https://github.com/tomas/eon.git
-    $ cd eon
-    $ git submodule update --init --recursive
+    $ git clone --recursive https://github.com/tomas/eon.git
 
 And off you go!
 

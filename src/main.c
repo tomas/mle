@@ -17,8 +17,7 @@ int main(int argc, char** argv) {
   if (editor_init(&_editor, argc, argv) == EON_OK) {
 
     if (!_editor.headless_mode) {
-      tb_init();
-      tb_clear_screen();
+      tb_init(1);
 
       int mode = TB_INPUT_ESC;
       if (!_editor.no_mouse) mode |= TB_INPUT_MOUSE;
@@ -37,7 +36,6 @@ int main(int argc, char** argv) {
 
     // shut down termbox if not on headless mode
     if (!_editor.headless_mode) {
-      tb_clear_screen();
       tb_shutdown();
     }
 

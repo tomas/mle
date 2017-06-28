@@ -88,4 +88,7 @@ clean:
 	$(MAKE) -C tests clean
 	rm -Rf termbox/build
 
+list:
+	@grep '^[a-z]*:' Makefile
+
 .PHONY: all eon_static test test_eon sloc install clean

@@ -18,7 +18,9 @@ int main(int argc, char** argv) {
 
     if (!_editor.headless_mode) {
       tb_init();
-      int mode = TB_INPUT_ALT;
+      tb_clear_screen();
+
+      int mode = TB_INPUT_ESC;
       if (!_editor.no_mouse) mode |= TB_INPUT_MOUSE;
 
       tb_select_input_mode(mode);
@@ -34,7 +36,10 @@ int main(int argc, char** argv) {
     editor_deinit(&_editor);
 
     // shut down termbox if not on headless mode
-    if (!_editor.headless_mode) tb_shutdown();
+    if (!_editor.headless_mode) {
+      tb_clear_screen();
+      tb_shutdown();
+    }
 
   } else { // init failed
     editor_deinit(&_editor);

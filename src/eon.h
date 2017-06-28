@@ -629,6 +629,7 @@ extern cmd_context_t * plugin_ctx;
 #define EON_KINPUT_NUMERIC (kinput_t){ 0xffffffff, 0xffff, 0x40 }
 #define EON_KINPUT_WILDCARD (kinput_t){ 0xffffffff, 0xffff, 0x80 }
 
+#define EON_LINENUM_TYPE_NONE -1
 #define EON_LINENUM_TYPE_ABS 0
 #define EON_LINENUM_TYPE_REL 1
 #define EON_LINENUM_TYPE_BOTH 2

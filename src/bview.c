@@ -115,7 +115,10 @@ int bview_resize(bview_t* self, int x, int y, int w, int h) {
     self->rect_margin_left.w = 1;
     self->rect_margin_left.h = ah - 1;
 
-    self->rect_buffer.x = x + self->linenum_width + 1;
+    self->rect_buffer.x = x;
+    if (self->editor->linenum_type != EON_LINENUM_TYPE_NONE) 
+      self->rect_buffer.x += self->linenum_width + 1;
+
     self->rect_buffer.y = y + 1;
     self->rect_buffer.w = aw - (self->linenum_width + 1 + 1);
     self->rect_buffer.h = ah - 1;
@@ -1122,22 +1125,25 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
 
   // Draw linenums and margins
   if (EON_BVIEW_IS_EDIT(self)) {
-    int linenum_fg = is_cursor_line ? LINENUM_FG_CURSOR : LINENUM_FG;
+    if (self->editor->linenum_type != EON_LINENUM_TYPE_NONE) {
 
-    if (self->editor->linenum_type == EON_LINENUM_TYPE_ABS
-        || self->editor->linenum_type == EON_LINENUM_TYPE_BOTH
-        || (self->editor->linenum_type == EON_LINENUM_TYPE_REL && is_cursor_line)) {
-      tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->abs_linenum_width, (int)(bline->line_index + 1) % (int)pow(10, self->linenum_width));
+      int linenum_fg = is_cursor_line ? LINENUM_FG_CURSOR : LINENUM_FG;
 
-      if (self->editor->linenum_type == EON_LINENUM_TYPE_BOTH) {
-        tb_printf(self->rect_lines, self->abs_linenum_width, rect_y, linenum_fg, LINENUM_BG, " %*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
+      if (self->editor->linenum_type == EON_LINENUM_TYPE_ABS
+          || self->editor->linenum_type == EON_LINENUM_TYPE_BOTH
+          || (self->editor->linenum_type == EON_LINENUM_TYPE_REL && is_cursor_line)) {
+        tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->abs_linenum_width, (int)(bline->line_index + 1) % (int)pow(10, self->linenum_width));
+
+        if (self->editor->linenum_type == EON_LINENUM_TYPE_BOTH) {
+          tb_printf(self->rect_lines, self->abs_linenum_width, rect_y, linenum_fg, LINENUM_BG, " %*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
+        }
+
+      } else if (self->editor->linenum_type == EON_LINENUM_TYPE_REL) {
+        tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
       }
 
-    } else if (self->editor->linenum_type == EON_LINENUM_TYPE_REL) {
-      tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
+      tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", viewport_x > 0 && bline->char_count > 0 ? '^' : ' ');
     }
-
-    tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", viewport_x > 0 && bline->char_count > 0 ? '^' : ' ');
 
     if (!is_soft_wrap && bline->char_vwidth - viewport_x_vcol > self->rect_buffer.w) {
       tb_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", '$');
@@ -1190,8 +1196,10 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
       rect_x = 0;
       rect_y += 1;
 
-      for (i = 0; i < self->linenum_width; i++) {
-        tb_printf(self->rect_lines, i, rect_y, 0, 0, "%c", '.');
+      if (self->editor->linenum_type != EON_LINENUM_TYPE_NONE) {
+        for (i = 0; i < self->linenum_width; i++) {
+          tb_printf(self->rect_lines, i, rect_y, 0, 0, "%c", '.');
+        }
       }
 
     } else {

@@ -17,6 +17,7 @@ int main(int argc, char** argv) {
   if (editor_init(&_editor, argc, argv) == EON_OK) {
 
     if (!_editor.headless_mode) {
+      _editor.linenum_type = EON_LINENUM_TYPE_NONE;
       tb_init(1);
 
       int mode = TB_INPUT_ESC;

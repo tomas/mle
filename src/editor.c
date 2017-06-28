@@ -2598,7 +2598,7 @@ static int _editor_init_from_args(editor_t* editor, int argc, char** argv) {
 
     case 'l':
       editor->linenum_type = atoi(optarg);
-      if (editor->linenum_type < 0 || editor->linenum_type > 2) editor->linenum_type = 0;
+      if (editor->linenum_type < -1 || editor->linenum_type > 2) editor->linenum_type = 0;
       break;
 
     case 'M':

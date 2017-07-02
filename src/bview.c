@@ -1169,6 +1169,10 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
       if (ch == '\t') {
         ch = ' ';
 
+      } else if (ch == TB_KEY_ESC) {
+
+        ch = '[';
+
       } else if (!iswprint(ch)) {
         ch = '?';
       }

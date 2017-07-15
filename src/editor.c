@@ -1692,7 +1692,7 @@ static void _editor_graceful_exit(int signum) {
   int bview_num;
   bview_num = 0;
 
-  if (tb_width() >= 0) tb_shutdown();
+  if (tb_width() >= 0) tb_shutdown(1);
 
   CDL_FOREACH2(_editor.all_bviews, bview, all_next) {
     if (bview->buffer->is_unsaved) {

@@ -1295,7 +1295,7 @@ static void _cmd_force_redraw(cmd_context_t* ctx) {
   int x;
   int y;
 
-  if (tb_width() >= 0) tb_shutdown();
+  if (tb_width() >= 0) tb_shutdown(1);
 
   tb_init();
   tb_select_input_mode(TB_INPUT_ALT);
@@ -1446,7 +1446,7 @@ int cmd_less(cmd_context_t* ctx) {
              "less +%ld -j%ld -k $tmp_lesskey -SN %s;"
              "rm -f $tmp_lesskey";
     int res = asprintf(&sh, sh_fmt, tmp_linenum, ctx->cursor->mark->bline->line_index + 1, screen_y + 1, tmp_buf);
-    tb_shutdown();
+    tb_shutdown(1);
 
     if (EON_ERR == util_shell_exec(ctx->editor, sh, -1, NULL, 0, "bash", NULL, NULL)) {
       rc = EON_ERR;

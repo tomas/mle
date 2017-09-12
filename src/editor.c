@@ -1947,6 +1947,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_save", "C-s"),
     // EON_KBINDING_DEF("cmd_save_as", "M-s"),
     EON_KBINDING_DEF("cmd_save_as", "C-o"),
+    EON_KBINDING_DEF("cmd_save_as", "CS-s"),
     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o a", "tab_to_space"),
     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o t", "tab_width"),
     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o y", "syntax"),

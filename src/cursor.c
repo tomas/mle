@@ -48,7 +48,7 @@ int cursor_toggle_anchor(cursor_t* cursor, int use_srules) {
     mark_clone(cursor->mark, &(cursor->anchor));
 
     if (use_srules) {
-      cursor->sel_rule = srule_new_range(cursor->mark, cursor->anchor, 0, TB_REVERSE);
+      cursor->sel_rule = srule_new_range(cursor->mark, cursor->anchor, 0, (uint16_t)TB_REVERSE);
       buffer_add_srule(cursor->bview->buffer, cursor->sel_rule, EON_MAX(cursor->mark->bline->line_index - 50, 0), 100);
     }
 
@@ -389,7 +389,7 @@ int cursor_replace(cursor_t* cursor, int interactive, char* opt_regex, char* opt
           yn = EON_PROMPT_YES;
 
         } else if (interactive) {
-          highlight = srule_new_range(search_mark, search_mark_end, 0, TB_REVERSE);
+          highlight = srule_new_range(search_mark, search_mark_end, 0, (uint16_t)TB_REVERSE);
           buffer_add_srule(cursor->bview->buffer, highlight, 0, 100);
           bview_rectify_viewport(cursor->bview);
           bview_draw(cursor->bview);

@@ -2341,9 +2341,9 @@ static void _editor_init_syntax_add_rule(syntax_t* syntax, srule_def_t* def) {
   node = calloc(1, sizeof(srule_node_t));
 
   if (def->re_end) {
-    node->srule = srule_new_multi(def->re, strlen(def->re), def->re_end, strlen(def->re_end), def->fg, def->bg);
+    node->srule = srule_new_multi(def->re, strlen(def->re), def->re_end, strlen(def->re_end), (uint16_t)def->fg, (uint16_t)def->bg);
   } else {
-    node->srule = srule_new_single(def->re, strlen(def->re), 0, def->fg, def->bg);
+    node->srule = srule_new_single(def->re, strlen(def->re), 0, (uint16_t)def->fg, (uint16_t)def->bg);
   }
 
   if (node->srule) DL_APPEND(syntax->srules, node);

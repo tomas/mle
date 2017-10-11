@@ -542,7 +542,7 @@ char* util_escape_shell_arg(char* str, int l) {
 }
 
 // Adapted from termbox src/demo/keyboard.c
-int rect_printf(bview_rect_t rect, int x, int y, uint16_t fg, uint16_t bg, const char *fmt, ...) {
+int rect_printf(bview_rect_t rect, int x, int y, uint32_t fg, uint32_t bg, const char *fmt, ...) {
   char buf[4096];
   va_list vl;
   va_start(vl, fmt);

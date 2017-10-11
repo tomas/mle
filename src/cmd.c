@@ -30,7 +30,7 @@ static void _cmd_aproc_bview_passthru_cb(async_proc_t* self, char* buf, size_t b
 static void _cmd_isearch_prompt_cb(bview_t* bview, baction_t* action, void* udata);
 static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action);
 static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action);
-static int _cmd_menu_ctag_cb(cmd_context_t* ctx);
+static int _cmd_menu_ctag_cb(cmd_context_t* ctx, char * action);
 static int _cmd_indent(cmd_context_t* ctx, int outdent);
 static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent, int col);
 static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h);
@@ -885,6 +885,7 @@ int cmd_ctag(cmd_context_t* ctx) {
   char* word_arg;
   char* cmd;
   bint_t word_len;
+  int res;
 
   if (cursor_select_by(ctx->cursor, "word") != EON_OK) {
     return EON_ERR;
@@ -894,7 +895,7 @@ int cmd_ctag(cmd_context_t* ctx) {
   cursor_toggle_anchor(ctx->cursor, 0);
   word_arg = util_escape_shell_arg(word, word_len);
   free(word);
-  asprintf(&cmd, "readtags -e - %s", word_arg);
+  res = asprintf(&cmd, "readtags -e - %s", word_arg);
   free(word_arg);
 
   if (!cmd) {
@@ -1295,7 +1296,7 @@ static void _cmd_force_redraw(cmd_context_t* ctx) {
   int x;
   int y;
 
-  if (tb_width() >= 0) tb_shutdown(1);
+  if (tb_width() >= 0) tb_shutdown();
 
   tb_init();
   tb_select_input_mode(TB_INPUT_ALT);
@@ -1446,7 +1447,7 @@ int cmd_less(cmd_context_t* ctx) {
              "less +%ld -j%ld -k $tmp_lesskey -SN %s;"
              "rm -f $tmp_lesskey";
     int res = asprintf(&sh, sh_fmt, tmp_linenum, ctx->cursor->mark->bline->line_index + 1, screen_y + 1, tmp_buf);
-    tb_shutdown(1);
+    tb_shutdown();
 
     if (EON_ERR == util_shell_exec(ctx->editor, sh, -1, NULL, 0, "bash", NULL, NULL)) {
       rc = EON_ERR;
@@ -1846,7 +1847,7 @@ static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action) {
 }
 
 // Callback from cmd_ctag
-static int _cmd_menu_ctag_cb(cmd_context_t* ctx) {
+static int _cmd_menu_ctag_cb(cmd_context_t* ctx, char * action) {
   char* line;
   char* tok;
   char* fname;
@@ -1890,7 +1891,7 @@ static int _cmd_menu_ctag_cb(cmd_context_t* ctx) {
   util_pcre_replace("([\\.\\\\\\+\\*\\?\\^\\$\\[\\]\\(\\)\\{\\}\\=\\!\\>\\<\\|\\:\\-])", re, "\\\\$1", &qre, &qre_len);
   editor_close_bview(ctx->editor, ctx->bview, NULL);
   editor_open_bview(ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, fname, strlen(fname), 1, 0, &ctx->editor->rect_edit, NULL, &bview);
-  asprintf(&qre2, "^%s", qre);
+  int len = asprintf(&qre2, "^%s", qre);
 
   mark_move_next_re(bview->active_cursor->mark, qre2, qre_len+1);
   bview_center_viewport_y(bview);
@@ -1908,7 +1909,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
 
   char* line;
   char* path;
-  char* cwd;
+  char cwd[PATH_MAX];
   char* corrected_path;
   bview_t* new_bview;
   int res;
@@ -1931,9 +1932,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
     return EON_ERR;
   }
 
-  int max_path_len = PATH_MAX;
-  cwd = malloc(sizeof(char) * max_path_len);
-  getcwd(cwd, max_path_len);
+  getcwd(cwd, PATH_MAX);
 
   if (strcmp(cwd, ctx->bview->init_cwd) != 0) {
     res = asprintf(&corrected_path, "%s/%s", ctx->bview->init_cwd, path);

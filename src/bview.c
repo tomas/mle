@@ -116,7 +116,7 @@ int bview_resize(bview_t* self, int x, int y, int w, int h) {
     self->rect_margin_left.h = ah - 1;
 
     self->rect_buffer.x = x;
-    if (self->editor->linenum_type != EON_LINENUM_TYPE_NONE) 
+    if (self->editor->linenum_type != EON_LINENUM_TYPE_NONE)
       self->rect_buffer.x += self->linenum_width + 1;
 
     self->rect_buffer.y = y + 1;
@@ -876,7 +876,7 @@ static void _bview_draw_status(bview_t* self) {
 
   // Prompt
   if (active == editor->prompt) {
-    tb_printf(editor->rect_status, 0, 0, PROMPT_FG, PROMPT_BG, "%-*.*s -- ", editor->rect_status.w, editor->rect_status.w,
+    rect_printf(editor->rect_status, 0, 0, PROMPT_FG, PROMPT_BG, "%-*.*s -- ", editor->rect_status.w, editor->rect_status.w,
               self->editor->prompt->prompt_str);
     goto _bview_draw_status_end;
   }
@@ -949,8 +949,8 @@ static void _bview_draw_status(bview_t* self) {
 
   // Render status line
   MLBUF_BLINE_ENSURE_CHARS(mark->bline);
-  tb_printf(editor->rect_status, 0, 0, 0, RECT_STATUS_BG, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
-  tb_printf_attr(editor->rect_status, 0, 0,
+  rect_printf(editor->rect_status, 0, 0, 0, RECT_STATUS_BG, "%*.*s", editor->rect_status.w, editor->rect_status.w, " ");
+  rect_printf_attr(editor->rect_status, 0, 0,
     // "@%d,%d;%s@%d,%d;"                                // eon_normal    mode
     " (@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;%s@%d,%d;) " // (....)        need_input,anchor,macro,async
     " [@%d,%d;%s@%d,%d;] "                             // <php>         syntax
@@ -968,19 +968,19 @@ static void _bview_draw_status(bview_t* self) {
     LINECOL_CURRENT_FG, 0, mark->col, 0, 0, LINECOL_TOTAL_FG, 0, mark->bline->char_count, 0, 0
   );
 
-  tb_printf(editor->rect_status, editor->rect_status.w - 11, 0, TB_WHITE | TB_BOLD, RECT_STATUS_BG, " eon %s", EON_VERSION);
+  rect_printf(editor->rect_status, editor->rect_status.w - 11, 0, TB_WHITE | TB_BOLD, RECT_STATUS_BG, " eon %s", EON_VERSION);
 
   // Overlay errstr if present
 _bview_draw_status_end:
 
   if (editor->errstr[0] != '\0') {
     int errstrlen = strlen(editor->errstr) + 5; // Add 5 for "err! "
-    tb_printf(editor->rect_status, editor->rect_status.w - errstrlen, 0, ERROR_FG, ERROR_BG, "err! %s", editor->errstr);
+    rect_printf(editor->rect_status, editor->rect_status.w - errstrlen, 0, ERROR_FG, ERROR_BG, "err! %s", editor->errstr);
     editor->errstr[0] = '\0'; // Clear errstr
 
   } else if (editor->infostr[0] != '\0') {
     int infostrlen = strlen(editor->infostr);
-    tb_printf(editor->rect_status, editor->rect_status.w - infostrlen, 0, INFO_FG, INFO_BG, "%s", editor->infostr);
+    rect_printf(editor->rect_status, editor->rect_status.w - infostrlen, 0, INFO_FG, INFO_BG, "%s", editor->infostr);
     editor->infostr[0] = '\0'; // Clear errstr
   }
 }
@@ -997,7 +997,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
   // Handle split
   if (self->split_child) {
-  
+
     // Calc split dimensions
     if (self->split_is_vertical) {
       split_w = w - (int)((float)w * self->split_factor);
@@ -1036,7 +1036,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
   CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
     // TODO: find out if this can be optimized
     if (EON_BVIEW_IS_EDIT(bview_tmp) && ((self->split_parent && bview_tmp == self) || (!self->split_parent && !bview_tmp->split_parent && self->split_parent != bview_tmp))) {
-  
+
       bview_count += 1;
 
       if (bview_tmp == self->editor->active_edit) {
@@ -1056,10 +1056,10 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
       }
 
       if (offset + self->editor->bview_tab_width <= w) {
-        tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",
+        rect_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",
           self->rect_caption.w, self->rect_caption.w, " ");
 
-        tb_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
+        rect_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, " [%d] %s %c",
           bview_count, desc, !EON_BVIEW_IS_MENU(bview_tmp) && bview_tmp->buffer->is_unsaved ? '*' : ' ');
 
         offset += self->editor->bview_tab_width;
@@ -1077,10 +1077,10 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
   for (rect_y = 0; rect_y < self->rect_buffer.h; rect_y++) {
     if (self->viewport_y + rect_y < 0 || self->viewport_y + rect_y >= self->buffer->line_count || !bline) { // "|| !bline" See TODOs below
       // Draw pre/post blank
-      tb_printf(self->rect_lines, 0, rect_y, 0, 0, "%*c", self->linenum_width, ' ');
-      tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", ' ');
-      tb_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", ' ');
-      tb_printf(self->rect_buffer, 0, rect_y, 0, 0, "%-*.*s", self->rect_buffer.w, self->rect_buffer.w, " ");
+      rect_printf(self->rect_lines, 0, rect_y, 0, 0, "%*c", self->linenum_width, ' ');
+      rect_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", ' ');
+      rect_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", ' ');
+      rect_printf(self->rect_buffer, 0, rect_y, 0, 0, "%-*.*s", self->rect_buffer.w, self->rect_buffer.w, " ");
 
     } else {
       // Draw bline at self->rect_buffer self->viewport_y + rect_y
@@ -1132,21 +1132,21 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
       if (self->editor->linenum_type == EON_LINENUM_TYPE_ABS
           || self->editor->linenum_type == EON_LINENUM_TYPE_BOTH
           || (self->editor->linenum_type == EON_LINENUM_TYPE_REL && is_cursor_line)) {
-        tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->abs_linenum_width, (int)(bline->line_index + 1) % (int)pow(10, self->linenum_width));
+        rect_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->abs_linenum_width, (int)(bline->line_index + 1) % (int)pow(10, self->linenum_width));
 
         if (self->editor->linenum_type == EON_LINENUM_TYPE_BOTH) {
-          tb_printf(self->rect_lines, self->abs_linenum_width, rect_y, linenum_fg, LINENUM_BG, " %*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
+          rect_printf(self->rect_lines, self->abs_linenum_width, rect_y, linenum_fg, LINENUM_BG, " %*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
         }
 
       } else if (self->editor->linenum_type == EON_LINENUM_TYPE_REL) {
-        tb_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
+        rect_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->rel_linenum_width, (int)labs(bline->line_index - self->active_cursor->mark->bline->line_index));
       }
 
-      tb_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", viewport_x > 0 && bline->char_count > 0 ? '^' : ' ');
+      rect_printf(self->rect_margin_left, 0, rect_y, 0, 0, "%c", viewport_x > 0 && bline->char_count > 0 ? '^' : ' ');
     }
 
     if (!is_soft_wrap && bline->char_vwidth - viewport_x_vcol > self->rect_buffer.w) {
-      tb_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", '$');
+      rect_printf(self->rect_margin_right, 0, rect_y, 0, 0, "%c", '$');
     }
   }
 
@@ -1172,7 +1172,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
       } else if (ch == TB_KEY_ESC) {
         ch = '[';
 
-      } else if (!iswprint(ch) && !iswalpha(ch)) { 
+      } else if (!iswprint(ch) && !iswalpha(ch)) {
         ch = '?';
       }
 
@@ -1201,7 +1201,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
 
       if (self->editor->linenum_type != EON_LINENUM_TYPE_NONE) {
         for (i = 0; i < self->linenum_width; i++) {
-          tb_printf(self->rect_lines, i, rect_y, 0, 0, "%c", '.');
+          rect_printf(self->rect_lines, i, rect_y, 0, 0, "%c", '.');
         }
       }
 

@@ -1000,7 +1000,7 @@ static void _editor_loop(editor_t* editor, loop_context_t* loop_ctx) {
 // #define SHOW_KEYS 1
 #ifdef SHOW_KEYS
     if (cmd_ctx.is_user_input) {
-      //  tb_printf(editor->rect_status, editor->rect_status.w - 20, 0, TB_DEFAULT, TB_DEFAULT,
+      //  rect_printf(editor->rect_status, editor->rect_status.w - 20, 0, TB_DEFAULT, TB_DEFAULT,
       //    "k:%d/ch:%d/m:%d", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
       printf("k:%d/ch:%d/m:%d\n", cmd_ctx.input.key, cmd_ctx.input.ch, cmd_ctx.input.meta);
     }
@@ -1692,7 +1692,7 @@ static void _editor_graceful_exit(int signum) {
   int bview_num;
   bview_num = 0;
 
-  if (tb_width() >= 0) tb_shutdown(1);
+  if (tb_width() >= 0) tb_shutdown();
 
   CDL_FOREACH2(_editor.all_bviews, bview, all_next) {
     if (bview->buffer->is_unsaved) {
@@ -1972,7 +1972,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_quit", "CS-q"),
     EON_KBINDING_DEF(NULL, NULL)
   });
-  
+
   // prompt input, used when requesting input from user (search string, save as)
   // no default command, but falls-through to normal keymap if no matches.
   _editor_init_kmap(editor, &editor->kmap_prompt_input, "eon_prompt_input", NULL, 1, (kbinding_def_t[]) {
@@ -2013,7 +2013,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF(NULL, NULL)
   });
 
-  
+
 //  _editor_init_kmap(editor, &editor->kmap_prompt_ok, "eon_prompt_ok", "_editor_prompt_cancel", 0, (kbinding_def_t[]) {
 //    EON_KBINDING_DEF(NULL, NULL)
 //  });
@@ -2025,7 +2025,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("_editor_menu_cancel", "C-c"),
     EON_KBINDING_DEF(NULL, NULL)
     });
-  
+
 
 
   // prompt menu input. used in prompts that allow going up and down. not used.

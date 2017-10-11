@@ -542,7 +542,7 @@ char* util_escape_shell_arg(char* str, int l) {
 }
 
 // Adapted from termbox src/demo/keyboard.c
-int tb_printf(bview_rect_t rect, int x, int y, uint16_t fg, uint16_t bg, const char *fmt, ...) {
+int rect_printf(bview_rect_t rect, int x, int y, uint16_t fg, uint16_t bg, const char *fmt, ...) {
   char buf[4096];
   va_list vl;
   va_start(vl, fmt);
@@ -551,10 +551,10 @@ int tb_printf(bview_rect_t rect, int x, int y, uint16_t fg, uint16_t bg, const c
   return tb_print(rect.x + x, rect.y + y, fg ? fg : rect.fg, bg ? bg : rect.bg, buf);
 }
 
-// Like tb_printf, but accepts @fg,bg; attributes inside the string. To print
+// Like rect_printf, but accepts @fg,bg; attributes inside the string. To print
 // a literal '@', use '@@' in the format string. Specify fg or bg of 0 to
 // reset that attribute.
-int tb_printf_attr(bview_rect_t rect, int x, int y, const char *fmt, ...) {
+int rect_printf_attr(bview_rect_t rect, int x, int y, const char *fmt, ...) {
   char bufo[4096];
   char* buf;
   int fg;

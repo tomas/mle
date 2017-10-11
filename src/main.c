@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 
     // shut down termbox if not on headless mode
     if (!_editor.headless_mode) {
-      tb_shutdown(1);
+      tb_shutdown();
     }
 
   } else { // init failed

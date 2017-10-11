@@ -1278,11 +1278,10 @@ int cmd_shell(cmd_context_t* ctx) {
 
 int cmd_toggle_mouse_mode(cmd_context_t* ctx) {
   if (ctx->editor->no_mouse) {
-    tb_select_input_mode(TB_INPUT_ALT | TB_INPUT_MOUSE);
+    tb_enable_mouse();
     ctx->editor->no_mouse = 0;
-
   } else {
-    tb_select_input_mode(TB_INPUT_ALT);
+    tb_disable_mouse();
     ctx->editor->no_mouse = 1;
   }
 
@@ -1299,7 +1298,7 @@ static void _cmd_force_redraw(cmd_context_t* ctx) {
   if (tb_width() >= 0) tb_shutdown();
 
   tb_init();
-  tb_select_input_mode(TB_INPUT_ALT);
+  tb_enable_mouse();
   tb_set_cursor(-1, -1);
   w = tb_width();
   h = tb_height();

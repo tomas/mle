@@ -20,10 +20,9 @@ int main(int argc, char** argv) {
       _editor.linenum_type = EON_LINENUM_TYPE_NONE;
       tb_init();
 
-      int mode = TB_INPUT_ESC;
-      if (!_editor.no_mouse) mode |= TB_INPUT_MOUSE;
+      if (!_editor.no_mouse)
+        tb_enable_mouse();
 
-      tb_select_input_mode(mode);
       // tb_select_output_mode(TB_OUTPUT_256);
     }
 

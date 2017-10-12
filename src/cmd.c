@@ -164,7 +164,6 @@ int cmd_delete_after(cmd_context_t* ctx) {
 }
 
 int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
-
   if ((mouse_down && !ctx->cursor->is_anchored) || (!mouse_down && ctx->cursor->is_anchored)) {
     cursor_toggle_anchor(ctx->cursor, 1);
   }

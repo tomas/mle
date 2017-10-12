@@ -1033,6 +1033,7 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
   int offset = 0;
   char * desc;
 
+  // render titlebar/tabs
   CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
     // TODO: find out if this can be optimized
     if (EON_BVIEW_IS_EDIT(bview_tmp) && ((self->split_parent && bview_tmp == self) || (!self->split_parent && !bview_tmp->split_parent && self->split_parent != bview_tmp))) {
@@ -1132,6 +1133,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
       if (self->editor->linenum_type == EON_LINENUM_TYPE_ABS
           || self->editor->linenum_type == EON_LINENUM_TYPE_BOTH
           || (self->editor->linenum_type == EON_LINENUM_TYPE_REL && is_cursor_line)) {
+
         rect_printf(self->rect_lines, 0, rect_y, linenum_fg, LINENUM_BG, "%*d", self->abs_linenum_width, (int)(bline->line_index + 1) % (int)pow(10, self->linenum_width));
 
         if (self->editor->linenum_type == EON_LINENUM_TYPE_BOTH) {

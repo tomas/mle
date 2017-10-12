@@ -48,7 +48,7 @@ int cursor_toggle_anchor(cursor_t* cursor, int use_srules) {
     mark_clone(cursor->mark, &(cursor->anchor));
 
     if (use_srules) {
-      cursor->sel_rule = srule_new_range(cursor->mark, cursor->anchor, 0, (uint16_t)TB_REVERSE);
+      cursor->sel_rule = srule_new_range(cursor->mark, cursor->anchor, 0, TB_REVERSE);
       buffer_add_srule(cursor->bview->buffer, cursor->sel_rule, EON_MAX(cursor->mark->bline->line_index - 50, 0), 100);
     }
 

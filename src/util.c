@@ -506,7 +506,6 @@ char* util_escape_shell_arg(char* str, int l) {
   char *cmd;
 
   cmd = malloc(4 * l + 3); // worst case
-
   cmd[y++] = '\'';
 
   for (x = 0; x < l; x++) {

@@ -1,19 +1,3 @@
-
-/*
-#define TB_DEFAULT 0x00
-#define TB_BLACK   0x01
-#define TB_RED     0x02
-#define TB_GREEN   0x03
-#define TB_YELLOW  0x04
-#define TB_BLUE    0x05
-#define TB_MAGENTA 0x06
-#define TB_CYAN    0x07
-#define TB_WHITE   0x08
-#define TB_BOLD      0x0100
-#define TB_UNDERLINE 0x0200
-#define TB_REVERSE   0x0400
-*/
-
 #define MACRO_RECORDING_FG (TB_RED | TB_BOLD)
 #define MACRO_RECORDING_BG TB_BLACK
 

@@ -425,7 +425,7 @@ int editor_close_bview(editor_t* editor, bview_t* bview, int* optret_num_closed)
 
   if (optret_num_closed) *optret_num_closed = 0;
 
-    printf(" Closing bview with path: %s\n", bview->path);
+  // debug("Closing bview with path: %s\n", bview->path);
   if ((rc = _editor_close_bview_inner(editor, bview, optret_num_closed)) == EON_OK) {
     _editor_resize(editor, editor->w, editor->h);
   }

@@ -374,11 +374,7 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
   // Check if already open and not dirty
   if (opt_path) {
     CDL_FOREACH2(editor->all_bviews, bview, all_next) {
-      if (bview->buffer
-        && !bview->buffer->is_unsaved
-        && bview->buffer->path
-        && strncmp(opt_path, bview->buffer->path, opt_path_len) == 0
-      ) {
+      if (bview->path && strcmp(opt_path, bview->path) == 0) {
         found = 1;
         break;
       }

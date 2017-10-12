@@ -545,7 +545,7 @@ int util_pcre_match(char* re, char* subject, int subject_len, char** optret_capt
 int util_pcre_replace(char* re, char* subj, char* repl, char** ret_result, int* ret_result_len);
 int util_timeval_is_gt(struct timeval* a, struct timeval* b);
 char* util_escape_shell_arg(char* str, int l);
-int rect_printf(bview_rect_t rect, int x, int y, uint32_t fg, uint32_t bg, const char *fmt, ...);
+int rect_printf(bview_rect_t rect, int x, int y, uint16_t fg, uint16_t bg, const char *fmt, ...);
 int rect_printf_attr(bview_rect_t rect, int x, int y, const char *fmt, ...);
 void str_append_stop(str_t* str, char* data, char* data_stop);
 void str_append(str_t* str, char* data);

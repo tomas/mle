@@ -367,13 +367,14 @@ int _editor_open_dir(editor_t* editor, bview_t * bview, char* opt_path, int opt_
 
 // Open a bview
 int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_path, int opt_path_len, int make_active, bint_t linenum, bview_rect_t* opt_rect, buffer_t* opt_buffer, bview_t** optret_bview) {
-  bview_t* bview;
 
-  int found;
-  found = 0;
-  // Check if already open and not dirty
-  if (opt_path) {
+  bview_t* bview;
+  int found = 0;
+  // debug("Opening bview [%d], path %s, buffer len %ld\n", type, opt_path, opt_buffer == NULL ? -1 : opt_buffer->byte_count);
+
+  if (opt_path) { // Check if already open and not dirty
     CDL_FOREACH2(editor->all_bviews, bview, all_next) {
+      // debug("Checking if bview (%s) matches path %s\n", bview->path, opt_path);
       if (bview->path && strcmp(opt_path, bview->path) == 0) {
         found = 1;
         break;
@@ -383,6 +384,7 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
 
   // Make new bview if not already open
   if (!found) {
+    // debug("Initializing bview with path: %s\n", opt_path);
     bview = bview_new(editor, opt_path, opt_path_len, opt_buffer);
     bview->type = type;
     CDL_APPEND2(editor->all_bviews, bview, all_prev, all_next);
@@ -423,6 +425,7 @@ int editor_close_bview(editor_t* editor, bview_t* bview, int* optret_num_closed)
 
   if (optret_num_closed) *optret_num_closed = 0;
 
+    printf(" Closing bview with path: %s\n", bview->path);
   if ((rc = _editor_close_bview_inner(editor, bview, optret_num_closed)) == EON_OK) {
     _editor_resize(editor, editor->w, editor->h);
   }
@@ -2694,7 +2697,7 @@ static void _editor_init_bviews(editor_t* editor, int argc, char** argv) {
     editor_open_bview(editor, NULL, EON_BVIEW_TYPE_EDIT, NULL, 0, 1, 0, NULL, NULL, NULL);
 
   } else {
-    // Open files
+    // Open files or directories
     for (i = optind; i < argc; i++) {
       path = argv[i];
       path_len = strlen(path);

@@ -996,16 +996,21 @@ int cmd_close(cmd_context_t* ctx) {
     cmd_remove_extra_cursors(ctx);
 
   } else {
+
     int num_open;
     int num_closed;
 
-    if (_cmd_pre_close(ctx->editor, ctx->bview) == EON_ERR) return EON_OK;
+    if (_cmd_pre_close(ctx->editor, ctx->bview) == EON_ERR)
+      return EON_OK;
 
     num_open = editor_bview_edit_count(ctx->editor);
 
+    // if a dir was initially opened, and we're now closing a different view,
+    // then close current view but reopen the original dir.
     if (num_open == 1 && ctx->editor->start_dir && !EON_BVIEW_IS_MENU(ctx->bview)) {
       char * path = ctx->editor->start_dir;
       int path_len = strlen(path);
+
       editor_open_bview(ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, path, path_len, 1, 0, NULL, NULL, NULL);
       editor_close_bview(ctx->editor, ctx->bview, &num_closed);
 
@@ -1942,11 +1947,12 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
   new_bview = NULL;
 
   if (util_is_dir(corrected_path)) {
+    // debug("Opening dir: %s\n", corrected_path);
     res = chdir(corrected_path);
     ctx->bview = ctx->editor->active_edit;
     cmd_browse(ctx);
-
   } else {
+    // debug("Opening file: %s\n", corrected_path);
     editor_open_bview(ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, corrected_path, strlen(corrected_path), 0, 0, &ctx->editor->rect_edit, NULL, &new_bview);
   }
 

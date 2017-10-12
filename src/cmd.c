@@ -1232,7 +1232,7 @@ int cmd_shell(cmd_context_t* ctx) {
     cmd = strdup(ctx->static_param);
 
   } else {
-    editor_prompt(ctx->editor, "shell: Cmd?", NULL, &cmd);
+    editor_prompt(ctx->editor, "shell: Command:", NULL, &cmd);
 
     if (!cmd) return EON_OK;
   }
@@ -1646,7 +1646,7 @@ static int _cmd_pre_close(editor_t* editor, bview_t* bview) {
   editor_set_active(editor, bview);
 
   yn = NULL;
-  editor_prompt(editor, "close: Save modified? (y=yes, n=no, C-c=cancel)",
+  editor_prompt(editor, "File modified. Save changes? (y/n)",
   &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn);
 
   if (!yn) {
@@ -1674,7 +1674,7 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
   do {
     if (!bview->buffer->path || save_as) {
       // Prompt for name
-      editor_prompt(editor, "save: Save as? (C-c=cancel)", &(editor_prompt_params_t) {
+      editor_prompt(editor, "Save as? (Ctrl-C to cancel)", &(editor_prompt_params_t) {
         .data = bview->buffer->path ? bview->buffer->path : "",
         .data_len = bview->buffer->path ? strlen(bview->buffer->path) : 0
       }, &path);
@@ -1696,7 +1696,7 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
         && st.st_mtime > bview->buffer->st.st_mtime
        ) {
       // File was modified after it was opened/last saved
-      editor_prompt(editor, "save: Clobber detected! Continue? (y=yes, n=no)",
+      editor_prompt(editor, "File was modified in between. Continue? (y/n)",
       &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn
                    );
 
@@ -1711,10 +1711,10 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
     free(path);
 
     if (rc == MLBUF_ERR) {
-      EON_SET_ERR(editor, "save: %s", errno ? strerror(errno) : "failed");
+      EON_SET_ERR(editor, "Save: %s", errno ? strerror(errno) : "failed");
 
     } else {
-      EON_SET_INFO(editor, "save: Wrote %ld bytes", (long int)nbytes);
+      EON_SET_INFO(editor, "Done. Wrote %ld bytes", (long int)nbytes);
     }
 
   } while (rc == MLBUF_ERR && (!bview->buffer->path || save_as));
@@ -1925,7 +1925,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
     path = line;
 
   } else {
-    EON_SET_ERR(ctx->editor, "browse: Cannot browse to: '%s'", line);
+    EON_SET_ERR(ctx->editor, "[browse] Cannot open '%s'", line);
     free(line);
     return EON_ERR;
   }

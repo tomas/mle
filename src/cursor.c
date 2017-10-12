@@ -345,11 +345,11 @@ int cursor_replace(cursor_t* cursor, int interactive, char* opt_regex, char* opt
       replacement = strdup(opt_replacement);
 
     } else {
-      editor_prompt(cursor->bview->editor, "replace: Search regex?", NULL, &regex);
+      editor_prompt(cursor->bview->editor, "[replace] Search regex:", NULL, &regex);
 
       if (!regex) break;
 
-      editor_prompt(cursor->bview->editor, "replace: Replacement string?", NULL, &replacement);
+      editor_prompt(cursor->bview->editor, "[replace] Replacement string:", NULL, &replacement);
 
       if (!replacement) break;
     }
@@ -393,7 +393,7 @@ int cursor_replace(cursor_t* cursor, int interactive, char* opt_regex, char* opt
           buffer_add_srule(cursor->bview->buffer, highlight, 0, 100);
           bview_rectify_viewport(cursor->bview);
           bview_draw(cursor->bview);
-          editor_prompt(cursor->bview->editor, "replace: OK to replace? (y=yes, n=no, a=all, C-c=stop)",
+          editor_prompt(cursor->bview->editor, "[replace] Go ahead and replace? (Yes/No/All)",
           &(editor_prompt_params_t) { .kmap = cursor->bview->editor->kmap_prompt_yna }, &yn
                        );
           buffer_remove_srule(cursor->bview->buffer, highlight, 0, 100);

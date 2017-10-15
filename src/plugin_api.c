@@ -100,7 +100,7 @@ static int start_nav(lua_State * L) {
   if (!lua_isfunction(L, 2) || !(callback = luaL_ref(L, LUA_REGISTRYINDEX))) {
     return -1;
   }
-  
+
   return start_callback_prompt(plugin_ctx, (char *)text, callback);
 }
 
@@ -114,7 +114,7 @@ static int close_nav(lua_State * L) {
   // int pos = func_ref_get(L, cbfunc);
   // free(cbfunc);
   // cbfunc = NULL;
-  
+
   editor_close_prompt(plugin_ctx->editor, plugin_ctx->editor->active_edit);
   return 0;
 }
@@ -162,7 +162,7 @@ static int draw(lua_State * L) {
   int fg = lua_tointeger(L, 4);
   const char *str = luaL_checkstring(L, 5);
 
-  tb_print(x, y, bg, fg, (char *)str);
+  tb_string(x, y, bg, fg, (char *)str);
   return 0;
 }
 

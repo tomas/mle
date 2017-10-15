@@ -1311,11 +1311,11 @@ static void _cmd_force_redraw(cmd_context_t* ctx) {
 
   for (x = 0; x < w; x++) {
     for (y = 0; y < h; y++) {
-      tb_change_cell(x, y, 160, 0, 0);
+      tb_char(x, y, 0, 0, 160);
     }
   }
 
-  tb_present();
+  tb_render();
 }
 
 // Indent or outdent line(s)
@@ -1681,7 +1681,7 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
   do {
     if (!bview->buffer->path || save_as) {
       // Prompt for name
-      editor_prompt(editor, "Save as? (Ctrl-C to cancel)", &(editor_prompt_params_t) {
+      editor_prompt(editor, "Save as: (Ctrl-C to cancel)", &(editor_prompt_params_t) {
         .data = bview->buffer->path ? bview->buffer->path : "",
         .data_len = bview->buffer->path ? strlen(bview->buffer->path) : 0
       }, &path);
@@ -1704,10 +1704,9 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
        ) {
       // File was modified after it was opened/last saved
       editor_prompt(editor, "File was modified in between. Continue? (y/n)",
-      &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn
-                   );
+        &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn);
 
-      if (!yn || 0 == strcmp(yn, EON_PROMPT_NO)) {
+      if (!yn || strcmp(yn, EON_PROMPT_NO) == 0) {
         free(path);
         return EON_OK;
       }

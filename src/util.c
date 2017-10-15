@@ -547,7 +547,7 @@ int rect_printf(bview_rect_t rect, int x, int y, uint16_t fg, uint16_t bg, const
   va_start(vl, fmt);
   vsnprintf(buf, sizeof(buf), fmt, vl);
   va_end(vl);
-  return tb_print(rect.x + x, rect.y + y, fg ? fg : rect.fg, bg ? bg : rect.bg, buf);
+  return tb_string(rect.x + x, rect.y + y, fg ? fg : rect.fg, bg ? bg : rect.bg, buf);
 }
 
 // Like rect_printf, but accepts @fg,bg; attributes inside the string. To print
@@ -611,7 +611,7 @@ int rect_printf_attr(bview_rect_t rect, int x, int y, const char *fmt, ...) {
       }
     }
 
-    tb_change_cell(x, y, uni, fg, bg);
+    tb_char(x, y, fg, bg, uni);
     x++;
     c++;
   }

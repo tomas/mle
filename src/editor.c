@@ -556,7 +556,7 @@ int editor_display(editor_t* editor) {
 
   if (editor->headless_mode) return EON_OK;
 
-  tb_clear();
+  tb_clear_buffer();
   bview_draw(editor->active_edit_root);
   bview_draw(editor->status);
 
@@ -565,7 +565,8 @@ int editor_display(editor_t* editor) {
   DL_FOREACH2(editor->top_bviews, bview, top_next) {
     _editor_draw_cursors(editor, bview);
   }
-  tb_present();
+
+  tb_render();
   return EON_OK;
 }
 
@@ -1221,45 +1222,15 @@ static void _close_bview_at(cmd_context_t * ctx, int offset) {
   }
 }
 
-
+static int mouse_down = 0;
 struct click {
+  int type;
   int x;
   int y;
-  struct timespec ts;
 };
 
-static struct click last_click = { -1, -1, { 0, 0 } };
-#ifdef __linux__
+static struct click last_click = { -1, -1, -1 };
 
-static double time_diff;
-static double _get_timediff(struct timespec start, struct timespec end) {
-  return ((double)end.tv_sec + 1.0e-9 * end.tv_nsec) - ((double)start.tv_sec + 1.0e-9 * start.tv_nsec);
-}
-
-static int _is_double_click(int x, int y) {
-  if (last_click.ts.tv_sec == -1 || x != last_click.x) {
-    clock_gettime(CLOCK_MONOTONIC, &last_click.ts);
-    return 0;
-  }
-
-  struct timespec now = {0, 0};
-  clock_gettime(CLOCK_MONOTONIC, &now);
-
-  time_diff = _get_timediff(last_click.ts, now);
-  last_click.ts.tv_sec = -1;
-
-  return time_diff < 0.5 ? 1 : 0;
-}
-
-#else // TODO
-
-static int _is_double_click(int x, int y) {
-  return 0;
-}
-
-#endif
-
-static int mouse_down = 0;
 static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
   switch (ev.key) {
   case TB_KEY_MOUSE_LEFT:
@@ -1269,12 +1240,13 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
     } else if (ev.y == ctx->editor->h - 1) {
       // clicked status bar
     } else {
-      if (mouse_down == 0 && _is_double_click(ev.x, ev.y)) {
+      int is_double_click = ev.ch == 2;
+
+      if (mouse_down == 0 && is_double_click) {
         if (EON_BVIEW_IS_MENU(ctx->editor->active))
           _editor_menu_submit(ctx);
         else
           cmd_select_current_word(ctx);
-
       } else {
         cmd_mouse_move(ctx, mouse_down, ev.x, ev.y);
         mouse_down = 1;
@@ -1287,7 +1259,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
     if (ev.y == 0) {
       _close_bview_at(ctx, ev.x);
 
-    } else if (ev.y == ctx->editor->h - 1 ) {
+    } else if (ev.y == ctx->editor->h - 1) {
 
     } else {
       if (ctx->cursor->is_anchored) {
@@ -1330,6 +1302,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
 
   }
 
+  last_click.type = ev.key;
   last_click.x = ev.x;
   last_click.y = ev.y;
 }
@@ -2690,6 +2663,7 @@ static void _editor_init_bviews(editor_t* editor, int argc, char** argv) {
 #ifdef __APPLE__
   optind++;
 #endif
+
 
   // Open bviews
   if (optind >= argc) {

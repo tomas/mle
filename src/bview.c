@@ -188,7 +188,7 @@ int bview_draw_cursor(bview_t* self, int set_real_cursor) {
     if (set_real_cursor && cursor == self->active_cursor) { // Set terminal cursor
       tb_set_cursor(screen_x, screen_y);
     } else { // Set fake cursor
-      tb_change_cell(screen_x, screen_y, cell->ch, cell->fg, cell->bg | (cursor->is_asleep ? ASLEEP_CURSOR_BG : AWAKE_CURSOR_BG));
+      tb_char(screen_x, screen_y, cell->fg, cell->bg | (cursor->is_asleep ? ASLEEP_CURSOR_BG : AWAKE_CURSOR_BG), cell->ch);
     }
 
     if (self->editor->highlight_bracket_pairs) {
@@ -1183,7 +1183,7 @@ static void _bview_draw_bline(bview_t* self, bline_t* bline, int rect_y, bline_t
     }
 
     for (i = 0; i < char_w && rect_x < self->rect_buffer.w; i++) {
-      tb_change_cell(self->rect_buffer.x + rect_x + i, self->rect_buffer.y + rect_y, ch, fg, bg);
+      tb_char(self->rect_buffer.x + rect_x + i, self->rect_buffer.y + rect_y, fg, bg, ch);
     }
 
     if (is_soft_wrap && rect_x + 1 >= self->rect_buffer.w && rect_y + 1 < self->rect_buffer.h) {
@@ -1246,7 +1246,7 @@ static void _bview_highlight_bracket_pair(bview_t* self, mark_t* mark) {
     return;
   }
 
-  tb_change_cell(screen_x, screen_y, cell->ch, cell->fg, cell->bg | BRACKET_HIGHLIGHT); // TODO configurable
+  tb_char(screen_x, screen_y, cell->fg, cell->bg | BRACKET_HIGHLIGHT, cell->ch); // TODO configurable
 }
 
 // Find screen coordinates for a mark

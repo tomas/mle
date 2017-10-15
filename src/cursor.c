@@ -389,7 +389,7 @@ int cursor_replace(cursor_t* cursor, int interactive, char* opt_regex, char* opt
           yn = EON_PROMPT_YES;
 
         } else if (interactive) {
-          highlight = srule_new_range(search_mark, search_mark_end, 0, (uint16_t)TB_REVERSE);
+          highlight = srule_new_range(search_mark, search_mark_end, 0, TB_REVERSE);
           buffer_add_srule(cursor->bview->buffer, highlight, 0, 100);
           bview_rectify_viewport(cursor->bview);
           bview_draw(cursor->bview);

@@ -374,8 +374,8 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
 
   if (opt_path) { // Check if already open and not dirty
     CDL_FOREACH2(editor->all_bviews, bview, all_next) {
-      // debug("Checking if bview (%s) matches path %s\n", bview->path, opt_path);
-      if (bview->path && strcmp(opt_path, bview->path) == 0) {
+      // debug("Checking if bview (%s) matches path %s\n", bview->buffer && bview->buffer->path, opt_path);
+      if (bview->buffer && bview->buffer->path && strcmp(opt_path, bview->buffer->path) == 0) {
         found = 1;
         break;
       }
@@ -425,7 +425,7 @@ int editor_close_bview(editor_t* editor, bview_t* bview, int* optret_num_closed)
 
   if (optret_num_closed) *optret_num_closed = 0;
 
-  // debug("Closing bview with path: %s\n", bview->path);
+  // debug("Closing bview with path: %s\n", bview->buffer->path);
   if ((rc = _editor_close_bview_inner(editor, bview, optret_num_closed)) == EON_OK) {
     _editor_resize(editor, editor->w, editor->h);
   }

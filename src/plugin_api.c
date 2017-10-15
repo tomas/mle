@@ -233,9 +233,9 @@ static int get_selection(lua_State * L) {
 
 // int = current_line_number()
 static int current_file_path(lua_State * L) {
-  if (EON_BVIEW_IS_EDIT(plugin_ctx->bview) && plugin_ctx->bview->path) {
-    int len = strlen(plugin_ctx->bview->path);
-    lua_pushlstring(L, plugin_ctx->bview->path, len);
+  if (EON_BVIEW_IS_EDIT(plugin_ctx->bview) && plugin_ctx->bview->buffer && plugin_ctx->bview->buffer->path) {
+    int len = strlen(plugin_ctx->bview->buffer->path);
+    lua_pushlstring(L, plugin_ctx->bview->buffer->path, len);
     return 1;
   } else {
     return 0;

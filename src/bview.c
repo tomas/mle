@@ -29,7 +29,6 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
   // Allocate and init bview
   self = calloc(1, sizeof(bview_t));
   self->editor = editor;
-  self->path = strndup(opt_path, opt_path_len);
 
   self->rect_caption.fg = RECT_CAPTION_FG;
   self->rect_caption.bg = RECT_CAPTION_BG;
@@ -60,11 +59,7 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
 // Open a buffer in an existing bview
 int bview_open(bview_t* self, char* path, int path_len) {
   buffer_t* buffer;
-
   buffer = _bview_open_buffer(self, path, path_len);
-  if (self->path) free(self->path);
-  self->path = strndup(path, path_len);
-
   _bview_init(self, buffer);
   return EON_OK;
 }
@@ -72,9 +67,6 @@ int bview_open(bview_t* self, char* path, int path_len) {
 // Free a bview
 int bview_destroy(bview_t* self) {
   _bview_deinit(self);
-
-  if (self->path) free(self->path);
-
   free(self);
   return EON_OK;
 }
@@ -1035,9 +1027,9 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
 
   // render titlebar/tabs
   CDL_FOREACH2(self->editor->all_bviews, bview_tmp, all_next) {
+
     // TODO: find out if this can be optimized
     if (EON_BVIEW_IS_EDIT(bview_tmp) && ((self->split_parent && bview_tmp == self) || (!self->split_parent && !bview_tmp->split_parent && self->split_parent != bview_tmp))) {
-
       bview_count += 1;
 
       if (bview_tmp == self->editor->active_edit) {
@@ -1049,12 +1041,9 @@ static void _bview_draw_edit(bview_t* self, int x, int y, int w, int h) {
         bg_attr = CAPTION_INACTIVE_BG;
       }
 
-      if (EON_BVIEW_IS_MENU(bview_tmp)) {
-        desc = strlen(bview_tmp->path) > 0 ? bview_tmp->path : "Results";
-
-      } else {
-        desc = bview_tmp->path ? basename(bview_tmp->path) : "Untitled";
-      }
+      desc = bview_tmp->buffer && bview_tmp->buffer->path
+             ? basename(bview_tmp->buffer->path)
+             : EON_BVIEW_IS_MENU(bview_tmp) ? "Results" : "Untitled";
 
       if (offset + self->editor->bview_tab_width <= w) {
         rect_printf(self->rect_caption, offset, 0, fg_attr, bg_attr, "%*.*s",

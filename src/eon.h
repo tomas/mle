@@ -175,7 +175,7 @@ struct bview_s {
     float split_factor;
     int split_is_vertical;
     char* prompt_str;
-    char* path;
+    // char* path;
     bint_t startup_linenum;
     kmap_node_t* kmap_stack;
     kmap_node_t* kmap_tail;

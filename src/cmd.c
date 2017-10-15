@@ -168,8 +168,23 @@ int cmd_mouse_move(cmd_context_t* ctx, int mouse_down, int mx, int my) {
     cursor_toggle_anchor(ctx->cursor, 1);
   }
 
-  int offsetx = mx > 4 ? mx - 4 : 0;
+  int offsetx = mx;
   int offsety = ctx->bview->viewport_y + my - 1;
+
+  // hack! count the number of tabs (n) before X pos and reduce the X pos by n * tab_with
+  bline_t* bline;
+  buffer_get_bline(ctx->bview->buffer, offsety, &bline);
+
+  int i = 0, tabs_before = 0;
+  while (i < bline->char_count && i < offsetx) {
+    if (bline->chars[i].ch == '\t')
+      tabs_before++;
+
+    i++;
+  }
+
+  offsetx = offsetx - (tabs_before * (ctx->bview->tab_width-1));
+  // end hack
 
   if (bview_get_active_cursor_count(ctx->bview) > 1) {
     cmd_remove_extra_cursors(ctx);

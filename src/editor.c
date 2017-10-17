@@ -1240,7 +1240,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
     } else if (ev.y == ctx->editor->h - 1) {
       // clicked status bar
     } else {
-      int is_double_click = ev.ch == 2;
+      int is_double_click = ev.h == 2;
 
       if (mouse_down == 0 && is_double_click) {
         if (EON_BVIEW_IS_MENU(ctx->editor->active))

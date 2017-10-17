@@ -30,8 +30,8 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
   self = calloc(1, sizeof(bview_t));
   self->editor = editor;
 
-  self->rect_caption.fg = RECT_CAPTION_FG;
-  self->rect_caption.bg = RECT_CAPTION_BG;
+  // self->rect_caption.fg = RECT_CAPTION_FG;
+  // self->rect_caption.bg = RECT_CAPTION_BG;
   self->rect_lines.fg = RECT_LINES_FG;
   self->rect_lines.bg = RECT_LINES_BG;
   self->rect_margin_left.fg = RECT_MARGIN_LEFT_FG;

@@ -1337,6 +1337,9 @@ static void _editor_get_user_input(editor_t* editor, cmd_context_t* ctx) {
         _handle_mouse_event(ctx, ev);
         editor_display(editor);
         continue;
+      } else {
+        EON_SET_ERR(editor, "No editor active, mouse event: %d/%d", ev.x, ev.y);
+        editor_display(editor);
       }
 
     } else if (rc == TB_EVENT_RESIZE) {

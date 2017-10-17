@@ -1215,7 +1215,7 @@ int cmd_set_opt(cmd_context_t* ctx) {
 
   if (!ctx->static_param) return EON_ERR;
 
-  int res = asprintf(&prompt, "set_opt: %s?", ctx->static_param);
+  int res = asprintf(&prompt, "[set option] %s: ", ctx->static_param);
   editor_prompt(ctx->editor, prompt, NULL, &val);
   free(prompt);
 

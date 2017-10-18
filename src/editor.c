@@ -2272,7 +2272,7 @@ static void _editor_init_syntaxes(editor_t* editor) {
     { "/" "/.*$", NULL, COMMENT_FG, COMMENT_BG },
     { "^\\s*#( .*|)$", NULL, COMMENT_FG, COMMENT_BG },
     { "^#!/.*$", NULL, COMMENT_FG, COMMENT_BG },
-    { "--.*$", NULL, COMMENT_FG, COMMENT_BG }, // lua comment
+    { "\\s--.*$", NULL, COMMENT_FG, COMMENT_BG }, // lua comment
     { "/\\" "*", "\\*" "/", COMMENT_FG, COMMENT_BG },
     { "\"\"\"", "\"\"\"", TRIPLE_QUOTE_COMMENT_FG, TRIPLE_QUOTE_COMMENT_BG },
     { "\\t+", NULL, TAB_WHITESPACE_FG, TAB_WHITESPACE_BG },

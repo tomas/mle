@@ -1,18 +1,5 @@
-diff --git a/Makefile b/Makefile
-index a3fe4eb..548cd3f 100644
---- a/Makefile
-+++ b/Makefile
-@@ -1,6 +1,6 @@
--SHELL=/bin/bash
-+# SHELL=/bin/bash
- mlbuf_cflags:=$(CFLAGS) -D_GNU_SOURCE -Wall -g -fPIC
--mlbuf_ldlibs:=$(LDLIBS) -lpcre
-+mlbuf_ldlibs:=$(LDLIBS) `pkg-config --libs libpcre`
- mlbuf_objects:=$(patsubst %.c,%.o,$(wildcard *.c))
- 
- all: libmlbuf.so
 diff --git a/buffer.c b/buffer.c
-index 50056d2..e8d4113 100644
+index 949a4dc..ec6aeef 100644
 --- a/buffer.c
 +++ b/buffer.c
 @@ -94,8 +94,11 @@ int buffer_open(buffer_t* self, char* path) {
@@ -29,7 +16,7 @@ index 50056d2..e8d4113 100644
              }
          } else {
              if (_buffer_open_read(self, fd, st.st_size) != MLBUF_OK) {
-@@ -267,7 +270,7 @@ int buffer_destroy_mark(buffer_t* self, mark_t* mark) {
+@@ -268,7 +271,7 @@ int buffer_destroy_mark(buffer_t* self, mark_t* mark) {
              && (node->srule->range_a == mark
              ||  node->srule->range_b == mark)
          ) {
@@ -38,7 +25,7 @@ index 50056d2..e8d4113 100644
          }
      }
      free(mark);
-@@ -355,13 +358,29 @@ int buffer_set_mmapped(buffer_t* self, char* data, bint_t data_len) {
+@@ -356,13 +359,29 @@ int buffer_set_mmapped(buffer_t* self, char* data, bint_t data_len) {
      line_num = 0;
      data_cursor = data;
      data_remaining_len = data_len;
@@ -74,7 +61,7 @@ index 50056d2..e8d4113 100644
          blines[line_num] = (bline_t){
              .buffer = self,
              .data = data_cursor,
-@@ -749,10 +768,21 @@ int buffer_get_offset(buffer_t* self, bline_t* bline, bint_t col, bint_t* ret_of
+@@ -750,10 +769,21 @@ int buffer_get_offset(buffer_t* self, bline_t* bline, bint_t col, bint_t* ret_of
  }
  
  // Add a style rule to the buffer
@@ -97,7 +84,7 @@ index 50056d2..e8d4113 100644
      if (srule->type == MLBUF_SRULE_TYPE_SINGLE) {
          DL_APPEND(self->single_srules, node);
      } else {
-@@ -762,15 +792,26 @@ int buffer_add_srule(buffer_t* self, srule_t* srule) {
+@@ -763,15 +793,26 @@ int buffer_add_srule(buffer_t* self, srule_t* srule) {
          srule->range_a->range_srule = srule;
          srule->range_b->range_srule = srule;
      }
@@ -126,7 +113,7 @@ index 50056d2..e8d4113 100644
      if (srule->type == MLBUF_SRULE_TYPE_SINGLE) {
          head = &self->single_srules;
      } else {
-@@ -789,7 +830,7 @@ int buffer_remove_srule(buffer_t* self, srule_t* srule) {
+@@ -790,7 +831,7 @@ int buffer_remove_srule(buffer_t* self, srule_t* srule) {
          break;
      }
      if (!found) return MLBUF_ERR;
@@ -135,7 +122,7 @@ index 50056d2..e8d4113 100644
  }
  
  // Set callback to cb. Pass in NULL to unset callback.
-@@ -981,6 +1022,9 @@ int buffer_apply_styles(buffer_t* self, bline_t* start_line, bint_t line_delta)
+@@ -982,6 +1023,9 @@ int buffer_apply_styles(buffer_t* self, bline_t* start_line, bint_t line_delta)
          return MLBUF_OK;
      }
  
@@ -145,7 +132,7 @@ index 50056d2..e8d4113 100644
      // min_nlines, minimum number of lines to style
      //     line_delta  < 0: 2 (start_line + 1)
      //     line_delta == 0: 1 (start_line)
-@@ -1425,6 +1469,7 @@ static bline_t* _buffer_bline_new(buffer_t* self) {
+@@ -1426,6 +1470,7 @@ static bline_t* _buffer_bline_new(buffer_t* self) {
      bline_t* bline;
      bline = calloc(1, sizeof(bline_t));
      bline->buffer = self;
@@ -154,7 +141,7 @@ index 50056d2..e8d4113 100644
  }
  
 diff --git a/mlbuf.h b/mlbuf.h
-index 79d7826..1fd70df 100644
+index e05b7d9..38a419b 100644
 --- a/mlbuf.h
 +++ b/mlbuf.h
 @@ -82,6 +82,7 @@ struct bline_s {
@@ -173,6 +160,6 @@ index 79d7826..1fd70df 100644
 -int buffer_remove_srule(buffer_t* self, srule_t* srule);
 +int buffer_add_srule(buffer_t* self, srule_t* srule, bint_t start_line_index, bint_t num_lines);
 +int buffer_remove_srule(buffer_t* self, srule_t* srule, bint_t start_line_index, bint_t num_lines);
- int buffer_set_callback(buffer_t* self, buffer_callback_t cb, void* udata);
+ int buffer_set_callback(buffer_t* self, buffer_callback_t fn_cb, void* udata);
  int buffer_set_tab_width(buffer_t* self, int tab_width);
  int buffer_set_styles_enabled(buffer_t* self, int is_enabled);

@@ -361,7 +361,7 @@ int cmd_move_relative(cmd_context_t* ctx) {
 
 // Move one word forward
 int cmd_move_word_forward(cmd_context_t* ctx) {
-  EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_next_re, EON_RE_WORD_FORWARD, sizeof(EON_RE_WORD_FORWARD) - 1);
+  EON_MULTI_CURSOR_MARK_FN(ctx->cursor, mark_move_next_re_nudge, EON_RE_WORD_FORWARD, sizeof(EON_RE_WORD_FORWARD) - 1);
   bview_rectify_viewport(ctx->bview);
   return EON_OK;
 }
@@ -1758,7 +1758,7 @@ static int _cmd_search_next(bview_t* bview, cursor_t* cursor, mark_t* search_mar
   mark_join(search_mark, cursor->mark);
 
   // Look for match ahead of us
-  if (mark_move_next_re(search_mark, regex, regex_len) == MLBUF_OK) {
+  if (mark_move_next_re_nudge(search_mark, regex, regex_len) == MLBUF_OK) {
     // Match! Move there
     mark_join(cursor->mark, search_mark);
     rc = EON_OK;
@@ -1828,11 +1828,7 @@ static void _cmd_isearch_prompt_cb(bview_t* bview_prompt, baction_t* action, voi
   if (!bview->isearch_rule) return;
 
   buffer_add_srule(bview->buffer, bview->isearch_rule, 0, 100);
-  mark_move_by(bview->active_cursor->mark, -1);
-
-  if (mark_move_next_cre(bview->active_cursor->mark, bview->isearch_rule->cre) != MLBUF_OK) {
-    mark_move_by(bview->active_cursor->mark, 1);
-  }
+  mark_move_next_cre(bview->active_cursor->mark, bview->isearch_rule->cre);
 
   bview_center_viewport_y(bview);
 }

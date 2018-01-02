@@ -888,7 +888,7 @@ static int _editor_prompt_menu_page_down(cmd_context_t* ctx) {
 // Invoked when user hits down in a prompt_isearch
 static int _editor_prompt_isearch_next(cmd_context_t* ctx) {
   if (ctx->editor->active_edit->isearch_rule) {
-    mark_move_next_cre(ctx->editor->active_edit->active_cursor->mark, ctx->editor->active_edit->isearch_rule->cre);
+    mark_move_next_cre_nudge(ctx->editor->active_edit->active_cursor->mark, ctx->editor->active_edit->isearch_rule->cre);
     bview_center_viewport_y(ctx->editor->active_edit);
   }
 
@@ -942,7 +942,7 @@ static int _editor_prompt_isearch_drop_cursors(cmd_context_t* ctx) {
   mark_move_beginning(mark);
   last_cursor = NULL;
 
-  while (mark_move_next_cre(mark, cre) == MLBUF_OK) {
+  while (mark_move_next_cre_nudge(mark, cre) == MLBUF_OK) {
     if (mark->col == 0 && mark->bline->line_index == 0) {
       break; // otherwise hell breaks loose. FIXME: we should skip to the next one.
     }

@@ -8,7 +8,7 @@ A clever little console text editor. Written in C, forked out of [mle](https://g
 
 Install main deps first:
 
-    $ apt install tree cmake libpcre-dev # or brew install / apk add
+    $ apt install tree cmake libpcre-dev patch # or brew install / apk add
 
 The `tree` command is for browsing directories. It's optional but you definitely want it.
 

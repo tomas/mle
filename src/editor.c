@@ -1240,7 +1240,7 @@ static void _handle_mouse_event(cmd_context_t* ctx, tb_event_t ev) {
     } else if (ev.y == ctx->editor->h - 1) {
       // clicked status bar
     } else {
-      int is_double_click = ev.ch == 2;
+      int is_double_click = ev.h == 2;
 
       if (mouse_down == 0 && is_double_click) {
         if (EON_BVIEW_IS_MENU(ctx->editor->active))
@@ -1923,7 +1923,7 @@ static void _editor_init_kmaps(editor_t* editor) {
     EON_KBINDING_DEF("cmd_save_as", "CS-s"),
     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o a", "tab_to_space"),
     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o t", "tab_width"),
-    EON_KBINDING_DEF_EX("cmd_set_opt", "M-o y", "syntax"),
+    EON_KBINDING_DEF_EX("cmd_set_opt", "M-o s", "syntax"),
     EON_KBINDING_DEF_EX("cmd_set_opt", "M-o w", "soft_wrap"),
     EON_KBINDING_DEF("cmd_open_new", "C-n"),
     // EON_KBINDING_DEF("cmd_open_file", "C-o"),
@@ -2235,7 +2235,7 @@ static int _editor_add_macro_by_str(editor_t* editor, char* str) {
 
 // Init built-in syntax map
 static void _editor_init_syntaxes(editor_t* editor) {
-  _editor_init_syntax(editor, NULL, "syn_generic", "\\.(c|cc|cpp|h|hpp|php|py|rb|erb|sh|pl|go|js|java|jsp|lua)$", -1, -1, (srule_def_t[]) {
+  _editor_init_syntax(editor, NULL, "generic", "\\.(c|cc|cpp|h|hpp|php|py|rb|erb|sh|pl|go|js|java|jsp|lua)$", -1, -1, (srule_def_t[]) {
     { "(?<![\\w%@$])("
       "abstract|alias|alignas|alignof|and|and_eq|arguments|array|as|asm|"
       "assert|auto|base|begin|bitand|bitor|bool|boolean|break|byte|"
@@ -2248,7 +2248,7 @@ static void _editor_init_syntaxes(editor_t* editor) {
       "fallthrough|false|fi|final|finally|fixed|float|for|foreach|friend|"
       "from|func|function|ge|global|go|goto|gt|if|implements|implicit|"
       "import|in|include|include_once|inline|instanceof|insteadof|int|"
-      "interface|internal|is|isset|lambda|le|let|list|lock|long|lt|m|map|"
+      "interface|internal|is|isset|lambda|le|let|list|local|lock|long|lt|m|map|"
       "module|mutable|namespace|native|ne|new|next|nil|no|noexcept|not|"
       "not_eq|null|nullptr|object|operator|or|or_eq|out|override|package|"
       "params|pass|print|private|protected|public|q|qq|qr|qw|qx|raise|"
@@ -2272,6 +2272,7 @@ static void _editor_init_syntaxes(editor_t* editor) {
     { "/" "/.*$", NULL, COMMENT_FG, COMMENT_BG },
     { "^\\s*#( .*|)$", NULL, COMMENT_FG, COMMENT_BG },
     { "^#!/.*$", NULL, COMMENT_FG, COMMENT_BG },
+    { "\\s--.*$", NULL, COMMENT_FG, COMMENT_BG }, // lua comment
     { "/\\" "*", "\\*" "/", COMMENT_FG, COMMENT_BG },
     { "\"\"\"", "\"\"\"", TRIPLE_QUOTE_COMMENT_FG, TRIPLE_QUOTE_COMMENT_BG },
     { "\\t+", NULL, TAB_WHITESPACE_FG, TAB_WHITESPACE_BG },

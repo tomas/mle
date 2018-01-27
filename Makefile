@@ -7,10 +7,13 @@ CC=gcc
 STRIP=strip
 
 WARNINGS=-Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-but-set-variable
-eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/ -I ./src/libs
+eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/ -I ./src/libs -I~/.nix-profile/include
 eon_ldlibs:=$(LDLIBS)
 eon_objects:=$(patsubst %.c,%.o,$(wildcard src/*.c))
 eon_static:=
+
+# this is required for building under nix environments
+# PKG_CONFIG_PATH=${HOME}/.nix-profile/lib/pkgconfig/
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -85,7 +88,6 @@ install: eon
 clean:
 	rm -f src/*.o eon.bak.* gmon.out perf.data perf.data.old eon
 	$(MAKE) -C mlbuf clean
-	$(MAKE) -C tests clean
 	rm -Rf termbox/build
 
 list:

@@ -1,3 +1,5 @@
+LUAJIT_VERSION := 2.0.5
+# LUAJIT_VERSION := 2.1.0-beta3
 WITH_PLUGINS=1
 # WITH_LIBCURL=1
 # SHELL=/bin/sh
@@ -5,6 +7,7 @@ DESTDIR?=/usr/local/bin/
 LC_ALL=C
 CC=gcc
 STRIP=strip
+CFLAGS+=-I./luajit/src
 
 WARNINGS=-Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-but-set-variable
 eon_cflags:=$(CFLAGS) -O2 -D_GNU_SOURCE $(WARNINGS) -g -I./mlbuf/ -I./termbox/src/ -I ./src/libs -I~/.nix-profile/include
@@ -23,11 +26,11 @@ else
 endif
 
 ifdef WITH_PLUGINS
-	eon_cflags+=-DWITH_PLUGINS `pkg-config --cflags luajit`
-	eon_ldlibs+=`pkg-config --libs-only-l --libs-only-L luajit` -lm -ldl
-ifeq ($(UNAME_S),Darwin) # needed for luajit to work
-	eon_ldlibs+=-pagezero_size 10000 -image_base 100000000
-endif
+        eon_cflags+=-I./luajit/src
+	eon_ldlibs+=-L./luajit/src -lluajit -lm -ldl
+	ifeq ($(UNAME_S),Darwin) # needed for luajit to work
+		eon_ldlibs+=-pagezero_size 10000 -image_base 100000000
+	endif
 else
 	eon_ldlibs+=-lm
 	# remove plugins stuff from list of objects
@@ -42,14 +45,14 @@ endif
 
 all: eon
 
-eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_objects)
-	$(CC) $(eon_objects) $(eon_static) ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a $(eon_ldlibs) -o eon
+eon: ./mlbuf/libmlbuf.a ./termbox/build/libtermbox.a luajit/src/libluajit.a $(eon_objects)
+	$(CC) $(eon_objects) $(eon_static) ./mlbuf/libmlbuf.a luajit/src/libluajit.a ./termbox/build/libtermbox.a $(eon_ldlibs) -o eon
 	$(STRIP) eon
 
 eon_static: eon_static:=-static
 eon_static: eon_ldlibs:=$(eon_ldlibs) -lpthread
 ifdef WITH_LIBCURL # include ssl/crypto and libz
-eon_static: eon_ldlibs:=$(eon_ldlibs) -lssl -lcrypto -ldl -lz
+	eon_static: eon_ldlibs:=$(eon_ldlibs) -lssl -lcrypto -ldl -lz
 endif
 eon_static: eon
 
@@ -69,6 +72,18 @@ $(eon_objects): %.o: %.c
 	@echo "Building termbox..."
 	if [ ! -e termbox/build ]; then mkdir termbox/build; cd termbox/build; cmake ..; cd ..; fi
 	cd termbox/build && make
+
+luajit/src/libluajit.a: luajit
+	# these below are slitaz compile flags
+	# CFLAGS = -march=i486 -Os -pipe -fomit-frame-pointer
+	# CPPFLAGS : -D_GLIBCXX_USE_C99_MATH=1
+	# LDFLAGS  : -Wl,-Os,--as-needed
+	@cd luajit; make -j2
+
+luajit:
+	@wget "http://luajit.org/download/LuaJIT-$(LUAJIT_VERSION).tar.gz"
+	@tar xfv LuaJIT-$(LUAJIT_VERSION).tar.gz
+	@ln -s LuaJIT-$(LUAJIT_VERSION) luajit
 
 test: eon test_eon
 	$(MAKE) -C mlbuf test

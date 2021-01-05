@@ -385,6 +385,7 @@ int editor_add_binding_to_keymap(editor_t* editor, kmap_t* kmap, kbinding_def_t*
 // bview functions
 bview_t* bview_get_split_root(bview_t* self);
 bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t* opt_buffer);
+bview_t* bview_new_cwd(editor_t* editor, char* opt_path, int opt_path_len, const char* opt_cwd, buffer_t* opt_buffer);
 int bview_add_cursor_asleep(bview_t* self, bline_t* bline, bint_t col, cursor_t** optret_cursor);
 int bview_add_cursor(bview_t* self, bline_t* bline, bint_t col, cursor_t** optret_cursor);
 int bview_add_listener(bview_t* self, bview_listener_cb_t callback, void* udata);

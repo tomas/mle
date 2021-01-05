@@ -23,6 +23,11 @@ static void _bview_highlight_bracket_pair(bview_t* self, mark_t* mark);
 
 // Create a new bview
 bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t* opt_buffer) {
+  return bview_new_cwd(editor, opt_path, opt_path_len, NULL, opt_buffer);
+}
+
+// Create a new bview with a working directory
+bview_t* bview_new_cwd(editor_t* editor, char* opt_path, int opt_path_len, const char* opt_cwd, buffer_t* opt_buffer) {
   bview_t* self;
   buffer_t* buffer;
 
@@ -43,8 +48,11 @@ bview_t* bview_new(editor_t* editor, char* opt_path, int opt_path_len, buffer_t*
   self->viewport_scope_x = editor->viewport_scope_x;
   self->viewport_scope_y = editor->viewport_scope_y;
 
-  char * res;
-  res = getcwd(self->init_cwd, PATH_MAX + 1);
+  if (opt_cwd != NULL) {
+    strncpy(self->init_cwd, opt_cwd, sizeof(self->init_cwd) - 1);
+  } else {
+    char* res = getcwd(self->init_cwd, sizeof(self->init_cwd));
+  }
 
   if (opt_buffer) { // Open buffer
     buffer = opt_buffer;

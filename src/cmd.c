@@ -1696,13 +1696,17 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
   do {
     if (!bview->buffer->path || save_as) {
       // Prompt for name
+      char* path_entry = NULL;
       editor_prompt(editor, "Save as: (Ctrl-C to cancel)", &(editor_prompt_params_t) {
         .data = bview->buffer->path ? bview->buffer->path : "",
         .data_len = bview->buffer->path ? strlen(bview->buffer->path) : 0
-      }, &path);
+      }, &path_entry);
 
-      if (!path) return EON_ERR;
+      if (!path_entry) return EON_ERR;
 
+      // Expand ~
+      util_expand_tilde(path_entry, strlen(path_entry), &path);
+      free(path_entry);
     } else {
       // Re-use existing name
       path = strdup(bview->buffer->path);

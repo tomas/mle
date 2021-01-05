@@ -1848,7 +1848,7 @@ static int _cmd_menu_grep_cb(cmd_context_t* ctx, char * action) {
     return EON_OK;
   }
 
-  if (colon + 1 != '\0' && strchr(colon + 1, ':') != NULL) {
+  if (*(colon + 1) != '\0' && strchr(colon + 1, ':') != NULL) {
     linenum = strtoll(colon + 1, NULL, 10);
 
   } else {
@@ -1947,7 +1947,9 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
     return EON_ERR;
   }
 
-  getcwd(cwd, PATH_MAX);
+  if (getcwd(cwd, PATH_MAX) == NULL) {
+    strcpy(cwd, ".");
+  }
 
   if (strcmp(cwd, ctx->bview->init_cwd) != 0) {
     res = asprintf(&corrected_path, "%s/%s", ctx->bview->init_cwd, path);

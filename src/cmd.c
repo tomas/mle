@@ -1821,7 +1821,15 @@ static void _cmd_isearch_prompt_cb(bview_t* bview_prompt, baction_t* action, voi
   regex = bview_prompt->buffer->first_line->data;
   regex_len = bview_prompt->buffer->first_line->data_len;
 
+  if (bview->last_search) {
+    free(bview->last_search);
+    bview->last_search = NULL;
+  }
+
   if (regex_len < 1) return;
+
+  // set the current string as the last search term so we can use F3/C-g
+  bview->last_search = strndup(regex, regex_len);
 
   bview->isearch_rule = srule_new_single(regex, regex_len, 1, 0, TB_YELLOW);
 

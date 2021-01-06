@@ -36,6 +36,7 @@ static int _cmd_indent_line(bline_t* bline, int use_tabs, int outdent, int col);
 static void _cmd_help_inner(char* buf, kbinding_t* trie, str_t* h);
 static void _cmd_insert_smart_newline(cmd_context_t* ctx);
 static void _cmd_insert_smart_closing_bracket(cmd_context_t* ctx);
+static int _cmd_browse(cmd_context_t* ctx);
 
 // Insert data
 int cmd_insert_data(cmd_context_t* ctx) {
@@ -930,6 +931,27 @@ int cmd_ctag(cmd_context_t* ctx) {
 
 // Browse directory via tree
 int cmd_browse(cmd_context_t* ctx) {
+  char cwd[PATH_MAX] = {0};
+  char* cr;
+  int r;
+
+  // Set the initial browse path to the current bview's working directory
+  if (ctx->bview->init_cwd[0]) {
+    cr = getcwd(cwd, sizeof(cwd));
+    r = chdir(ctx->bview->init_cwd);
+  }
+
+  int ret = _cmd_browse(ctx);
+
+  // Restore the previous cwd
+  if (cwd[0]) {
+    r = chdir(cwd);
+  }
+
+  return ret;
+}
+
+int _cmd_browse(cmd_context_t* ctx) {
   bview_t* menu;
   async_proc_t* aproc;
   char* cmd;
@@ -1987,7 +2009,7 @@ static int _cmd_menu_browse_cb(cmd_context_t* ctx, char * action) {
     // debug("Opening dir: %s\n", corrected_path);
     res = chdir(corrected_path);
     ctx->bview = ctx->editor->active_edit;
-    cmd_browse(ctx);
+    _cmd_browse(ctx);
   } else {
     // debug("Opening file: %s\n", corrected_path);
     editor_open_bview(ctx->editor, NULL, EON_BVIEW_TYPE_EDIT, corrected_path, strlen(corrected_path), 0, 0, &ctx->editor->rect_edit, NULL, &new_bview);

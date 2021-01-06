@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <time.h>
 #include <termbox.h>
+#include <libgen.h>
 #include "uthash.h"
 #include "utlist.h"
 #include "eon.h"
@@ -385,7 +386,13 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
   // Make new bview if not already open
   if (!found) {
     // debug("Initializing bview with path: %s\n", opt_path);
-    bview = bview_new(editor, opt_path, opt_path_len, opt_buffer);
+    char* opt_cwd = NULL, *path_cpy = NULL;
+    if (opt_path != NULL) {
+      path_cpy = strdup(opt_path);
+      opt_cwd = dirname(path_cpy);
+    }
+
+    bview = bview_new_cwd(editor, opt_path, opt_path_len, opt_cwd, opt_buffer);
     bview->type = type;
     CDL_APPEND2(editor->all_bviews, bview, all_prev, all_next);
     if (!parent) {
@@ -393,6 +400,8 @@ int editor_open_bview(editor_t* editor, bview_t* parent, int type, char* opt_pat
     } else {
       parent->split_child = bview;
     }
+
+    free(path_cpy);
   }
 
   if (make_active) {

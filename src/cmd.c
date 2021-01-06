@@ -1681,12 +1681,18 @@ static int _cmd_pre_close(editor_t* editor, bview_t* bview) {
   return _cmd_save(editor, bview, 1);
 }
 
+static int _clobber_warning(editor_t* editor, char* warning) {
+  char* yn = NULL;
+  editor_prompt(editor, warning, &(editor_prompt_params_t) {
+    .kmap = editor->kmap_prompt_yn }, &yn);
+  return !yn || strcmp(yn, EON_PROMPT_NO) == 0;
+}
+
 // Prompt to save changes. Return EON_OK if file was saved or EON_ERR if the action
 // was cancelled.
 static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
   int rc;
   char* path;
-  char* yn;
   int fname_changed;
   struct stat st;
   bint_t nbytes;
@@ -1719,20 +1725,20 @@ static int _cmd_save(editor_t* editor, bview_t* bview, int save_as) {
     if (stat(path, &st) == 0) {
       // If the name changed, then always confirm whether we want to clobber the existing file
       if (fname_changed) {
-        editor_prompt(editor, "File already exists. Continue? (y/n)",
-          &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn);
+        if (_clobber_warning(editor, "File already exists. Continue? (y/n)")) {
+          free(path);
+          return EON_OK;
+        }
       }
       // If the name didn't change but the file was updated in the meantime, confirm overwrite
       else if (st.st_dev == bview->buffer->st.st_dev
         && st.st_ino == bview->buffer->st.st_ino
         && st.st_mtime > bview->buffer->st.st_mtime) {
         // File was modified after it was opened/last saved
-        editor_prompt(editor, "File was modified in between. Continue? (y/n)",
-          &(editor_prompt_params_t) { .kmap = editor->kmap_prompt_yn }, &yn);
-      }
-      if (!yn || strcmp(yn, EON_PROMPT_NO) == 0) {
-        free(path);
-        return EON_OK;
+        if (_clobber_warning(editor, "File was modified in between. Continue? (y/n)")) {
+          free(path);
+          return EON_OK;
+        }
       }
     }
 
